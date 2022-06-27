@@ -1,0 +1,7 @@
+{
+	"url": "https://example.com",
+	"realm": "cortex", 
+	"client_id": "iqm_client", 
+	"username": "user", 
+	"tokens_path": "tokens.json"
+}

@@ -14,21 +14,24 @@
 """
 Token manager for authorization to IQM's quantum computers. Part of Cortex CLI.
 """
-import daemon
 import json
 import os
 import signal
 import time
-from cortex_cli.auth import refresh_tokens
 from pathlib import Path
 
+import daemon
 
-def start_tm_daemon(timeout, cfg):
-    with daemon.DaemonContext(stderr=open('/tmp/stderr.txt', 'w')) as context:
+from cortex_cli.auth import refresh_tokens
+
+
+def daemonize_token_manager(timeout: int, cfg: dict):
+    """Start a daemon process."""
+    with daemon.DaemonContext(stderr=open('/tmp/stderr.txt', 'w', encoding='UTF-8')):
         _token_manager(timeout, cfg)
 
-
-def _token_manager(timeout, cfg):
+def _token_manager(timeout: int, cfg: dict):
+    """Refresh tokens periodically."""
     path_to_tokens_dir = Path(cfg['tokens_path']).parent
     path_to_tokens_file = cfg['tokens_path']
     url = cfg['url']
@@ -39,13 +42,12 @@ def _token_manager(timeout, cfg):
         with open(path_to_tokens_file, 'r', encoding='utf-8') as file:
             rft = json.load(file)['refresh_token']
 
-
         n = refresh_tokens(url, realm, client_id, rft)
         tokens_json = json.dumps({
-            "pid": os.getpid(),
-            "timestmamp": time.ctime(),
-            "access_token": n['access_token'],
-            "refresh_token": n['refresh_token']
+            'pid': os.getpid(),
+            'timestmamp': time.ctime(),
+            'access_token': n['access_token'],
+            'refresh_token': n['refresh_token']
         })
         try:
             path_to_tokens_dir.mkdir(parents=True, exist_ok=True)
@@ -56,7 +58,8 @@ def _token_manager(timeout, cfg):
 
         time.sleep(timeout)
 
-def check_pid(pid):        
+
+def check_pid(pid: int) -> bool:
     """ Check for the existence of a unix pid."""
     try:
         os.kill(pid, 0)
@@ -66,8 +69,9 @@ def check_pid(pid):
         return True
 
 def kill_by_pid(pid: int) -> bool:
+    """Kill process with given PID"""
     if check_pid(pid):
         os.kill(int(pid), signal.SIGTERM)
-        print(f"Killed token manager process with PID {pid}")
+        print(f'Killed token manager process with PID {pid}')
         return True
     return False

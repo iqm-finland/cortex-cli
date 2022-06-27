@@ -15,14 +15,20 @@
 Authorization and session management for Cortex CLI.
 """
 
-from datetime import datetime
+import json
+import time
+from base64 import b64decode
 from enum import Enum
+from typing import Optional
+
 import requests
-from typing import Any, Optional, Union
 from pydantic import BaseModel, Field
-from pprint import pprint
 
 REFRESH_MARGIN_SECONDS = 5
+
+class ClientConfigurationError(RuntimeError):
+    """Wrong configuration provided.
+    """
 
 class ClientAuthenticationError(RuntimeError):
     """Something went wrong with user authentication.
@@ -109,7 +115,15 @@ def _time_left_seconds(token: str) -> int:
     exp_time = int(json.loads(b64decode(body)).get('exp', '0'))
     return max(0, exp_time - int(time.time()))
 
-def login_request(url, realm, client_id, username, password):
+def login_request(url, realm, client_id, username, password) -> dict:
+    """Sends login request to the authentication server.
+
+    Raises:
+        ClientAuthenticationError: updating the tokens failed
+
+    Returns:
+        Tokens dictionary
+    """
     data = AuthRequest(
         client_id = client_id,
         grant_type = GrantType.PASSWORD,
@@ -127,7 +141,7 @@ def login_request(url, realm, client_id, username, password):
 def refresh_tokens(url, realm, client_id, refresh_token):
     """Update access token and refresh token.
 
-    Uses refresh token to request new tokens from authentication server. 
+    Uses refresh token to request new tokens from authentication server.
 
     Raises:
         ClientAuthenticationError: updating the tokens failed
@@ -140,20 +154,30 @@ def refresh_tokens(url, realm, client_id, refresh_token):
 
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
     result = requests.post(request_url, data=data.dict(exclude_none=True))
-    
+
     if result.status_code != 200:
         raise ClientAuthenticationError(f'Failed to update tokens, {result.text}')
     tokens = result.json()
     return tokens
 
-def logout_request(url, realm, client_id, refresh_token):
+def logout_request(url, realm, client_id, refresh_token) -> bool:
+    """Sends logout request to the authentication server.
+
+    Raises:
+        ClientAuthenticationError: updating the tokens failed
+
+    Returns:
+        True if logout was successful
+    """
     data = AuthRequest(
         client_id = client_id,
         refresh_token = refresh_token
     )
     request_url = f'{url}realms/{realm}/protocol/openid-connect/logout'
     result = requests.post(request_url, data=data.dict(exclude_none=True))
-    pprint(vars(result))
-    if result.status_code != 200 or result.status_code != 204:
+    # pprint(vars(result))
+    if result.status_code in (200, 204):
+        print('Logged out')
+    else:
         raise ClientAuthenticationError(f'Failed to logout, {result.text}')
     return True
