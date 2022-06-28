@@ -180,11 +180,13 @@ def status(config_path, verbose):
 @click.option('--username')
 @click.option('--password')
 @click.option('--refresh-period', default=DEFAULT_REFRESH_PERIOD)
-def login(config_path, username, password, refresh_period):
+@click.option('--no-refresh', is_flag=True, default=False)
+def login(config_path, username, password, refresh_period, no_refresh):
     """Authorize"""
     config = json.loads(_read(config_path))
     url = config['url']
     realm = config['realm']
+    tokens_path = config['tokens_path']
 
     if not username:
         if not config['username']:
@@ -196,9 +198,11 @@ def login(config_path, username, password, refresh_period):
     if not password:
         password = click.prompt('Password')
 
+
     tokens = login_request(url, realm, DEFAULT_CLIENT_ID, username, password)
-    save_tokens_file(DEFAULT_TOKENS_PATH, tokens['access_token'], tokens['refresh_token'])
-    daemonize_token_manager(refresh_period, config)
+    save_tokens_file(tokens_path, tokens['access_token'], tokens['refresh_token'])
+    if not no_refresh:
+        daemonize_token_manager(refresh_period, config)
 
 
 @auth.command()

@@ -34,26 +34,28 @@ from cortex_cli.cortex_cli import DEFAULT_CLIENT_ID, DEFAULT_REALM_NAME
 @pytest.fixture()
 def base_url():
     """Base url of IQM server"""
-    return 'https://example.com'
+    return 'http://localhost'
+
+@pytest.fixture()
+def realm():
+    """Default realm of IQM auth server"""
+    return 'cortex'
 
 @pytest.fixture()
 def credentials():
     """Sample credentials for logging in"""
     return {
-        'auth_server_url': 'https://example.com',
+        'auth_server_url': 'http://localhost',
         'username': 'some_username',
         'password': 'some_password',
     }
 
-@pytest.fixture(scope='function')
-def mock_server(url, realm, credentials):
+@pytest.fixture
+def config_file_path():
     """
-    Runs mocking separately for each test
+    Returns sample config file
     """
-    generate_server_stubs(url, realm, credentials)
-    yield  # running test function
-    unstub()
-
+    return os.path.dirname(os.path.realpath(__file__)) + '/resources/config.json'
 
 @pytest.fixture
 def config_dict():
@@ -80,7 +82,7 @@ def sample_config():
     """
     return {
         'tokens_path': 'tokens.json',
-        'url': 'https://example.com',
+        'url': 'http://localhost',
         'realm': 'cortex',
         'client_id': 'iqm_client',
         'username': 'user',
@@ -101,39 +103,6 @@ class MockJsonResponse:
     def raise_for_status(self):
         if 400 <= self.status_code < 600:
             raise HTTPError('')
-
-
-def generate_server_stubs(base_url, realm, credentials):
-    """
-    Mocking some calls to the server by mocking 'requests'
-    """
-    when(requests).post(
-        f'{base_url}/realms/{realm}/protocol/openid-connect/token',
-        data=credentials).thenReturn(
-            MockJsonResponse(
-                200,
-                {
-                    'access_token': 'access.token.fake',
-                    'expires_in': 300,
-                    'refresh_expires_in': 14400,
-                    'refresh_token': 'refresh.token.fake',
-                    'token_type': 'Bearer',
-                    'not-before-policy': 0,
-                    'session_state': 'session.state.fake',
-                    'scope': 'email profile'
-                }
-            )
-    )
-
-    when(requests).post(
-        f'{base_url}/realms/{realm}/protocol/openid-connect/token',
-        data=credentials).thenReturn(
-            MockJsonResponse(
-                401,
-                {'error':'invalid_grant',
-                'error_description':'Invalid user credentials'}
-            )
-        )
 
 
 def prepare_tokens(
@@ -197,37 +166,17 @@ def make_token(token_type: str, lifetime: int) -> str:
     return f'{empty}.{body}.{empty}'
 
 
-# def expect_status_request(url: str, access_token: Optional[str], times: int = 1) -> UUID:
-#     """Prepare for status request.
+def expect_logout(auth_server_url: str, refresh_token: str):
+    """Prepare for logout request.
 
-#     Args:
-#         url: server URL for the status request
-#         access_token: access token to use in Authorization header
-#             If not set, expect request to have no Authorization header
-#         times: number of times the status request is expected to be made
-
-#     Returns:
-#         Expected job ID to be used in the request
-#     """
-#     job_id = uuid4()
-#     headers = None if access_token is None else {'Authorization': f'Bearer {access_token}'}
-#     expect(requests, times=times).get(f'{url}/jobs/{job_id}', headers=headers).thenReturn(
-#         MockJsonResponse(200, {'status': 'pending'})
-#     )
-#     return job_id
-
-
-# def expect_logout(auth_server_url: str, refresh_token: str):
-#     """Prepare for logout request.
-
-#     Args:
-#         auth_server_url: base URL of the authentication server
-#         refresh_token: refresh token expected to be used in the request
-#     """
-#     request_data = AuthRequest(client_id=AUTH_CLIENT_ID, refresh_token=refresh_token)
-#     expect(requests, times=1).post(
-#         f'{auth_server_url}/realms/{AUTH_REALM}/protocol/openid-connect/logout',
-#         data=request_data.dict(exclude_none=True)
-#     ).thenReturn(
-#         mock({'status_code': 204, 'text': '{}'})
-#     )
+    Args:
+        auth_server_url: base URL of the authentication server
+        refresh_token: refresh token expected to be used in the request
+    """
+    request_data = AuthRequest(client_id=DEFAULT_CLIENT_ID, refresh_token=refresh_token)
+    expect(requests, times=1).post(
+        f'{auth_server_url}/realms/{AUTH_REALM}/protocol/openid-connect/logout',
+        data=request_data.dict(exclude_none=True)
+    ).thenReturn(
+        mock({'status_code': 204, 'text': '{}'})
+    )

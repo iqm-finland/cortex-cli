@@ -173,10 +173,10 @@ def logout_request(url, realm, client_id, refresh_token) -> bool:
         client_id = client_id,
         refresh_token = refresh_token
     )
-    request_url = f'{url}realms/{realm}/protocol/openid-connect/logout'
+    request_url = f'{url}/realms/{realm}/protocol/openid-connect/logout'
     result = requests.post(request_url, data=data.dict(exclude_none=True))
     # pprint(vars(result))
-    if result.status_code in (200, 204):
+    if result.status_code == 204:
         print('Logged out')
     else:
         raise ClientAuthenticationError(f'Failed to logout, {result.text}')
