@@ -20,10 +20,13 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import Optional
+
 import click
 
 from cortex_cli import __version__
-from cortex_cli.auth import login_request, logout_request, refresh_request
+from cortex_cli.auth import (ClientAuthenticationError, login_request,
+                             logout_request, refresh_request)
 from cortex_cli.token_manager import (check_pid, daemonize_token_manager,
                                       kill_by_pid)
 
@@ -51,7 +54,15 @@ logger.setLevel(logging.INFO)
 
 
 def _validate_path(ctx, param, path) -> str:
-    """Validate whether entered file path already exists"""
+    """Callback for CLI prompt. If needed, confirmation to overwrite is prompted.
+
+    Args:
+        ctx: click context
+        param: click prompt param object
+        path: path provided by user
+    Returns:
+        str: finalized, confirmed path
+    """
     if ctx.obj and param.name in ctx.obj:
         return path
     ctx.obj = { param.name: True }
@@ -62,7 +73,7 @@ def _validate_path(ctx, param, path) -> str:
 
     # File exists, so user must either overwrite or enter a new path
     while True:
-        msg = f"{click.style('File at that path already exists. Overwrite?', fg='red')}"
+        msg = f"{click.style('File at given path already exists. Overwrite?', fg='red')}"
         if click.confirm(msg, default=None):
             return path
 
@@ -128,7 +139,7 @@ def init(config_path, tokens_path, url, realm, client_id, username) -> None: #py
             file.write(config_json)
     except OSError as error:
         print('Error writing configuration file', error)
-    click.echo("Cortex CLI initialized successfully. You can login with 'cortex auth login'.")
+    logger.info("Cortex CLI initialized successfully. You can login with 'cortex auth login'.")
 
 
 @cortex_cli.group()
@@ -145,20 +156,21 @@ def auth() -> None:
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 def status(config_path, verbose):
     """Check status of authorization."""
+    if verbose:
+        logger.setLevel(logging.DEBUG)
+
     if not Path(config_path).is_file():
-        click.echo(f'Config file not found at: {config_path}')
+        logger.info('Config file not found at: %s', config_path)
         return
 
-    if verbose:
-        click.echo(f'Using configuration file: {config_path}')
+    logger.debug('Using configuration file: %s', config_path)
     config = json.loads(_read(config_path))
     tokens_path = config['tokens_path']
     if not Path(tokens_path).is_file():
-        click.echo(f'Tokens file not found at: {tokens_path}')
+        logger.info('Tokens file not found at: %s', tokens_path)
         return
 
-    if verbose:
-        click.echo(f'Using tokens file {tokens_path}')
+    logger.debug('Using tokens file: %s', tokens_path)
     tokens_data = json.loads(_read(tokens_path))
     if 'pid' not in tokens_data:
         click.echo(f'Token manager: {click.style("NOT RUNNING", fg="red")}')
@@ -180,22 +192,30 @@ def status(config_path, verbose):
 @click.option('--refresh-period', default=DEFAULT_REFRESH_PERIOD, help='How often to reresh tokens (in seconds).')
 @click.option('--no-refresh', is_flag=True, default=False, help='Do not start token manager to refresh tokens.')
 def login(config_path, username, password, refresh_period, no_refresh):
-    """Authorize"""
-    config = json.loads(_read(config_path))
-    url = config['url']
-    realm = config['realm']
-    tokens_path = config['tokens_path']
+    """Authorize to access the IQM server."""
+    cfg = json.loads(_read(config_path))
+    url = cfg['url']
+    realm = cfg['realm']
+    tokens_path = cfg['tokens_path']
+
+    # Tokens file exists, trying to refresh tokens without username/password
     if Path(tokens_path).is_file():
-        tokens_data = json.loads(_read(tokens_path))
-        tokens = refresh_request(config['url'], config['realm'], config['client_id'], tokens_data['refresh_token'])
-        save_tokens_file(tokens_path, tokens['access_token'], tokens['refresh_token'])
-        return
+        refresh_token = _read_json(tokens_path)['refresh_token']
+        tokens = _attempt_login_by_token(cfg['url'], cfg['realm'], cfg['client_id'], refresh_token)
+        if tokens:
+            save_tokens_file(tokens_path, tokens['access_token'], tokens['refresh_token'])
+            if not no_refresh:
+                daemonize_token_manager(refresh_period, cfg)
+                logger.info('Existing token was used to refresh the auth session. Token manager started.')
+            else:
+                logger.info('Existing token was used to refresh session. Token manager was not started.')
+            return
 
     if not username:
-        if not config['username']:
+        if not cfg['username']:
             username = click.prompt('Username')
         else:
-            username = config['username']
+            username = cfg['username']
             click.echo(f'Username: {username}')
 
     if not password:
@@ -206,8 +226,17 @@ def login(config_path, username, password, refresh_period, no_refresh):
     if tokens:
         logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_path, tokens['access_token'], tokens['refresh_token'])
+
     if not no_refresh:
-        daemonize_token_manager(refresh_period, config)
+        daemonize_token_manager(refresh_period, cfg)
+
+def _attempt_login_by_token(url, realm, client_id, refresh_token):
+    tokens = {}
+    try:
+        tokens = refresh_request(url, realm, client_id, refresh_token)
+    except ClientAuthenticationError:
+        return None
+    return tokens
 
 
 @auth.command()
@@ -218,13 +247,9 @@ def login(config_path, username, password, refresh_period, no_refresh):
     help="Don't delete tokens file, but kill token manager daemon.")
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
 def logout(config_path, keep_tokens, force):
-    """Either logout completely, or only stop token manager process and keep tokens file."""
-    config = json.loads(_read(config_path))
-    url = config['url']
-    realm = config['realm']
-    client_id = config['client_id']
-    tokens_path = config['tokens_path']
-
+    """Either logout completely, or just stop token manager while keeping tokens file."""
+    cfg = json.loads(_read(config_path))
+    tokens_path = cfg['tokens_path']
     tokens = json.loads(_read(tokens_path))
     pid = None
     if 'pid' in tokens:
@@ -238,14 +263,13 @@ def logout(config_path, keep_tokens, force):
                 return
             logger.info('Logout aborted.')
             return
-        else:
-            logger.info('No PID found in tokens file. Token manager is not running, so tokens may be stale.')
-            return
+        logger.info('No PID found in tokens file. Token manager is not running, so tokens may be stale.')
+        return
 
     # Don't keep tokens, kill by PID
     if pid:
         if force or click.confirm('Logout from server, kill token manager, and delete tokens. OK?', default=None):
-            if logout_request(url, realm, client_id, refresh_token):
+            if logout_request(cfg['url'], cfg['realm'], cfg['client_id'], refresh_token):
                 kill_by_pid(pid)
                 os.remove(tokens_path)
                 logger.info('Logged out successfully.')
@@ -256,29 +280,34 @@ def logout(config_path, keep_tokens, force):
         return
 
     # Don't keep tokens, PID doesn't exist
-    click.echo('No PID found in tokens file. Token manager daemon is not running, so tokens may be stale.')
-    click.echo('Attempting to logout from server...')
+    _attempt_logout_without_pid(cfg, refresh_token, tokens_path, force)
+
+def _attempt_logout_without_pid(cfg, refresh_token, tokens_path, force):
+    # Don't keep tokens, PID doesn't exist
+    logger.info('No PID found in tokens file. Token manager daemon is not running, so tokens may be stale.')
+    logger.info('Attempting to logout from server...')
     if force or click.confirm('Logout from server and delete tokens. OK?', default=None):
-        if logout_request(url, realm, client_id, refresh_token):
+        if logout_request(cfg['url'], cfg['realm'], cfg['client_id'], refresh_token):
             os.remove(tokens_path)
             logger.info('Logged out successfully.')
             return
         logger.info('Error when logging out.')
         return
     logger.info('Logout aborted.')
-    return
-
 
 @auth.command()
 @click.option('--config-path', default=DEFAULT_CONFIG_PATH, help='Location of the configuration file to be used.')
 def refresh(config_path):
-    """Refresh tokens manually"""
-    config = json.loads(_read(config_path))
+    """Refresh tokens manually."""
+    config = _read_json(config_path)
     tokens_path = config['tokens_path']
-    tokens_data = json.loads(_read(tokens_path))
+    tokens_data = _read_json(tokens_path)
     tokens = refresh_request(config['url'], config['realm'], config['client_id'], tokens_data['refresh_token'])
-    save_tokens_file(tokens_path, tokens['access_token'], tokens['refresh_token'])
-    logger.info('Logout aborted.')
+    if tokens:
+        logger.info('Tokens refreshed successfully.')
+        save_tokens_file(tokens_path, tokens['access_token'], tokens['refresh_token'])
+        return
+    logger.info('Refresh failed.')
 
 
 def _read(filename: str) -> str:
@@ -297,6 +326,22 @@ def _read(filename: str) -> str:
     except FileNotFoundError as ex:
         raise click.ClickException(f'File {filename} not found') from ex
 
+def _read_json(filename: str) -> dict:
+    """Opens and parses the given JSON file.
+
+    Args:
+        filename (str): name of the file to read
+    Returns:
+        dict: object derived from JSON file
+    Raises:
+        JSONDecodeError: if parsing fails
+    """
+    try:
+        json_data = json.loads(_read(filename))
+    except json.decoder.JSONDecodeError as e:
+        print('Decoding JSON has failed', e)
+    return json_data
+
 def get_pid_from_tokens_file(path: str) -> int:
     """Reads PID from tokens file.
 
@@ -304,38 +349,13 @@ def get_pid_from_tokens_file(path: str) -> int:
         filename (str): name of the file to read
     Returns:
         int: pid
-    Raises:
-        ClickException: if file is not found
     """
-    tokens_file = _read(path)
-    try:
-        tokens_data = json.loads(tokens_file)
-    except json.decoder.JSONDecodeError as e:
-        print('Decoding JSON has failed', e)
+    tokens_data = _read_json(path)
     if 'pid' in tokens_data:
         return int(tokens_data['pid'])
     return None
 
-def get_refresh_token_from_tokens_file(path: str) -> int:
-    """Reads PID from tokens file.
-
-    Args:
-        filename (str): name of the file to read
-    Returns:
-        int: pid
-    Raises:
-        ClickException: if file is not found
-    """
-    tokens_file = _read(path)
-    try:
-        tokens_data = json.loads(tokens_file)
-    except json.decoder.JSONDecodeError as e:
-        print('Decoding JSON has failed', e)
-    if 'pid' in tokens_data:
-        return tokens_data['refresh_token']
-    return None
-
-def save_tokens_file(path: str, access_token: str, refresh_token: str):
+def save_tokens_file(path: str, access_token: str, refresh_token: str, pid: Optional[str] = None):
     """Saves tokens as JSON file at given path.
 
     Args:
@@ -346,11 +366,16 @@ def save_tokens_file(path: str, access_token: str, refresh_token: str):
         OSError: if writing to file fails
     """
     path_to_dir = Path(path).parent
-    tokens_json = json.dumps({
+    tokens_data = {
+        'timestmamp': time.ctime(),
         'access_token': access_token,
-        'refresh_token': refresh_token,
-        'timestmamp': time.time()
-    })
+        'refresh_token': refresh_token
+    }
+
+    if pid:
+        tokens_data['pid'] = pid
+
+    tokens_json = json.dumps(tokens_data)
     try:
         path_to_dir.mkdir(parents=True, exist_ok=True)
         with open(Path(path), 'w', encoding='UTF-8') as file:
@@ -360,29 +385,3 @@ def save_tokens_file(path: str, access_token: str, refresh_token: str):
 
 if __name__ == '__main__':
     cortex_cli(sys.argv[1:])  # pylint: disable=too-many-function-args
-
-
-
-# CONFIG_FILE_SCHEMA = {
-#     "type" : "object",
-#     "properties" : {
-#         "base_url" : {"type" : "string"},
-#         "realm" : {"type" : "string"},
-#         "tokens_path" : {"type" : "string"},
-#         "username" : {"type" : "string"},
-#     },
-#     "required": ["base_url", "realm", "tokens_path"],
-#     "additionalProperties": False
-# }
-
-# TOKENS_FILE_SCHEMA = {
-#     "type" : "object",
-#     "properties" : {
-#         "pid" : {"type" : "number"},
-#         "timestmamp" : {"type" : "string"},
-#         "access_token" : {"type" : "string"},
-#         "refresh_token" : {"type" : "string"},
-#     },
-#     "required": ["pid", "timestmamp", "access_token", "refresh_token"],
-#     "additionalProperties": False
-# }

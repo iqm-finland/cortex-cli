@@ -25,9 +25,9 @@ import daemon
 from cortex_cli.auth import refresh_request
 
 
-def daemonize_token_manager(timeout: int, cfg: dict):
+def daemonize_token_manager(timeout: int, cfg: dict, errfile: str = '/tmp/stderr.txt'):
     """Start a daemon process."""
-    with daemon.DaemonContext(stderr=open('/tmp/stderr.txt', 'w', encoding='UTF-8')):
+    with daemon.DaemonContext(stderr=open(errfile, 'w', encoding='UTF-8')):
         _token_manager(timeout, cfg)
 
 def _token_manager(timeout: int, cfg: dict):

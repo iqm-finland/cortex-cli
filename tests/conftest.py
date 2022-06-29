@@ -24,7 +24,7 @@ from typing import Optional
 
 import pytest
 import requests
-from mockito import expect, mock, unstub, when
+from mockito import expect, mock, when
 from requests import HTTPError
 
 from cortex_cli.auth import AuthRequest, GrantType
@@ -128,7 +128,7 @@ def make_token(token_type: str, lifetime: int) -> str:
     return f'{empty}.{body}.{empty}'
 
 
-def expect_refresh(auth_server_url: str, realm: str, client_id: str, refresh_token: str):
+def expect_refresh(auth_server_url: str, realm: str, refresh_token: str):
     """Prepare for refresh request.
 
     Args:

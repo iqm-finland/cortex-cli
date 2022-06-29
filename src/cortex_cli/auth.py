@@ -85,24 +85,6 @@ class Credentials(BaseModel):
     'current refresh token of the session'
 
 
-def _get_credentials(credentials: dict[str, str]) -> Optional[Credentials]:
-    """Try to obtain credentials from arguments
-
-    Args:
-        credentials: dict of credentials provided as arguments
-
-    Returns:
-        Credentials with token fields cleared, or None if ``auth_server_url`` was not set.
-    """
-    auth_server_url = credentials.get('auth_server_url')
-    username = credentials.get('username')
-    password = credentials.get('password')
-    if not auth_server_url:
-        return None
-    if not username or not password:
-        raise ClientConfigurationError('Auth server URL is set but no username or password')
-    return Credentials(auth_server_url=auth_server_url, username=username, password=password)
-
 def _time_left_seconds(token: str) -> int:
     """Check how much time is left until the token expires.
 
@@ -116,6 +98,11 @@ def _time_left_seconds(token: str) -> int:
     return max(0, exp_time - int(time.time()))
 
 def token_is_valid(refresh_token):
+    """Check if token is not about to expire.
+
+    Returns:
+        True if token is still valid, False otherwise.
+    """
     return _time_left_seconds(refresh_token) > REFRESH_MARGIN_SECONDS
 
 def login_request(url, realm, client_id, username, password) -> dict:
@@ -159,7 +146,7 @@ def refresh_request(url, realm, client_id, refresh_token):
     result = requests.post(request_url, data=data.dict(exclude_none=True))
 
     if result.status_code != 200:
-        raise ClientAuthenticationError(f'Failed to update tokens, {result.text}')
+        raise ClientAuthenticationError(f'Failed to refresh tokens, {result.text}')
     tokens = result.json()
     return tokens
 
