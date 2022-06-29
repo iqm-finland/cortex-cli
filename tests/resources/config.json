@@ -2,6 +2,6 @@
 	"url": "http://localhost",
 	"realm": "cortex", 
 	"client_id": "iqm_client", 
-	"username": "some_username",
-	"tokens_path": "tokens.json"
+	"tokens_path": "tokens.json",
+	"username": ""
 }

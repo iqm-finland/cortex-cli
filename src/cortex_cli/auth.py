@@ -24,7 +24,7 @@ from typing import Optional
 import requests
 from pydantic import BaseModel, Field
 
-REFRESH_MARGIN_SECONDS = 5
+REFRESH_MARGIN_SECONDS = 15
 
 class ClientConfigurationError(RuntimeError):
     """Wrong configuration provided.
@@ -115,6 +115,9 @@ def _time_left_seconds(token: str) -> int:
     exp_time = int(json.loads(b64decode(body)).get('exp', '0'))
     return max(0, exp_time - int(time.time()))
 
+def token_is_valid(refresh_token):
+    return _time_left_seconds(refresh_token) > REFRESH_MARGIN_SECONDS
+
 def login_request(url, realm, client_id, username, password) -> dict:
     """Sends login request to the authentication server.
 
@@ -138,7 +141,7 @@ def login_request(url, realm, client_id, username, password) -> dict:
     tokens = result.json()
     return tokens
 
-def refresh_tokens(url, realm, client_id, refresh_token):
+def refresh_request(url, realm, client_id, refresh_token):
     """Update access token and refresh token.
 
     Uses refresh token to request new tokens from authentication server.
@@ -175,9 +178,7 @@ def logout_request(url, realm, client_id, refresh_token) -> bool:
     )
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/logout'
     result = requests.post(request_url, data=data.dict(exclude_none=True))
-    # pprint(vars(result))
-    if result.status_code == 204:
-        print('Logged out')
-    else:
+
+    if result.status_code != 204:
         raise ClientAuthenticationError(f'Failed to logout, {result.text}')
     return True

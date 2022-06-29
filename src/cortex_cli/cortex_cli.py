@@ -20,11 +20,10 @@ import os
 import sys
 import time
 from pathlib import Path
-
 import click
 
 from cortex_cli import __version__
-from cortex_cli.auth import login_request, logout_request, refresh_tokens
+from cortex_cli.auth import login_request, logout_request, refresh_request
 from cortex_cli.token_manager import (check_pid, daemonize_token_manager,
                                       kill_by_pid)
 
@@ -51,11 +50,11 @@ logger.addHandler(ClickLoggingHandler())
 logger.setLevel(logging.INFO)
 
 
-def _validate_config_path(ctx, param, path) -> str: # pylint: disable=unused-argument
-    """Validate whether entered config file path already exists"""
-    if ctx.obj and 'validated_config_path' in ctx.obj:
+def _validate_path(ctx, param, path) -> str:
+    """Validate whether entered file path already exists"""
+    if ctx.obj and param.name in ctx.obj:
         return path
-    ctx.obj = { 'validated_config_path': True }
+    ctx.obj = { param.name: True }
 
     # File doesn't exist, no need to confirm overwriting
     if not Path(path).is_file():
@@ -63,37 +62,11 @@ def _validate_config_path(ctx, param, path) -> str: # pylint: disable=unused-arg
 
     # File exists, so user must either overwrite or enter a new path
     while True:
-        msg = f"{click.style('Config file at that path already exists. Overwrite?', fg='red')}"
-        overwrite = click.confirm(msg, default=None)
-        if overwrite:
+        msg = f"{click.style('File at that path already exists. Overwrite?', fg='red')}"
+        if click.confirm(msg, default=None):
             return path
 
-        new_path = click.prompt('New config path')
-        if new_path == path:
-            continue
-        return new_path
-
-
-def _validate_tokens_path(ctx, _, path):
-    """Validate whether entered tokens file path already exists"""
-    if ctx.obj and 'validated_tokens_path' in ctx.obj:
-        return path
-    ctx.obj = { 'validated_tokens_path': True }
-
-    # File doesn't exist, no need to confirm overwriting
-    if not Path(path).is_file():
-        return path
-
-    # User must either agree to overwrite or enter a truly new path
-    while True:
-        msg = f"{click.style('Tokens file already exists. Overwrite it and kill its token manager?', fg='red')}"
-        overwrite = click.confirm(msg, default=None)
-        if overwrite:
-            pid = get_pid_from_tokens_file(path)
-            if pid:
-                kill_by_pid(pid)
-            return path
-        new_path = click.prompt('New configuration path')
+        new_path = click.prompt('New file path')
         if new_path == path:
             continue
         return new_path
@@ -109,17 +82,36 @@ def cortex_cli():
 @click.option(
     '--config-path',
     prompt='Where to save config',
-    callback=_validate_config_path,
-    default=DEFAULT_CONFIG_PATH)
+    callback=_validate_path,
+    default=DEFAULT_CONFIG_PATH,
+    help='Location where the configuration file will be saved.')
 @click.option(
     '--tokens-path',
     prompt='Where to save auth tokens',
-    callback=_validate_tokens_path,
-    default=DEFAULT_TOKENS_PATH)
-@click.option('--url', prompt='Base URL of IQM auth server', default=DEFAULT_BASE_URL)
-@click.option('--realm', prompt='Realm on IQM auth server', default=DEFAULT_REALM_NAME)
-@click.option('--client-id', prompt='Client ID', default=DEFAULT_CLIENT_ID)
-@click.option('--username', prompt='Username (optional)', required=False, default=DEFAULT_USERNAME)
+    callback=_validate_path,
+    default=DEFAULT_TOKENS_PATH,
+    help='Location where the tokens file will be saved.')
+@click.option(
+    '--url',
+    prompt='Base URL of IQM auth server',
+    default=DEFAULT_BASE_URL,
+    help='Base URL of IQM authentication server.')
+@click.option(
+    '--realm',
+    prompt='Realm on IQM auth server',
+    default=DEFAULT_REALM_NAME,
+    help='Name of the realm on the IQM authentication server.')
+@click.option(
+    '--client-id',
+    prompt='Client ID',
+    default=DEFAULT_CLIENT_ID,
+    help='Client ID on the IQM authentication server.')
+@click.option(
+    '--username',
+    prompt='Username (optional)',
+    required=False,
+    default=DEFAULT_USERNAME,
+    help='Username. If not provided, it will be asked at login.')
 def init(config_path, tokens_path, url, realm, client_id, username) -> None: #pylint: disable=too-many-arguments
     """Initialize configuration and authentication."""
     path_to_dir = Path(config_path).parent
@@ -130,7 +122,6 @@ def init(config_path, tokens_path, url, realm, client_id, username) -> None: #py
         'username': username,
         'tokens_path': tokens_path
     })
-
     try:
         path_to_dir.mkdir(parents=True, exist_ok=True)
         with open(Path(config_path), 'w', encoding='UTF-8') as file:
@@ -146,20 +137,24 @@ def auth() -> None:
     return
 
 @auth.command()
-@click.option('--config-path', default=DEFAULT_CONFIG_PATH, type=click.Path())
+@click.option(
+    '--config-path',
+    default=DEFAULT_CONFIG_PATH,
+    type=click.Path(),
+    help='Location of the configuration file to be used.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 def status(config_path, verbose):
     """Check status of authorization."""
     if not Path(config_path).is_file():
-        click.echo(f'Config file not found: {config_path}')
+        click.echo(f'Config file not found at: {config_path}')
         return
 
     if verbose:
-        click.echo(f'Using configuration file {config_path}')
+        click.echo(f'Using configuration file: {config_path}')
     config = json.loads(_read(config_path))
     tokens_path = config['tokens_path']
     if not Path(tokens_path).is_file():
-        click.echo(f'Tokens file not found: {tokens_path}')
+        click.echo(f'Tokens file not found at: {tokens_path}')
         return
 
     if verbose:
@@ -176,17 +171,25 @@ def status(config_path, verbose):
         click.echo(f'Token manager: {click.style("NOT RUNNING", fg="red")}')
 
 @auth.command()
-@click.option('--config-path', default=DEFAULT_CONFIG_PATH)
-@click.option('--username')
-@click.option('--password')
-@click.option('--refresh-period', default=DEFAULT_REFRESH_PERIOD)
-@click.option('--no-refresh', is_flag=True, default=False)
+@click.option(
+    '--config-path',
+    default=DEFAULT_CONFIG_PATH,
+    help='Location of the configuration file to be used.')
+@click.option('--username', help='Username for authentication.')
+@click.option('--password', help='Password for authentication.')
+@click.option('--refresh-period', default=DEFAULT_REFRESH_PERIOD, help='How often to reresh tokens (in seconds).')
+@click.option('--no-refresh', is_flag=True, default=False, help='Do not start token manager to refresh tokens.')
 def login(config_path, username, password, refresh_period, no_refresh):
     """Authorize"""
     config = json.loads(_read(config_path))
     url = config['url']
     realm = config['realm']
     tokens_path = config['tokens_path']
+    if Path(tokens_path).is_file():
+        tokens_data = json.loads(_read(tokens_path))
+        tokens = refresh_request(config['url'], config['realm'], config['client_id'], tokens_data['refresh_token'])
+        save_tokens_file(tokens_path, tokens['access_token'], tokens['refresh_token'])
+        return
 
     if not username:
         if not config['username']:
@@ -196,10 +199,12 @@ def login(config_path, username, password, refresh_period, no_refresh):
             click.echo(f'Username: {username}')
 
     if not password:
-        password = click.prompt('Password')
+        password = click.prompt('Password', hide_input=True)
 
 
     tokens = login_request(url, realm, DEFAULT_CLIENT_ID, username, password)
+    if tokens:
+        logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_path, tokens['access_token'], tokens['refresh_token'])
     if not no_refresh:
         daemonize_token_manager(refresh_period, config)
@@ -209,50 +214,71 @@ def login(config_path, username, password, refresh_period, no_refresh):
 @click.option('--config-path', default=DEFAULT_CONFIG_PATH)
 @click.option(
     '--keep-tokens',
-    is_flag=True,
-    default=False,
+    is_flag=True, default=False,
     help="Don't delete tokens file, but kill token manager daemon.")
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
 def logout(config_path, keep_tokens, force):
-    """Logout completely, or just stop token manager process and keep tokens file"""
-    config = json.loads(_read(config_path))
-    tokens_path = config['tokens_path']
-    pid = get_pid_from_tokens_file(tokens_path)
-    if not pid:
-        click.echo('No PID found in tokens file.')
-        return
-    if keep_tokens:
-        if force or click.confirm('Kill token manager daemon and keep tokens file. OK?', default=None):
-            kill_by_pid(pid)
-            return
-
-    tokens_data = json.loads(_read(tokens_path))
-    refresh_token = tokens_data['refresh_token']
+    """Either logout completely, or only stop token manager process and keep tokens file."""
     config = json.loads(_read(config_path))
     url = config['url']
     realm = config['realm']
+    client_id = config['client_id']
+    tokens_path = config['tokens_path']
 
-    if force:
-        logged_out = logout_request(url, realm, 'iqm_client', refresh_token)
-        os.remove(tokens_path)
-        if logged_out:
-            click.echo('Logged out successfully.')
+    tokens = json.loads(_read(tokens_path))
+    pid = None
+    if 'pid' in tokens:
+        pid = int(tokens['pid'])
+    refresh_token = tokens['refresh_token']
+
+    if keep_tokens:
+        if pid:
+            if force or click.confirm('Kill token manager and keep tokens file. OK?', default=None):
+                kill_by_pid(pid)
+                return
+            logger.info('Logout aborted.')
+            return
+        else:
+            logger.info('No PID found in tokens file. Token manager is not running, so tokens may be stale.')
+            return
+
+    # Don't keep tokens, kill by PID
+    if pid:
+        if force or click.confirm('Logout from server, kill token manager, and delete tokens. OK?', default=None):
+            if logout_request(url, realm, client_id, refresh_token):
+                kill_by_pid(pid)
+                os.remove(tokens_path)
+                logger.info('Logged out successfully.')
+                return
+            logger.info('Error when logging out.')
+            return
+        logger.info('Logout aborted.')
         return
-    confirmed = click.confirm('Logout from server, stop token manager and delete tokens file. OK?', default=None)
-    if confirmed:
-        if logout_request(url, realm, 'iqm_client', refresh_token):
+
+    # Don't keep tokens, PID doesn't exist
+    click.echo('No PID found in tokens file. Token manager daemon is not running, so tokens may be stale.')
+    click.echo('Attempting to logout from server...')
+    if force or click.confirm('Logout from server and delete tokens. OK?', default=None):
+        if logout_request(url, realm, client_id, refresh_token):
             os.remove(tokens_path)
+            logger.info('Logged out successfully.')
+            return
+        logger.info('Error when logging out.')
+        return
+    logger.info('Logout aborted.')
+    return
 
 
 @auth.command()
-@click.option('--config-path', default=DEFAULT_CONFIG_PATH)
+@click.option('--config-path', default=DEFAULT_CONFIG_PATH, help='Location of the configuration file to be used.')
 def refresh(config_path):
     """Refresh tokens manually"""
     config = json.loads(_read(config_path))
     tokens_path = config['tokens_path']
     tokens_data = json.loads(_read(tokens_path))
-
-    refresh_tokens(config['url'], config['realm'], config['client_id'], tokens_data['refresh_token'])
+    tokens = refresh_request(config['url'], config['realm'], config['client_id'], tokens_data['refresh_token'])
+    save_tokens_file(tokens_path, tokens['access_token'], tokens['refresh_token'])
+    logger.info('Logout aborted.')
 
 
 def _read(filename: str) -> str:
@@ -288,6 +314,25 @@ def get_pid_from_tokens_file(path: str) -> int:
         print('Decoding JSON has failed', e)
     if 'pid' in tokens_data:
         return int(tokens_data['pid'])
+    return None
+
+def get_refresh_token_from_tokens_file(path: str) -> int:
+    """Reads PID from tokens file.
+
+    Args:
+        filename (str): name of the file to read
+    Returns:
+        int: pid
+    Raises:
+        ClickException: if file is not found
+    """
+    tokens_file = _read(path)
+    try:
+        tokens_data = json.loads(tokens_file)
+    except json.decoder.JSONDecodeError as e:
+        print('Decoding JSON has failed', e)
+    if 'pid' in tokens_data:
+        return tokens_data['refresh_token']
     return None
 
 def save_tokens_file(path: str, access_token: str, refresh_token: str):

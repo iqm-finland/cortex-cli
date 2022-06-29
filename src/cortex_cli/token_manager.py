@@ -22,7 +22,7 @@ from pathlib import Path
 
 import daemon
 
-from cortex_cli.auth import refresh_tokens
+from cortex_cli.auth import refresh_request
 
 
 def daemonize_token_manager(timeout: int, cfg: dict):
@@ -42,7 +42,7 @@ def _token_manager(timeout: int, cfg: dict):
         with open(path_to_tokens_file, 'r', encoding='utf-8') as file:
             rft = json.load(file)['refresh_token']
 
-        n = refresh_tokens(url, realm, client_id, rft)
+        n = refresh_request(url, realm, client_id, rft)
         tokens_json = json.dumps({
             'pid': os.getpid(),
             'timestmamp': time.ctime(),
