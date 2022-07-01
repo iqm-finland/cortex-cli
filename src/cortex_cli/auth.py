@@ -30,6 +30,7 @@ class ClientConfigurationError(RuntimeError):
     """Wrong configuration provided.
     """
 
+
 class ClientAuthenticationError(RuntimeError):
     """Something went wrong with user authentication.
     """
@@ -41,6 +42,7 @@ class GrantType(str, Enum):
     """
     PASSWORD = 'password'
     REFRESH = 'refresh_token'
+
 
 class AuthRequest(BaseModel):
     """Request sent to authentication server for access token and refresh token, or for terminating the session.
@@ -97,7 +99,7 @@ def _time_left_seconds(token: str) -> int:
     exp_time = int(json.loads(b64decode(body)).get('exp', '0'))
     return max(0, exp_time - int(time.time()))
 
-def token_is_valid(refresh_token):
+def token_is_valid(refresh_token: str) -> bool:
     """Check if token is not about to expire.
 
     Returns:
@@ -105,7 +107,7 @@ def token_is_valid(refresh_token):
     """
     return _time_left_seconds(refresh_token) > REFRESH_MARGIN_SECONDS
 
-def login_request(url, realm, client_id, username, password) -> dict:
+def login_request(url: str, realm:str, client_id:str, username:str, password:str) -> dict:
     """Sends login request to the authentication server.
 
     Raises:
@@ -128,13 +130,15 @@ def login_request(url, realm, client_id, username, password) -> dict:
     tokens = result.json()
     return tokens
 
-def refresh_request(url, realm, client_id, refresh_token):
+def refresh_request(url:str, realm:str, client_id:str, refresh_token:str) -> dict:
     """Update access token and refresh token.
 
     Uses refresh token to request new tokens from authentication server.
 
     Raises:
         ClientAuthenticationError: updating the tokens failed
+    Returns:
+        Tokens dictionary
     """
     data = AuthRequest(
         client_id = client_id,
@@ -150,7 +154,7 @@ def refresh_request(url, realm, client_id, refresh_token):
     tokens = result.json()
     return tokens
 
-def logout_request(url, realm, client_id, refresh_token) -> bool:
+def logout_request(url:str, realm:str, client_id:str, refresh_token:str) -> bool:
     """Sends logout request to the authentication server.
 
     Raises:

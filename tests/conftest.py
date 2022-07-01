@@ -18,6 +18,7 @@ Mocks server calls for testing
 
 import json
 import os
+import signal
 import time
 from base64 import b64encode
 from typing import Optional
@@ -27,6 +28,7 @@ import requests
 from mockito import expect, mock, when
 from requests import HTTPError
 
+from cortex_cli import token_manager
 from cortex_cli.auth import AuthRequest, GrantType
 from cortex_cli.cortex_cli import DEFAULT_CLIENT_ID, DEFAULT_REALM_NAME
 
@@ -45,10 +47,15 @@ def config_dict():
     """
     Reads and parses config file into a dictionary
     """
-    settings_path = os.path.dirname(os.path.realpath(__file__)) + '/resources/config.json'
-    with open(settings_path, 'r', encoding='utf-8') as f:
+    config_path = os.path.dirname(os.path.realpath(__file__)) + '/resources/config.json'
+    with open(config_path, 'r', encoding='utf-8') as f:
         return json.loads(f.read())
 
+@pytest.fixture
+def tokens_dict():
+    tokens_path = os.path.dirname(os.path.realpath(__file__)) + '/resources/tokens.json'
+    with open(tokens_path, 'r', encoding='utf-8') as f:
+        return json.loads(f.read())
 
 class MockJsonResponse:
     def __init__(self, status_code: int, json_data: dict):
@@ -128,7 +135,7 @@ def make_token(token_type: str, lifetime: int) -> str:
     return f'{empty}.{body}.{empty}'
 
 
-def expect_refresh(auth_server_url: str, realm: str, refresh_token: str):
+def expect_refresh(auth_server_url: str, realm: str, refresh_token: str, status_code: int = 200):
     """Prepare for refresh request.
 
     Args:
@@ -147,10 +154,10 @@ def expect_refresh(auth_server_url: str, realm: str, refresh_token: str):
     expect(requests, times=1).post(
         f'{auth_server_url}/realms/{realm}/protocol/openid-connect/token',
         data=request_data.dict(exclude_none=True)
-    ).thenReturn(MockJsonResponse(200, tokens))
+    ).thenReturn(MockJsonResponse(status_code, tokens))
     return tokens
 
-def expect_logout(auth_server_url: str, realm: str, client_id: str, refresh_token: str):
+def expect_logout(auth_server_url: str, realm: str, client_id: str, refresh_token: str, status_code: int = 204):
     """Prepare for logout request.
 
     Args:
@@ -162,5 +169,16 @@ def expect_logout(auth_server_url: str, realm: str, client_id: str, refresh_toke
         f'{auth_server_url}/realms/{realm}/protocol/openid-connect/logout',
         data=request_data.dict(exclude_none=True)
     ).thenReturn(
-        mock({'status_code': 204, 'text': '{}'})
+        mock({'status_code': status_code, 'text': '{}'})
     )
+
+def expect_check_pid(pid):
+    when(token_manager).check_pid(pid).thenReturn(True)
+
+def expect_kill_by_pid(pid):
+    when(token_manager).kill_by_pid(pid).thenReturn(True)
+
+def expect_os_kill_to_succeed(pid):
+    when(os).kill(pid, signal.SIGTERM).thenReturn(True)
+
+# write file fail

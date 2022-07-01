@@ -28,9 +28,9 @@ from cortex_cli.auth import refresh_request
 def daemonize_token_manager(timeout: int, cfg: dict, errfile: str = '/tmp/stderr.txt'):
     """Start a daemon process."""
     with daemon.DaemonContext(stderr=open(errfile, 'w', encoding='UTF-8')):
-        _token_manager(timeout, cfg)
+        start_token_manager(timeout, cfg)
 
-def _token_manager(timeout: int, cfg: dict):
+def start_token_manager(timeout: int, cfg: dict, single_run: bool = False):
     """Refresh tokens periodically."""
     path_to_tokens_dir = Path(cfg['tokens_path']).parent
     path_to_tokens_file = cfg['tokens_path']
@@ -55,6 +55,9 @@ def _token_manager(timeout: int, cfg: dict):
                 file.write(tokens_json)
         except OSError as error:
             print('Error writing configuration file', error)
+
+        if single_run:
+            break
 
         time.sleep(timeout)
 
