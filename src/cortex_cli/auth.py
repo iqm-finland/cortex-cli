@@ -26,10 +26,6 @@ from pydantic import BaseModel, Field
 
 REFRESH_MARGIN_SECONDS = 15
 
-class ClientConfigurationError(RuntimeError):
-    """Wrong configuration provided.
-    """
-
 
 class ClientAuthenticationError(RuntimeError):
     """Something went wrong with user authentication.
@@ -69,53 +65,16 @@ class AuthRequest(BaseModel):
     "refresh token for grant type ``'refresh_token'`` and logout request"
 
 
-class Credentials(BaseModel):
-    """Credentials and tokens for maintaining a session with the authentication server.
-    * Fields ``auth:server_url``, ``username`` and ``password`` are provided by the user.
-    * Fields ``access_token`` and ``refresh_token`` are loaded from the authentication server and
-      refreshed periodically.
-    """
-    auth_server_url: str = Field(..., description='Base URL of the authentication server')
-    'Base URL of the authentication server'
-    username: str = Field(..., description='username for logging in to the server')
-    'username for logging in to the server'
-    password: str = Field(..., description='password for logging in to the server')
-    'password for logging in to the server'
-    access_token: Optional[str] = Field(None, description='current access token of the session')
-    'current access token of the session'
-    refresh_token: Optional[str] = Field(None, description='current refresh token of the session')
-    'current refresh token of the session'
-
-
-def _time_left_seconds(token: str) -> int:
-    """Check how much time is left until the token expires.
-
-    Returns:
-        Time left on token in seconds.
-    """
-    _, body, _ = token.split('.', 2)
-    # Add padding to adjust body length to a multiple of 4 chars as required by base64 decoding
-    body += '=' * (-len(body) % 4)
-    exp_time = int(json.loads(b64decode(body)).get('exp', '0'))
-    return max(0, exp_time - int(time.time()))
-
-def token_is_valid(refresh_token: str) -> bool:
-    """Check if token is not about to expire.
-
-    Returns:
-        True if token is still valid, False otherwise.
-    """
-    return _time_left_seconds(refresh_token) > REFRESH_MARGIN_SECONDS
-
 def login_request(url: str, realm:str, client_id:str, username:str, password:str) -> dict:
     """Sends login request to the authentication server.
 
     Raises:
-        ClientAuthenticationError: updating the tokens failed
+        ClientAuthenticationError: obtaining the tokens failed
 
     Returns:
         Tokens dictionary
     """
+
     data = AuthRequest(
         client_id = client_id,
         grant_type = GrantType.PASSWORD,
@@ -126,20 +85,24 @@ def login_request(url: str, realm:str, client_id:str, username:str, password:str
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
     result = requests.post(request_url, data=data.dict(exclude_none=True))
     if result.status_code != 200:
-        raise ClientAuthenticationError(f'Failed to update tokens, {result.text}')
+        raise ClientAuthenticationError(f'Failed to authenticate, {result.text}')
     tokens = result.json()
     return tokens
 
-def refresh_request(url:str, realm:str, client_id:str, refresh_token:str) -> dict:
-    """Update access token and refresh token.
-
-    Uses refresh token to request new tokens from authentication server.
+def refresh_request(url: str, realm:str, client_id:str, refresh_token:str) -> dict:
+    """Sends refresh request to the authentication server.
 
     Raises:
         ClientAuthenticationError: updating the tokens failed
+
     Returns:
-        Tokens dictionary
+        Tokens dictionary, or None if refresh_token is expired.
     """
+
+    if not token_is_valid(refresh_token):
+        return None
+
+    # Update tokens using existing refresh_token
     data = AuthRequest(
         client_id = client_id,
         grant_type=GrantType.REFRESH,
@@ -148,9 +111,8 @@ def refresh_request(url:str, realm:str, client_id:str, refresh_token:str) -> dic
 
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
     result = requests.post(request_url, data=data.dict(exclude_none=True))
-
     if result.status_code != 200:
-        raise ClientAuthenticationError(f'Failed to refresh tokens, {result.text}')
+        raise ClientAuthenticationError(f'Failed to update tokens, {result.text}')
     tokens = result.json()
     return tokens
 
@@ -173,3 +135,24 @@ def logout_request(url:str, realm:str, client_id:str, refresh_token:str) -> bool
     if result.status_code != 204:
         raise ClientAuthenticationError(f'Failed to logout, {result.text}')
     return True
+
+
+def time_left_seconds(token: str) -> int:
+    """Check how much time is left until the token expires.
+
+    Returns:
+        Time left on token in seconds.
+    """
+    _, body, _ = token.split('.', 2)
+    # Add padding to adjust body length to a multiple of 4 chars as required by base64 decoding
+    body += '=' * (-len(body) % 4)
+    exp_time = int(json.loads(b64decode(body)).get('exp', '0'))
+    return max(0, exp_time - int(time.time()))
+
+def token_is_valid(refresh_token: str) -> bool:
+    """Check if token is not about to expire.
+
+    Returns:
+        True if token is still valid, False otherwise.
+    """
+    return time_left_seconds(refresh_token) > REFRESH_MARGIN_SECONDS

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Mocks server calls for testing
+Mocks server and system calls for testing
 """
 
 import json
@@ -28,34 +28,34 @@ import requests
 from mockito import expect, mock, when
 from requests import HTTPError
 
-from cortex_cli import token_manager
+from cortex_cli import auth
 from cortex_cli.auth import AuthRequest, GrantType
-from cortex_cli.cortex_cli import DEFAULT_CLIENT_ID, DEFAULT_REALM_NAME
+from cortex_cli.cortex_cli import CLIENT_ID, REALM_NAME
 
 
 @pytest.fixture()
 def credentials():
     """Sample credentials for logging in"""
     return {
-        'auth_server_url': 'http://localhost',
+        'base_url': 'http://example.com',
         'username': 'some_username',
         'password': 'some_password',
     }
 
 @pytest.fixture
 def config_dict():
-    """
-    Reads and parses config file into a dictionary
-    """
+    """Reads and parses config file into a dictionary"""
     config_path = os.path.dirname(os.path.realpath(__file__)) + '/resources/config.json'
-    with open(config_path, 'r', encoding='utf-8') as f:
-        return json.loads(f.read())
+    with open(config_path, 'r', encoding='utf-8') as file:
+        return json.loads(file.read())
 
 @pytest.fixture
 def tokens_dict():
+    """Reads and parses tokens file into a dictionary"""
     tokens_path = os.path.dirname(os.path.realpath(__file__)) + '/resources/tokens.json'
-    with open(tokens_path, 'r', encoding='utf-8') as f:
-        return json.loads(f.read())
+    with open(tokens_path, 'r', encoding='utf-8') as file:
+        return json.loads(file.read())
+
 
 class MockJsonResponse:
     def __init__(self, status_code: int, json_data: dict):
@@ -74,51 +74,6 @@ class MockJsonResponse:
             raise HTTPError('')
 
 
-def prepare_tokens(
-        access_token_lifetime: int,
-        refresh_token_lifetime: int,
-        previous_refresh_token: Optional[str] = None,
-        status_code: int = 200,
-        **credentials
-) -> dict[str, str]:
-    """Prepare tokens and set them to be returned for a token request.
-
-    Args:
-        access_token_lifetime: seconds from current time to access token expire time
-        refresh_token_lifetime: seconds from current time to refresh token expire time
-        previous_refresh_token: refresh token to be used in refresh request
-        status_code: status code to return for token request
-        credentials: dict containing auth_server_url, username and password
-
-    Returns:
-         Prepared tokens as a dict.
-    """
-    if previous_refresh_token is None:
-        request_data = AuthRequest(
-            client_id=DEFAULT_CLIENT_ID,
-            grant_type=GrantType.PASSWORD,
-            username=credentials['username'],
-            password=credentials['password']
-        )
-    else:
-        request_data = AuthRequest(
-            client_id=DEFAULT_CLIENT_ID,
-            grant_type=GrantType.REFRESH,
-            refresh_token=previous_refresh_token
-        )
-
-    tokens = {
-        'access_token': make_token('Bearer', access_token_lifetime),
-        'refresh_token': make_token('Refresh', refresh_token_lifetime)
-    }
-    when(requests).post(
-        f'{credentials["auth_server_url"]}/realms/{DEFAULT_REALM_NAME}/protocol/openid-connect/token',
-        data=request_data.dict(exclude_none=True)
-    ).thenReturn(MockJsonResponse(status_code, tokens))
-
-    return tokens
-
-
 def make_token(token_type: str, lifetime: int) -> str:
     """Encode given token type and expire time as a token.
 
@@ -135,50 +90,80 @@ def make_token(token_type: str, lifetime: int) -> str:
     return f'{empty}.{body}.{empty}'
 
 
-def expect_refresh(auth_server_url: str, realm: str, refresh_token: str, status_code: int = 200):
-    """Prepare for refresh request.
+def prepare_tokens(
+        access_token_lifetime: int,
+        refresh_token_lifetime: int,
+        previous_refresh_token: Optional[str] = None,
+        status_code: int = 200,
+        **credentials
+) -> dict[str, str]:
+    """Prepare tokens and set them to be returned for a token request.
 
     Args:
-        auth_server_url: base URL of the authentication server
-        refresh_token: refresh token expected to be used in the request
+        access_token_lifetime: seconds from current time to access token expire time
+        refresh_token_lifetime: seconds from current time to refresh token expire time
+        previous_refresh_token: refresh token to be used in refresh request
+        status_code: status code to return for token request
+        credentials: dict containing base_url, username and password
+
+    Returns:
+         Prepared tokens as a dict.
     """
-    request_data = AuthRequest(
-            client_id=DEFAULT_CLIENT_ID,
-            grant_type=GrantType.REFRESH,
-            refresh_token=refresh_token
+    if previous_refresh_token is None:
+        request_data = AuthRequest(
+            client_id=CLIENT_ID,
+            grant_type=GrantType.PASSWORD,
+            username=credentials['username'],
+            password=credentials['password']
         )
+    else:
+        request_data = AuthRequest(
+            client_id=CLIENT_ID,
+            grant_type=GrantType.REFRESH,
+            refresh_token=previous_refresh_token
+        )
+
     tokens = {
-        'access_token': make_token('Bearer', 300),
-        'refresh_token': make_token('Refresh', 300)
+        'access_token': make_token('Bearer', access_token_lifetime),
+        'refresh_token': make_token('Refresh', refresh_token_lifetime)
     }
-    expect(requests, times=1).post(
-        f'{auth_server_url}/realms/{realm}/protocol/openid-connect/token',
+    when(requests).post(
+        f'{credentials["base_url"]}/realms/{REALM_NAME}/protocol/openid-connect/token',
         data=request_data.dict(exclude_none=True)
     ).thenReturn(MockJsonResponse(status_code, tokens))
+
     return tokens
 
-def expect_logout(auth_server_url: str, realm: str, client_id: str, refresh_token: str, status_code: int = 204):
+def expect_logout(
+        base_url: str,
+        realm: str,
+        client_id: str,
+        refresh_token: str,
+        status_code: int = 204):
     """Prepare for logout request.
 
     Args:
-        auth_server_url: base URL of the authentication server
-        refresh_token: refresh token expected to be used in the request
+        base_url: base URL of the authentication server
+        realm: realm name on the authentication server
+        client_id: cliend ID on the authentication srver
+        refresh_token: refresh token to be used in the request
     """
     request_data = AuthRequest(client_id=client_id, refresh_token=refresh_token)
     expect(requests, times=1).post(
-        f'{auth_server_url}/realms/{realm}/protocol/openid-connect/logout',
+        f'{base_url}/realms/{realm}/protocol/openid-connect/logout',
         data=request_data.dict(exclude_none=True)
     ).thenReturn(
         mock({'status_code': status_code, 'text': '{}'})
     )
 
-def expect_check_pid(pid):
-    when(token_manager).check_pid(pid).thenReturn(True)
+def expect_token_is_valid(token:str, result:bool = True):
+    """
+    Prepare for token_is_valid call
+    """
+    when(auth).token_is_valid(token).thenReturn(result)
 
-def expect_kill_by_pid(pid):
-    when(token_manager).kill_by_pid(pid).thenReturn(True)
-
-def expect_os_kill_to_succeed(pid):
-    when(os).kill(pid, signal.SIGTERM).thenReturn(True)
-
-# write file fail
+def expect_os_kill(pid:int, signal = signal.SIGTERM, result:bool = True):
+    """
+    Prepare for os.kill call
+    """
+    when(os).kill(pid, signal).thenReturn(result)

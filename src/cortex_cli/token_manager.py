@@ -19,6 +19,7 @@ import os
 import signal
 import time
 from pathlib import Path
+from typing import Optional
 
 import daemon
 
@@ -30,40 +31,50 @@ def daemonize_token_manager(timeout: int, cfg: dict, errfile: str = '/tmp/stderr
     with daemon.DaemonContext(stderr=open(errfile, 'w', encoding='UTF-8')):
         start_token_manager(timeout, cfg)
 
-def start_token_manager(timeout: int, cfg: dict, single_run: bool = False):
+def start_token_manager(timeout: int, config: dict, single_run: bool = False):
     """Refresh tokens periodically."""
-    path_to_tokens_dir = Path(cfg['tokens_path']).parent
-    path_to_tokens_file = cfg['tokens_path']
-    url = cfg['url']
-    realm = cfg['realm']
-    client_id = cfg['client_id']
+    path_to_tokens_dir = Path(config['tokens_path']).parent
+    path_to_tokens_file = config['tokens_path']
+    base_url = config['base_url']
+    realm = config['realm']
+    client_id = config['client_id']
 
     while True:
         with open(path_to_tokens_file, 'r', encoding='utf-8') as file:
-            rft = json.load(file)['refresh_token']
+            refresh_token = json.load(file)['refresh_token']
 
-        n = refresh_request(url, realm, client_id, rft)
+        tokens = refresh_request(base_url, realm, client_id, refresh_token)
         tokens_json = json.dumps({
             'pid': os.getpid(),
-            'timestmamp': time.ctime(),
-            'access_token': n['access_token'],
-            'refresh_token': n['refresh_token']
+            'timestamp': time.ctime(),
+            'access_token': tokens['access_token'],
+            'refresh_token': tokens['refresh_token']
         })
+
         try:
             path_to_tokens_dir.mkdir(parents=True, exist_ok=True)
             with open(Path(path_to_tokens_file), 'w', encoding='UTF-8') as file:
                 file.write(tokens_json)
         except OSError as error:
-            print('Error writing configuration file', error)
+            print('Error writing tokens file', error)
 
         if single_run:
             break
 
         time.sleep(timeout)
 
+def check_daemon(tokens_path: str) -> Optional[int]:
+    """Check whether a daemon related to the given tokens_path is running."""
+    with open(tokens_path, 'r', encoding='utf-8') as file:
+        tokens_data = json.load(file)
+    pid = tokens_data['pid'] if 'pid' in tokens_data else None
+
+    if pid and check_pid(pid):
+        return pid
+    return None
 
 def check_pid(pid: int) -> bool:
-    """ Check for the existence of a unix pid."""
+    """Check for the existence of a unix PID."""
     try:
         os.kill(pid, 0)
     except OSError:
@@ -72,9 +83,8 @@ def check_pid(pid: int) -> bool:
         return True
 
 def kill_by_pid(pid: int) -> bool:
-    """Kill process with given PID"""
+    """Kill process with given PID."""
     if check_pid(pid):
         os.kill(int(pid), signal.SIGTERM)
-        print(f'Killed token manager process with PID {pid}')
         return True
     return False
