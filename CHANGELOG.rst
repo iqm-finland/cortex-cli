@@ -5,4 +5,5 @@ Changelog
 Version 0.1
 =============
 
-- Init
+- Authentication token manager daemon
+- Multiple configurations support

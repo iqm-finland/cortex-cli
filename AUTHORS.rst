@@ -2,4 +2,4 @@
 Contributors
 ============
 
-* Rakhim Davletkaliyev
+* Rakhim Davletkaliyev <rakhim.davletkaliyev@meetiqm.com>

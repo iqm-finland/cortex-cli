@@ -1,5 +1,5 @@
 Cortex CLI
-######
+##########
 
 :Release: |release|
 :Date: |today|

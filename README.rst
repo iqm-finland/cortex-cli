@@ -1,11 +1,11 @@
-======
+==========
 Cortex CLI
-======
+==========
 
 Command-line tool (CLI) for interacting with IQM quantum computers.
 
 Installing Cortex CLI
------------------
+---------------------
 
 Requirements for installing:
 
@@ -17,7 +17,7 @@ Requirements for installing:
   $ pip install iqm-cortrx-cli
 
 Using Cortex CLI
-------------
+----------------
 
 For general usage instructions, run
 
