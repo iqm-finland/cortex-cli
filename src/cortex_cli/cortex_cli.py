@@ -264,6 +264,10 @@ def login(config_file, username, password, refresh_period, no_daemon, verbose): 
 
     logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_file, tokens, base_url)
+    click.echo(f"""To use the tokens file with IQM Client or IQM Client-based software, set the environment variable:
+export IQM_TOKENS_FILE={tokens_file}
+Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm-client/""")
+
     if no_daemon:
         logger.info('Token manager not started.')
     else:
@@ -330,7 +334,6 @@ def logout(config_file, keep_tokens, force):
             os.remove(tokens_file)
             logger.info('Logged out successfully.')
             return
-
 
     logger.info('Logout aborted.')
 
