@@ -201,7 +201,7 @@ def _print_status_details(tokens_path):
 
     click.echo(f'Tokens file: {tokens_path}')
     if not 'pid' in tokens_data:
-        click.echo("Tokens file doesn't contain PID. Probably, 'cortex auth login' was run with flag '--no-daemon'\n")
+        click.echo("Tokens file doesn't contain PID. Probably, 'cortex auth login' was launched with '--no-daemon'\n")
 
     click.echo(f"Last refresh: {tokens_data['timestamp']}")
 

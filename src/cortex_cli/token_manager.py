@@ -64,7 +64,12 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False):
         time.sleep(timeout)
 
 def check_daemon(tokens_path: str) -> Optional[int]:
-    """Check whether a daemon related to the given tokens_path is running."""
+    """Check whether a daemon related to the given tokens_path is running.
+    Args:
+        tokens_path: Path to a tokens JSON file.
+    Returns:
+        Optional[int]: PID of the process if process is running, None otherwise.
+    """
     with open(tokens_path, 'r', encoding='utf-8') as file:
         tokens_data = json.load(file)
     pid = tokens_data['pid'] if 'pid' in tokens_data else None
@@ -74,7 +79,12 @@ def check_daemon(tokens_path: str) -> Optional[int]:
     return None
 
 def check_pid(pid: int) -> bool:
-    """Check for the existence of a unix PID."""
+    """Check for the existence of a unix PID.
+    Args:
+        pid: PID in question
+    Returns:
+        bool: True if process with given PID is running, False otherwise.
+    """
     try:
         os.kill(pid, 0)
     except OSError:
@@ -83,7 +93,12 @@ def check_pid(pid: int) -> bool:
         return True
 
 def kill_by_pid(pid: int) -> bool:
-    """Kill process with given PID."""
+    """Kill process with given PID.
+    Args:
+        pid: PID in question
+    Returns:
+        bool: True if process with given PID is has been killed, False otherwise.
+    """
     if check_pid(pid):
         os.kill(int(pid), signal.SIGTERM)
         return True

@@ -65,7 +65,7 @@ class AuthRequest(BaseModel):
     "refresh token for grant type ``'refresh_token'`` and logout request"
 
 
-def login_request(url: str, realm:str, client_id:str, username:str, password:str) -> dict:
+def login_request(url: str, realm:str, client_id:str, username:str, password:str) -> dict[str, str]:
     """Sends login request to the authentication server.
 
     Raises:
@@ -89,7 +89,7 @@ def login_request(url: str, realm:str, client_id:str, username:str, password:str
     tokens = result.json()
     return tokens
 
-def refresh_request(url: str, realm:str, client_id:str, refresh_token:str) -> dict:
+def refresh_request(url: str, realm:str, client_id:str, refresh_token:str) -> Optional[dict[str, str]]:
     """Sends refresh request to the authentication server.
 
     Raises:
