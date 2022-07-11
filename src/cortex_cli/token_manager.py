@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Token manager for authorization to IQM's quantum computers. Part of Cortex CLI.
+Token manager for authentication and authorization to IQM's quantum computers. Part of Cortex CLI.
 """
 import json
 import os
@@ -33,8 +33,8 @@ def daemonize_token_manager(timeout: int, cfg: dict, errfile: str = '/tmp/stderr
 
 def start_token_manager(timeout: int, config: dict, single_run: bool = False):
     """Refresh tokens periodically."""
-    path_to_tokens_dir = Path(config['tokens_path']).parent
-    path_to_tokens_file = config['tokens_path']
+    path_to_tokens_dir = Path(config['tokens_file']).parent
+    path_to_tokens_file = config['tokens_file']
     base_url = config['base_url']
     realm = config['realm']
     client_id = config['client_id']
@@ -63,14 +63,14 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False):
 
         time.sleep(timeout)
 
-def check_daemon(tokens_path: str) -> Optional[int]:
-    """Check whether a daemon related to the given tokens_path is running.
+def check_daemon(tokens_file: str) -> Optional[int]:
+    """Check whether a daemon related to the given tokens_file is running.
     Args:
-        tokens_path: Path to a tokens JSON file.
+        tokens_file: Path to a tokens JSON file.
     Returns:
         Optional[int]: PID of the process if process is running, None otherwise.
     """
-    with open(tokens_path, 'r', encoding='utf-8') as file:
+    with open(tokens_file, 'r', encoding='utf-8') as file:
         tokens_data = json.load(file)
     pid = tokens_data['pid'] if 'pid' in tokens_data else None
 

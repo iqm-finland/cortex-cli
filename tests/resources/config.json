@@ -2,6 +2,6 @@
 	"base_url": "http://example.com",
 	"realm": "cortex", 
 	"client_id": "iqm_client", 
-	"tokens_path": "tokens.json",
+	"tokens_file": "tokens.json",
 	"username": ""
 }

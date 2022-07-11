@@ -86,10 +86,10 @@ See ``cortex auth logout --help`` for more details.
 Multiple configuration files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, all Cortex CLI commands read the configuration file from the default location ``~/.config/iqm-cortex-cli/config.json``. You can specify a different path by providing ``--config-path`` value, for example:
+By default, all Cortex CLI commands read the configuration file from the default location ``~/.config/iqm-cortex-cli/config.json``. You can specify a different filepath by providing ``--config-file`` value, for example:
 
 .. code-block:: bash
 
-  $ cortex auth status --config-path /home/joe/config.json
-  $ cortex auth login --config-path /home/joe/config.json
-  $ cortex auth logout --config-path /home/joe/config.json
+  $ cortex auth status --config-file /home/joe/config.json
+  $ cortex auth login --config-file /home/joe/config.json
+  $ cortex auth logout --config-file /home/joe/config.json

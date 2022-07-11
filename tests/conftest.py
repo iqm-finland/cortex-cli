@@ -45,15 +45,15 @@ def credentials():
 @pytest.fixture
 def config_dict():
     """Reads and parses config file into a dictionary"""
-    config_path = os.path.dirname(os.path.realpath(__file__)) + '/resources/config.json'
-    with open(config_path, 'r', encoding='utf-8') as file:
+    config_file = os.path.dirname(os.path.realpath(__file__)) + '/resources/config.json'
+    with open(config_file, 'r', encoding='utf-8') as file:
         return json.loads(file.read())
 
 @pytest.fixture
 def tokens_dict():
     """Reads and parses tokens file into a dictionary"""
-    tokens_path = os.path.dirname(os.path.realpath(__file__)) + '/resources/tokens.json'
-    with open(tokens_path, 'r', encoding='utf-8') as file:
+    tokens_file = os.path.dirname(os.path.realpath(__file__)) + '/resources/tokens.json'
+    with open(tokens_file, 'r', encoding='utf-8') as file:
         return json.loads(file.read())
 
 
@@ -162,8 +162,16 @@ def expect_token_is_valid(token:str, result:bool = True):
     """
     when(auth).token_is_valid(token).thenReturn(result)
 
+
 def expect_os_kill(pid:int, signal = signal.SIGTERM, result:bool = True):
     """
     Prepare for os.kill call
     """
     when(os).kill(pid, signal).thenReturn(result)
+
+def expect_check_pid(pid:int, result:bool = True):
+    expect_os_kill(pid, 0, result)
+
+def expect_kill_by_pid(pid:int, result:bool = True):
+    expect_check_pid(pid, result = result)
+    expect_os_kill(pid, result = result)

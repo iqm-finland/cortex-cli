@@ -46,7 +46,6 @@ def test_start_token_manager(credentials, config_dict, tokens_dict):
             saved_tokens = json.loads(file.read())
             assert saved_tokens['access_token'] == expected_tokens['access_token']
             assert saved_tokens['refresh_token'] == expected_tokens['refresh_token']
-
     unstub()
 
 
