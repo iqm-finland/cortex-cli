@@ -48,7 +48,8 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False):
             'pid': os.getpid(),
             'timestamp': time.ctime(),
             'access_token': tokens['access_token'],
-            'refresh_token': tokens['refresh_token']
+            'refresh_token': tokens['refresh_token'],
+            'auth_server_url': base_url
         })
 
         try:

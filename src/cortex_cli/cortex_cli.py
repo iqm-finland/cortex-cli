@@ -242,7 +242,7 @@ def login(config_file, username, password, refresh_period, no_daemon, verbose): 
             logger.info('Failed to refresh tokens by using existing token. Switching to username/password.')
 
         if new_tokens:
-            save_tokens_file(tokens_file, new_tokens)
+            save_tokens_file(tokens_file, new_tokens, base_url)
             logger.debug('Saved new tokens file: %s', tokens_file)
             if no_daemon:
                 logger.info('Existing token was used to refresh session. Token manager not started.')
@@ -263,7 +263,7 @@ def login(config_file, username, password, refresh_period, no_daemon, verbose): 
         raise click.ClickException('Invalid username and/or password') from error
 
     logger.info('Logged in successfully as %s', username)
-    save_tokens_file(tokens_file, tokens)
+    save_tokens_file(tokens_file, tokens, base_url)
     if no_daemon:
         logger.info('Token manager not started.')
     else:
@@ -334,7 +334,7 @@ def logout(config_file, keep_tokens, force):
 
     logger.info('Logout aborted.')
 
-def save_tokens_file(path: str, tokens: dict[str, str]):
+def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str):
     """Saves tokens as JSON file at given path.
 
     Args:
@@ -348,7 +348,8 @@ def save_tokens_file(path: str, tokens: dict[str, str]):
     tokens_data = {
         'timestamp': time.ctime(),
         'access_token': tokens['access_token'],
-        'refresh_token': tokens['refresh_token']
+        'refresh_token': tokens['refresh_token'],
+        'auth_server_url': auth_server_url
     }
 
     try:

@@ -193,7 +193,7 @@ def test_auth_login_succeeds(config_dict, credentials):
         result = runner.invoke(cortex_cli,
             ['auth', 'login',
             '--config-file', 'config.json',
-            # '--username', credentials['username'],
+            '--username', credentials['username'],
             '--password', credentials['password'],
             '--no-daemon', # do not daemonize
             ])
