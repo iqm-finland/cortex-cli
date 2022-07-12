@@ -202,11 +202,11 @@ def status(config_file, verbose) -> None:
 
     click.echo(f"Last refresh: {tokens_data['timestamp']}")
     seconds_at = time_left_seconds(tokens_data['access_token'])
-    time_left = str(datetime.timedelta(seconds=seconds_at))
-    click.echo(f'Time left on access token (hh:mm:ss): {time_left}')
+    time_left_at = str(datetime.timedelta(seconds=seconds_at))
+    click.echo(f'Time left on access token (hh:mm:ss): {time_left_at}')
     seconds_rt = time_left_seconds(tokens_data['refresh_token'])
-    time_left = str(datetime.timedelta(seconds=seconds_rt))
-    click.echo(f'Time left on refresh token (hh:mm:ss): {time_left}')
+    time_left_rt = str(datetime.timedelta(seconds=seconds_rt))
+    click.echo(f'Time left on refresh token (hh:mm:ss): {time_left_rt}')
 
     active_pid = check_daemon(tokens_file)
     if active_pid:

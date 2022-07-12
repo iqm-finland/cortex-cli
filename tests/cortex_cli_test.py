@@ -15,6 +15,7 @@
 Tests for Cortex CLI's commands
 """
 
+import datetime
 import json
 import os
 
@@ -23,6 +24,7 @@ from click.testing import CliRunner
 from mockito import unstub
 from pytest import raises
 
+from cortex_cli.auth import time_left_seconds
 from cortex_cli.cortex_cli import _validate_path, cortex_cli
 from tests.conftest import (expect_check_pid, expect_kill_by_pid,
                             expect_logout, expect_token_is_valid,
@@ -163,6 +165,24 @@ def test_auth_status_reports_running_daemon(config_dict, tokens_dict):
         assert result.exit_code == 0
         assert 'RUNNING' in result.output
         assert 'NOT RUNNING' not in result.output
+
+def test_auth_status_reports_valid_token_time(config_dict, tokens_dict):
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        with open('tokens.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(tokens_dict))
+
+        seconds_at = time_left_seconds(tokens_dict['access_token'])
+        time_left_at = str(datetime.timedelta(seconds=seconds_at))
+        seconds_rt = time_left_seconds(tokens_dict['refresh_token'])
+        time_left_rt = str(datetime.timedelta(seconds=seconds_rt))
+        result = runner.invoke(cortex_cli,['auth', 'status', '--config-file', 'config.json'])
+        assert result.exit_code == 0
+        assert f'Time left on access token (hh:mm:ss): {time_left_at}' in result.output
+        assert f'Time left on refresh token (hh:mm:ss): {time_left_rt}' in result.output
+        # isn't there a racing condition above?
 
 def test_auth_status_reports_not_running_daemon(config_dict, tokens_dict):
     runner = CliRunner()
