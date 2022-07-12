@@ -53,12 +53,20 @@ logger = logging.getLogger('cortex_cli')
 logger.addHandler(ClickLoggingHandler())
 logger.setLevel(logging.INFO)
 
-def _setLogLevelByVerbosity(verbose):
-    """Sets logger log level to DEBUG if verbose is True."""
+def _setLogLevelByVerbosity(verbose: bool) -> int:
+    """Sets logger log level to DEBUG if verbose is True, to INFO otherwise.
+    Args:
+        verbose: whether logging should be verbose (i.e. DEBUG level)
+    Returns:
+        int: logging level which was set
+    """
     if verbose:
         logger.setLevel(logging.DEBUG)
+        return logging.DEBUG
+    logger.setLevel(logging.INFO)
+    return logging.INFO
 
-def _validate_path(ctx, param, path) -> str:
+def _validate_path(ctx: click.Context, param: object, path: str) -> str:
     """Callback for CLI prompt. If needed, confirmation to overwrite is prompted.
 
     Args:
@@ -92,7 +100,7 @@ def _validate_path(ctx, param, path) -> str:
 
 @click.group()
 @click.version_option(__version__)
-def cortex_cli():
+def cortex_cli() -> None:
     """Interact with an IQM quantum computer with Cortex CLI."""
     return
 
@@ -176,7 +184,7 @@ def auth() -> None:
     type=click.Path(exists=True, dir_okay=False),
     help='Location of the configuration file to be used.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def status(config_file, verbose):
+def status(config_file, verbose) -> None:
     """Check status of authentication."""
     _setLogLevelByVerbosity(verbose)
 
@@ -217,7 +225,7 @@ def status(config_file, verbose):
 @click.option('--refresh-period', default=REFRESH_PERIOD, help='How often to reresh tokens (in seconds).')
 @click.option('--no-daemon', is_flag=True, default=False, help='Do not start token manager to refresh tokens.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def login(config_file, username, password, refresh_period, no_daemon, verbose): #pylint: disable=too-many-arguments
+def login(config_file, username, password, refresh_period, no_daemon, verbose) -> None: #pylint: disable=too-many-arguments
     """Authenticate on the IQM server."""
     _setLogLevelByVerbosity(verbose)
 
@@ -225,13 +233,12 @@ def login(config_file, username, password, refresh_period, no_daemon, verbose): 
     base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
     tokens_file = config['tokens_file']
 
-    if Path(tokens_file).is_file() and check_daemon(tokens_file):
-        logger.info("Login aborted, because token manager is already running. See 'cortex auth status'.")
-        return
-
-    # Tokens file exists
     if Path(tokens_file).is_file():
-        # Refresh tokens without username/password
+        if check_daemon(tokens_file):
+            logger.info("Login aborted, because token manager is already running. See 'cortex auth status'.")
+            return
+
+        # Tokens file exists; Refresh tokens without username/password
         refresh_token = _read_json(tokens_file)['refresh_token']
         logger.debug('Attempting to refresh tokens by using existing refresh token from file: %s', tokens_file)
 
@@ -284,7 +291,7 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
     is_flag=True, default=False,
     help="Don't delete tokens file, but kill token manager daemon.")
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
-def logout(config_file, keep_tokens, force):
+def logout(config_file, keep_tokens, force) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
     config = _read_json(config_file)
     base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
@@ -337,7 +344,7 @@ def logout(config_file, keep_tokens, force):
 
     logger.info('Logout aborted.')
 
-def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str):
+def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) -> None:
     """Saves tokens as JSON file at given path.
 
     Args:

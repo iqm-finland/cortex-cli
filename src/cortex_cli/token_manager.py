@@ -35,7 +35,6 @@ def daemonize_token_manager(timeout: int, config: dict, errfile: str = '/tmp/std
     """
     with daemon.DaemonContext(stderr=open(errfile, 'w', encoding='UTF-8')):
         start_token_manager(timeout, config)
-    return
 
 def start_token_manager(timeout: int, config: dict, single_run: bool = False) -> None:
     """Refresh tokens periodically.
@@ -74,8 +73,6 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
             break
 
         time.sleep(timeout)
-
-    return
 
 def check_daemon(tokens_file: str) -> Optional[int]:
     """Check whether a daemon related to the given tokens_file is running.
