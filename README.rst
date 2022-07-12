@@ -14,7 +14,7 @@ Requirements for installing:
 
 .. code-block:: bash
 
-  $ pip install iqm-cortrx-cli
+  $ pip install iqm-cortex-cli
 
 Using Cortex CLI
 ----------------
