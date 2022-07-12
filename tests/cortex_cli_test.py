@@ -151,7 +151,7 @@ def test_auth_status_reports_no_pid_in_tokens_file(config_dict, tokens_dict):
         assert result.exit_code == 0
         assert 'NOT RUNNING' in result.output
 
-def test_status_reports_running_daemon(config_dict, tokens_dict):
+def test_auth_status_reports_running_daemon(config_dict, tokens_dict):
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
