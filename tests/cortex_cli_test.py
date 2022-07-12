@@ -67,8 +67,8 @@ def test_init_overwrites_config_file(config_dict):
     runner = CliRunner()
     with runner.isolated_filesystem():
         old_config_dict = config_dict.copy()
-        old_config_dict['base_url'] = 'https://to.be.overriten.com'
-        old_config_dict['username'] = 'to_be_overriten'
+        old_config_dict['base_url'] = 'https://to.be.overwritten.com'
+        old_config_dict['username'] = 'to_be_overwritten'
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(old_config_dict))
 
