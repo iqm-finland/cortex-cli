@@ -26,13 +26,24 @@ import daemon
 from cortex_cli.auth import refresh_request
 
 
-def daemonize_token_manager(timeout: int, cfg: dict, errfile: str = '/tmp/stderr.txt'):
-    """Start a daemon process."""
+def daemonize_token_manager(timeout: int, config: dict, errfile: str = '/tmp/stderr.txt') -> None:
+    """Start a daemon process.
+    Args:
+        timeout: refresh timeout (period) in seconds
+        config: Cortex CLI configuration dict
+        errfile: path to file for writing errors
+    """
     with daemon.DaemonContext(stderr=open(errfile, 'w', encoding='UTF-8')):
-        start_token_manager(timeout, cfg)
+        start_token_manager(timeout, config)
+    return
 
-def start_token_manager(timeout: int, config: dict, single_run: bool = False):
-    """Refresh tokens periodically."""
+def start_token_manager(timeout: int, config: dict, single_run: bool = False) -> None:
+    """Refresh tokens periodically.
+    Args:
+        timeout: refresh timeout (period) in seconds
+        config: Cortex CLI configuration dict
+        single_run: if True, refresh tokens only once and exit; otherwise repeat refreshing indefinitely
+    """
     path_to_tokens_dir = Path(config['tokens_file']).parent
     path_to_tokens_file = config['tokens_file']
     base_url = config['base_url']
@@ -63,6 +74,8 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False):
             break
 
         time.sleep(timeout)
+
+    return
 
 def check_daemon(tokens_file: str) -> Optional[int]:
     """Check whether a daemon related to the given tokens_file is running.
