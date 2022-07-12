@@ -15,6 +15,11 @@ and install it in editable mode with all the extras:
    $ cd cortex-cli
    $ pip install -e ".[dev,docs,testing]"
 
+Now that the package is installed in editable mode, you can run it:
+
+.. code-block:: bash
+
+   $ cortex --help
 
 Build and view the docs:
 
