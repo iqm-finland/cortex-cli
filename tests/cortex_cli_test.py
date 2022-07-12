@@ -164,7 +164,7 @@ def test_auth_status_reports_running_daemon(config_dict, tokens_dict):
         assert 'RUNNING' in result.output
         assert 'NOT RUNNING' not in result.output
 
-def test_status_reports_not_running_daemon(config_dict, tokens_dict):
+def test_auth_status_reports_not_running_daemon(config_dict, tokens_dict):
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
