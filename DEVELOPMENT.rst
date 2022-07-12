@@ -12,7 +12,7 @@ and install it in editable mode with all the extras:
 .. code-block:: bash
 
    $ git clone git@github.com:iqm-finland/cortex-cli.git
-   $ cdcortex-cli
+   $ cd cortex-cli
    $ pip install -e ".[dev,docs,testing]"
 
 
