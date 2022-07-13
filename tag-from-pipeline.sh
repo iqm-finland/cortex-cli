@@ -20,7 +20,7 @@ function get_version_in_changelog() {
     printf "\033[0;31mChangelog file is incorrect, one of the first seven lines should be of the format 'Version xx.xx.'\033[0m";
     return 171
   fi
-}2
+}
 
 function verify_changelog_version() {
   read -r version date < <(get_version_in_changelog)
