@@ -38,7 +38,7 @@ BASE_URL = 'https://auth.demo.qc.iqm.fi'
 REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
-REFRESH_PERIOD = 20 # in seconds
+REFRESH_PERIOD = 3*60 # in seconds
 
 class ClickLoggingHandler(logging.Handler):
     """Simple log handler using click's echo function."""
