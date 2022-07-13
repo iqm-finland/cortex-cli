@@ -1,3 +1,8 @@
+|CI badge| |Release badge|
+
+.. |CI badge| image:: https://github.com/iqm-finland/cortex-cli/actions/workflows/ci.yml/badge.svg
+.. |Release badge| image:: https://img.shields.io/github/release/iqm-finland/cortex-cli.svg
+
 ==========
 Cortex CLI
 ==========
