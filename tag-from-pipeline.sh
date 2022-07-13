@@ -31,7 +31,9 @@ function verify_changelog_version() {
   fi
   if [ $(git tag -l "$version") ]; then
     printf "Version %s already exists.\n" "$version";
+    return 172
   fi
+  printf "Current version is %s, new version is %s.\n" "$current_version" "$version";
 }
 
 function create_new_tag() {
@@ -43,7 +45,8 @@ function create_new_tag() {
   # Only tag if version doesn't exist yet
   if ! [ $(git tag -l "$version") ]; then
     printf "Releasing version %s.\n" "$version"
-    curl --request POST --header "PRIVATE-TOKEN: $PROJECT_TOKEN_PIPELINE" "https://gitlab.iqm.fi/api/v4/projects/${CI_PROJECT_ID}/repository/tags?tag_name=${version}&ref=master" -f
+    curl -X POST -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/releases" \
+         -d "{\"tag_name\": \"$version\", \"name\": \"$version\", \"body\": \"Changelog: https://github.com/$GITHUB_REPOSITORY/blob/main/CHANGELOG.rst\"}"
   fi
 }
 
