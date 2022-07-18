@@ -49,6 +49,7 @@ def test_refresh_request(credentials, config_dict, tokens_dict):
     assert result == expected_tokens
     unstub()
 
+
 def test_refresh_request_handles_expired_token(config_dict, tokens_dict):
     """
     Tests that refresh request is not made when token is expired.
@@ -87,6 +88,7 @@ def test_raises_client_authentication_error_if_login_fails(credentials, config_d
         login_request(base_url, realm, client_id, username, password)
     unstub()
 
+
 def test_raises_client_authentication_error_if_refresh_fails(credentials, config_dict, tokens_dict):
     """
     Tests that authentication failure at refresh raises ClientAuthenticationError
@@ -100,6 +102,7 @@ def test_raises_client_authentication_error_if_refresh_fails(credentials, config
         refresh_request(base_url, realm, client_id, refresh_token)
     unstub()
 
+
 def test_raises_client_authentication_error_if_logout_fails(config_dict, tokens_dict):
     """
     Tests that authentication failure at logout raises ClientAuthenticationError
@@ -111,6 +114,7 @@ def test_raises_client_authentication_error_if_logout_fails(config_dict, tokens_
     with raises(ClientAuthenticationError):
         logout_request(base_url, realm, client_id, refresh_token)
     unstub()
+
 
 def test_token_is_valid(credentials):
     """

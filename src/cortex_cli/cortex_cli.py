@@ -20,9 +20,15 @@ import logging
 import os
 import sys
 import time
+from io import TextIOWrapper
 from pathlib import Path
+from typing import Optional
 
+import cirq_iqm
 import click
+from cirq.contrib.qasm_import.exception import QasmException
+from cirq_iqm.iqm_sampler import serialize_circuit, serialize_qubit_mapping
+from iqm_client.iqm_client import Circuit, IQMClient
 
 from cortex_cli import __version__
 from cortex_cli.auth import (ClientAuthenticationError, login_request,
@@ -141,7 +147,15 @@ def cortex_cli() -> None:
     default=USERNAME,
     help='Username. If not provided, it will be asked for at login.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def init(config_file, tokens_file, base_url, realm, client_id, username, verbose) -> None: #pylint: disable=too-many-arguments
+def init( #pylint: disable=too-many-arguments
+         config_file: str,
+         tokens_file: str,
+         base_url: str,
+         realm: str,
+         client_id: str,
+         username: str,
+         verbose: bool
+) -> None:
     """Initialize configuration and authentication."""
     _setLogLevelByVerbosity(verbose)
 
@@ -225,7 +239,14 @@ def status(config_file, verbose) -> None:
 @click.option('--refresh-period', default=REFRESH_PERIOD, help='How often to reresh tokens (in seconds).')
 @click.option('--no-daemon', is_flag=True, default=False, help='Do not start token manager to refresh tokens.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def login(config_file, username, password, refresh_period, no_daemon, verbose) -> None: #pylint: disable=too-many-arguments
+def login( #pylint: disable=too-many-arguments
+          config_file:str,
+          username:str,
+          password:str,
+          refresh_period:int,
+          no_daemon: bool,
+          verbose:bool
+) -> None:
     """Authenticate on the IQM server."""
     _setLogLevelByVerbosity(verbose)
 
@@ -291,7 +312,7 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
     is_flag=True, default=False,
     help="Don't delete tokens file, but kill token manager daemon.")
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
-def logout(config_file, keep_tokens, force) -> None:
+def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
     config = _read_json(config_file)
     base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
@@ -344,6 +365,21 @@ def logout(config_file, keep_tokens, force) -> None:
 
     logger.info('Logout aborted.')
 
+
+
+@cortex_cli.group()
+def circuit() -> None:
+    """Execute your quantum circuits with Cortex CLI."""
+    return
+
+@circuit.command()
+@click.argument('filename')
+def validate(filename:str) -> None:
+    """Check if a quantum circuit is valid."""
+    _validate_circuit(filename)
+    logger.info('File %s contains a valid quantum circuit', filename)
+
+
 def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) -> None:
     """Saves tokens as JSON file at given path.
 
@@ -368,6 +404,108 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
             file.write(json.dumps(tokens_data))
     except OSError as error:
         raise click.ClickException(f'Error writing tokens file, {error}') from error
+
+
+@circuit.command()
+@click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
+@click.option('--shots', default=1, type=int, help='Number of times to sample the circuit.')
+@click.option('--settings', default=None, type=click.File(), envvar='IQM_SETTINGS_PATH',
+              help='Path to the settings file containing calibration data for the backend. Must be JSON formatted. '
+                   'Can also be set using the IQM_SETTINGS_PATH environment variable:\n'
+                   '`export IQM_SETTINGS_PATH=\"/path/to/settings/file.json\"`\n'
+                   'If not set, the default (latest) calibration data will be used.')
+@click.option('--qubit-mapping', default=None, type=click.File(), envvar='IQM_QUBIT_MAPPING_PATH',
+              help='Path to the qubit mapping JSON file. Must consist of a single JSON object, with logical '
+                   'qubit names ("Alice", "Bob", ...) as keys, and physical qubit names (appearing in '
+                   'the settings file) as values. For example: {"Alice": "QB1", "Bob": "QB2"}. '
+                   'Can also be set using the IQM_QUBIT_MAPPING_PATH environment variable:\n'
+                   '`export IQM_QUBIT_MAPPING_PATH=\"/path/to/qubit/mapping.json\"`\n'
+                   'If not set, the qubit names are assumed to be physical names.')
+@click.option('--url', envvar='IQM_SERVER_URL', type=str, required=True,
+              help='URL of the IQM server interface for running circuits. Must start with http or https. '
+                   'Can also be set using the IQM_SERVER_URL environment variable:\n'
+                   '`export IQM_SERVER_URL=\"https://example.com\"`')
+@click.option('-i', '--iqm-json', is_flag=True,
+              help='Set this flag if FILENAME is already in IQM JSON format (instead of being an OpenQASM file).')
+@click.option('--config-file',
+              default=CONFIG_PATH,
+              type=click.Path(exists=True, dir_okay=False),
+              help='Location of the configuration file to be used.')
+@click.option('--no-auth', is_flag=True, default=False,
+              help="Do not use Cortex CLI's auth functionality."
+              'If True, then --config-file option is ignored.'
+              'When submitting a circuit job, Cortex CLI will use IQM Client without passing any auth tokens.'
+              'Auth data can still be set using environment variables for IQM Client.'
+              "Refer to IQM Client's documentation for details.")
+@click.argument('filename', type=click.Path())
+def run( #pylint: disable=too-many-arguments, too-many-locals
+        verbose: bool,
+        shots: int,
+        settings: Optional[TextIOWrapper],
+        qubit_mapping: Optional[TextIOWrapper],
+        url: str,
+        filename: str,
+        iqm_json: bool,
+        config_file: str,
+        no_auth: bool
+) -> None:
+    """Execute a quantum circuit.
+
+    The circuit is provided in the OpenQASM 2.0 file FILENAME. The circuit must only contain operations that are
+    natively supported by the quantum computer the execution happens on. You can use the separate IQM
+    Quantum Circuit Optimizer (QCO) to convert your circuit to a supported format.
+
+    Returns a JSON object whose keys correspond to the measurement operations in the circuit.
+    The value for each key is a 2-D array of integers containing the corresponding measurement
+    results. The first index of the array goes over the shots, and the second over the qubits
+    included in the measurement.
+    """
+    _setLogLevelByVerbosity(verbose)
+
+    raw_input = _read(filename)
+
+    if not no_auth:
+        config = _read_json(config_file)
+        tokens_file = config['tokens_file']
+        if not Path(tokens_file).is_file():
+            raise click.ClickException(f'Tokens file not found: {tokens_file}')
+
+    try:
+        # serialize the circuit and the qubit mapping
+        if iqm_json:
+            input_circuit = Circuit.parse_raw(raw_input)
+        else:
+            _validate_circuit(filename)
+            input_circuit = cirq_iqm.circuit_from_qasm(raw_input)
+            input_circuit = serialize_circuit(input_circuit)
+
+        logger.debug('\nInput circuit:\n%s', input_circuit)
+
+        if qubit_mapping is not None:
+            qubit_mapping = serialize_qubit_mapping(json.load(qubit_mapping))
+
+        if settings is not None:
+            settings = json.load(settings)
+
+        # run the circuit on the backend
+        if no_auth:
+            iqm_client = IQMClient(url, settings)
+        else:
+            iqm_client = IQMClient(url, settings, tokens_file = tokens_file)
+        job_id = iqm_client.submit_circuits([input_circuit], qubit_mapping, shots=shots)
+        results = iqm_client.wait_for_results(job_id)
+        iqm_client.close()
+    except Exception as ex:
+        # just show the error message, not a stack trace
+        raise click.ClickException(str(ex)) from ex
+
+    if results.measurements is None:
+        raise click.ClickException(
+            f'No measurements obtained from backend. Job status is ${results.status}'
+        )
+
+    logger.debug('\nResults:')
+    logger.info(json.dumps(results.measurements[0]))
 
 
 def _read(filename: str) -> str:
@@ -401,6 +539,20 @@ def _read_json(filename: str) -> dict:
     except json.decoder.JSONDecodeError as error:
         raise click.ClickException(f'Decoding JSON has failed, {error}') from error
     return json_data
+
+def _validate_circuit(filename: str) -> None:
+    """Validates the given OpenQASM 2.0 file.
+
+    Args:
+        filename: name of the QASM file
+    Raises:
+        ClickException: if circuit is invalid or not found
+    """
+    try:
+        cirq_iqm.circuit_from_qasm(_read(filename))
+    except QasmException as ex:
+        message = f'Invalid quantum circuit in {filename}\n{ex.message}'
+        raise click.ClickException(message) from ex
 
 
 if __name__ == '__main__':

@@ -22,6 +22,8 @@ import signal
 import time
 from base64 import b64encode
 from typing import Optional
+from unittest import mock as umock
+from uuid import UUID
 
 import pytest
 import requests
@@ -32,6 +34,11 @@ from cortex_cli import auth
 from cortex_cli.auth import AuthRequest, GrantType
 from cortex_cli.cortex_cli import CLIENT_ID, REALM_NAME
 
+existing_run = UUID('3c3fcda3-e860-46bf-92a4-bcc59fa76ce9')
+
+def resources_path():
+    """Get path to tests/resources directory from current location"""
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources')
 
 @pytest.fixture()
 def credentials():
@@ -45,16 +52,26 @@ def credentials():
 @pytest.fixture
 def config_dict():
     """Reads and parses config file into a dictionary"""
-    config_file = os.path.dirname(os.path.realpath(__file__)) + '/resources/config.json'
+    config_file = os.path.join(resources_path(), 'config.json')
     with open(config_file, 'r', encoding='utf-8') as file:
         return json.loads(file.read())
 
 @pytest.fixture
 def tokens_dict():
     """Reads and parses tokens file into a dictionary"""
-    tokens_file = os.path.dirname(os.path.realpath(__file__)) + '/resources/tokens.json'
+    tokens_file = os.path.join(resources_path(), 'tokens.json')
     with open(tokens_file, 'r', encoding='utf-8') as file:
         return json.loads(file.read())
+
+@pytest.fixture()
+def mock_environment_vars_for_backend(credentials):
+    """
+    Mocks environment variables
+    """
+    settings_path = os.path.join(resources_path(), 'settings.json')
+    with (umock.patch.dict(os.environ, {'IQM_SERVER_URL': credentials['base_url']}),
+          umock.patch.dict(os.environ, {'IQM_SETTINGS_PATH': settings_path})):
+        yield
 
 
 class MockJsonResponse:
@@ -134,6 +151,7 @@ def prepare_tokens(
 
     return tokens
 
+
 def expect_logout(
         base_url: str,
         realm: str,
@@ -155,6 +173,38 @@ def expect_logout(
     ).thenReturn(
         mock({'status_code': status_code, 'text': '{}'})
     )
+
+
+def expect_jobs_requests(base_url):
+    """
+    Prepare for job submission requests.
+    """
+    success_submit_result = {'id': str(existing_run)}
+    success_submit_response = mock({'status_code': 201, 'text': json.dumps(success_submit_result)})
+    when(success_submit_response).json().thenReturn(success_submit_result)
+    when(requests).post(f'{base_url}/jobs', ...).thenReturn(success_submit_response)
+
+    running_result = {'status': 'pending'}
+    running_response = mock({'status_code': 200, 'text': json.dumps(running_result)})
+    when(running_response).json().thenReturn(running_result)
+
+    success_get_result = {
+        'status': 'ready',
+        'measurements': [{
+            'result': [[1, 0, 1, 1], [1, 0, 0, 1], [1, 0, 1, 1], [1, 0, 1, 1]]
+        }]
+    }
+    success_get_response = mock({'status_code': 200, 'text': json.dumps(success_get_result)})
+    when(success_get_response).json().thenReturn(success_get_result)
+
+    when(requests).get(
+        f'{base_url}/jobs/{existing_run}', ...
+    ).thenReturn(
+        running_response
+    ).thenReturn(
+        success_get_response
+    )
+
 
 def expect_token_is_valid(token:str, result:bool = True):
     """
