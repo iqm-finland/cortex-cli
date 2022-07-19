@@ -26,7 +26,6 @@ from typing import Optional
 
 import cirq_iqm
 import click
-from cirq.contrib.qasm_import.exception import QasmException
 from cirq_iqm.iqm_sampler import serialize_circuit, serialize_qubit_mapping
 from iqm_client.iqm_client import Circuit, IQMClient
 
@@ -34,8 +33,10 @@ from cortex_cli import __version__
 from cortex_cli.auth import (ClientAuthenticationError, login_request,
                              logout_request, refresh_request,
                              time_left_seconds)
+from cortex_cli.circuit import validate_circuit
 from cortex_cli.token_manager import (check_daemon, daemonize_token_manager,
                                       kill_by_pid)
+from cortex_cli.utils import read_file, read_json
 
 HOME_PATH = str(Path.home())
 CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
@@ -203,12 +204,12 @@ def status(config_file, verbose) -> None:
     _setLogLevelByVerbosity(verbose)
 
     logger.debug('Using configuration file: %s', config_file)
-    config = _read_json(config_file)
+    config = read_json(config_file)
     tokens_file = config['tokens_file']
     if not Path(tokens_file).is_file():
         raise click.ClickException(f'Tokens file not found: {tokens_file}')
 
-    tokens_data = _read_json(tokens_file)
+    tokens_data = read_json(tokens_file)
 
     click.echo(f'Tokens file: {tokens_file}')
     if not 'pid' in tokens_data:
@@ -250,7 +251,7 @@ def login( #pylint: disable=too-many-arguments
     """Authenticate on the IQM server."""
     _setLogLevelByVerbosity(verbose)
 
-    config = _read_json(config_file)
+    config = read_json(config_file)
     base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
     tokens_file = config['tokens_file']
 
@@ -260,7 +261,7 @@ def login( #pylint: disable=too-many-arguments
             return
 
         # Tokens file exists; Refresh tokens without username/password
-        refresh_token = _read_json(tokens_file)['refresh_token']
+        refresh_token = read_json(tokens_file)['refresh_token']
         logger.debug('Attempting to refresh tokens by using existing refresh token from file: %s', tokens_file)
 
         new_tokens = None
@@ -314,11 +315,11 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
 def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
-    config = _read_json(config_file)
+    config = read_json(config_file)
     base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
     tokens_file = config['tokens_file']
 
-    tokens = _read_json(tokens_file)
+    tokens = read_json(tokens_file)
     pid = tokens['pid'] if 'pid' in tokens else None
     refresh_token = tokens['refresh_token']
 
@@ -376,7 +377,7 @@ def circuit() -> None:
 @click.argument('filename')
 def validate(filename:str) -> None:
     """Check if a quantum circuit is valid."""
-    _validate_circuit(filename)
+    validate_circuit(filename)
     logger.info('File %s contains a valid quantum circuit', filename)
 
 
@@ -432,11 +433,10 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
               type=click.Path(exists=True, dir_okay=False),
               help='Location of the configuration file to be used.')
 @click.option('--no-auth', is_flag=True, default=False,
-              help="Do not use Cortex CLI's auth functionality."
-              'If True, then --config-file option is ignored.'
-              'When submitting a circuit job, Cortex CLI will use IQM Client without passing any auth tokens.'
-              'Auth data can still be set using environment variables for IQM Client.'
-              "Refer to IQM Client's documentation for details.")
+              help="Do not use Cortex CLI's auth functionality. "
+              'If True, then --config-file option is ignored. '
+              'When submitting a circuit job, Cortex CLI will use IQM Client without passing any auth tokens. '
+              'Auth data can still be set using environment variables for IQM Client.')
 @click.argument('filename', type=click.Path())
 def run( #pylint: disable=too-many-arguments, too-many-locals
         verbose: bool,
@@ -462,10 +462,10 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
     """
     _setLogLevelByVerbosity(verbose)
 
-    raw_input = _read(filename)
+    raw_input = read_file(filename)
 
     if not no_auth:
-        config = _read_json(config_file)
+        config = read_json(config_file)
         tokens_file = config['tokens_file']
         if not Path(tokens_file).is_file():
             raise click.ClickException(f'Tokens file not found: {tokens_file}')
@@ -475,7 +475,7 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
         if iqm_json:
             input_circuit = Circuit.parse_raw(raw_input)
         else:
-            _validate_circuit(filename)
+            validate_circuit(filename)
             input_circuit = cirq_iqm.circuit_from_qasm(raw_input)
             input_circuit = serialize_circuit(input_circuit)
 
@@ -506,53 +506,6 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
 
     logger.debug('\nResults:')
     logger.info(json.dumps(results.measurements[0]))
-
-
-def _read(filename: str) -> str:
-    """Opens and reads the given file.
-
-    Args:
-        filename (str): name of the file to read
-    Returns:
-        str: contents of the file
-    Raises:
-        ClickException: if file is not found
-    """
-    try:
-        with open(filename, 'r', encoding='utf-8') as file:
-            return file.read()
-    except FileNotFoundError as error:
-        raise click.ClickException(f'File {filename} not found') from error
-
-def _read_json(filename: str) -> dict:
-    """Opens and parses the given JSON file.
-
-    Args:
-        filename (str): name of the file to read
-    Returns:
-        dict: object derived from JSON file
-    Raises:
-        JSONDecodeError: if parsing fails
-    """
-    try:
-        json_data = json.loads(_read(filename))
-    except json.decoder.JSONDecodeError as error:
-        raise click.ClickException(f'Decoding JSON has failed, {error}') from error
-    return json_data
-
-def _validate_circuit(filename: str) -> None:
-    """Validates the given OpenQASM 2.0 file.
-
-    Args:
-        filename: name of the QASM file
-    Raises:
-        ClickException: if circuit is invalid or not found
-    """
-    try:
-        cirq_iqm.circuit_from_qasm(_read(filename))
-    except QasmException as ex:
-        message = f'Invalid quantum circuit in {filename}\n{ex.message}'
-        raise click.ClickException(message) from ex
 
 
 if __name__ == '__main__':

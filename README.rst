@@ -98,3 +98,53 @@ By default, all Cortex CLI commands read the configuration file from the default
   $ cortex auth status --config-file /home/joe/config.json
   $ cortex auth login --config-file /home/joe/config.json
   $ cortex auth logout --config-file /home/joe/config.json
+
+Circuit validation
+^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+  $ cortex circuit validate my_circuit.qasm
+
+validates the quantum circuit in file `my_circuit.qasm`, and reports errors if the circuit is not valid OpenQASM 2.0. The exit code is 0 if and only if the circuit is valid.
+
+Executing circuits on a quantum computer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can execute a quantum circuit on an IQM quantum computer with
+
+.. code-block:: bash
+
+  $ export IQM_SERVER_URL="https://example.com/iqm-server"
+  $ cortex circuit run --settings "path/to/settings.json" --shots 100 --qubit-mapping my_qubit_mapping.json my_circuit.qasm
+
+The server URL and settings path can be set either with command-line options or as environment variables.
+
+By default, authentication is handled the same way as with other Cortex CLI commands. You can override this and provide your own server url, username and password by setting environment variables IQM_AUTH_SERVER, IQM_AUTH_USERNAME and IQM_AUTH_PASSWORD.
+
+Note that the circuit needs to be transpiled so that it only contains operations natively supported by the IQM quantum
+computer you are using. You can achieve this using the separate IQM Quantum Circuit Optimizer (QCO) software.
+
+Run the following command:
+
+.. code-block:: bash
+
+  $ cortex circuit run --help
+
+for information on all the parameters and their usage.
+
+The results of the measurements in the circuit are returned in JSON format:
+
+.. code-block:: json
+
+  {"measurement_0":
+    [
+      [1, 0, 1, 1],
+      [1, 0, 1, 1],
+      [1, 0, 1, 1]
+    ]
+  }
+
+The dictionary keys are measurement keys from the circuit. The value for each measurement is a 2-D array of binary
+integers. The first index goes over the shots, and the second over the qubits in the measurement. For example, in the
+example above, "measurement_0" is a 4-qubit measurement, and the number of shots is three.
