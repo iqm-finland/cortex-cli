@@ -123,7 +123,7 @@ The server URL and settings path can be set either with command-line options or 
 By default, authentication is handled the same way as with other Cortex CLI commands. You can override this and provide your own server url, username and password by setting environment variables IQM_AUTH_SERVER, IQM_AUTH_USERNAME and IQM_AUTH_PASSWORD.
 
 Note that the circuit needs to be transpiled so that it only contains operations natively supported by the IQM quantum
-computer you are using. You can achieve this using the separate IQM Quantum Circuit Optimizer (QCO) software.
+computer you are using.
 
 Run the following command:
 
