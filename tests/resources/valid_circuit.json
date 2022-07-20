@@ -1,0 +1,36 @@
+{
+  "name": "Serialized from Cirq",
+  "instructions": [
+    {
+      "name": "cz",
+      "qubits": [
+        "QB1",
+        "QB3"
+      ],
+      "args": {}
+    },
+    {
+      "name": "phased_rx",
+      "qubits": [
+        "QB5"
+      ],
+      "args": {
+        "angle_t": -0.25,
+        "phase_t": 0
+      }
+    },
+    {
+      "name": "measurement",
+      "qubits": [
+        "QB2",
+        "QB4",
+        "QB1",
+        "QB5",
+        "QB3"
+      ],
+      "args": {
+        "key": "a measurement"
+      }
+    }
+  ]
+}
