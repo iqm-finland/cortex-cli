@@ -15,7 +15,7 @@ Installing Cortex CLI
 Requirements for installing:
 
 - Python 3.9
-- `Pip <https://pypi.org/project/pip/>`_
+- `pip <https://pypi.org/project/pip/>`_
 
 .. code-block:: bash
 
@@ -33,7 +33,7 @@ For general usage instructions, run
 Initialization
 ^^^^^^^^^^^^^^
 
-First, Cortex CLI needs initialization, which produces a configuration file. Run:
+First, Cortex CLI needs initialization, which produces a configuration file:
 
 .. code-block:: bash
 
@@ -44,7 +44,7 @@ Cortex CLI will ask a few questions. You can also pass the values via command li
 Login
 ^^^^^
 
-To login, use:
+To login, use
 
 .. code-block:: bash
 
@@ -52,7 +52,9 @@ To login, use:
 
 This will ask you to enter your login and password. After a successful authentication, tokens will be saved into a tokens file (path specified in the configuration file), and a token manager daemon will start in the background. Token manager will periodically refresh the session and re-write the tokens file. To login and get tokens once, without starting a token manager daemon, run ``cortex auth login --no-daemon``.
 
-If the tokens file already exists, then running ``cortex auth login`` will first attempt to refresh the session without asking you for a login and password. If that fails (because existing tokens may've already expired), then you'll be asked to enter login and password.
+If the tokens file already exists, then running ``cortex auth login`` will first attempt to refresh
+the session without asking you for a login and password. If that fails (because existing tokens
+may already have expired), then you'll be asked to enter login and password.
 
 See ``cortex auth login --help`` for more details.
 
@@ -72,7 +74,7 @@ See ``cortex auth status --help`` for more details.
 Logout
 ^^^^^^
 
-To logout, run:
+To logout, run
 
 .. code-block:: bash
 

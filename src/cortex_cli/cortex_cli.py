@@ -161,13 +161,16 @@ def init( #pylint: disable=too-many-arguments
     _setLogLevelByVerbosity(verbose)
 
     path_to_dir = Path(config_file).parent
-    config_json = json.dumps({
-        'base_url': base_url,
-        'realm': realm,
-        'client_id': client_id,
-        'username': username,
-        'tokens_file': tokens_file
-    })
+    config_json = json.dumps(
+        {
+            'base_url': base_url,
+            'realm': realm,
+            'client_id': client_id,
+            'username': username,
+            'tokens_file': tokens_file
+        },
+        indent=2,
+    )
 
     # Tokens file exist, so daemon may be running. Notify user and kill daemon.
     if Path(tokens_file).is_file():
