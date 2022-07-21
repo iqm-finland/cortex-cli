@@ -50,7 +50,11 @@ To login, use
 
   $ cortex auth login
 
-This will ask you to enter your login and password. After a successful authentication, tokens will be saved into a tokens file (path specified in the configuration file), and a token manager daemon will start in the background. Token manager will periodically refresh the session and re-write the tokens file. To login and get tokens once, without starting a token manager daemon, run ``cortex auth login --no-daemon``.
+This will ask you to enter your login and password. After a successful authentication, tokens will
+be saved into a tokens file (path specified in the configuration file), and a token manager daemon
+will start in the background. Token manager will periodically refresh the session and re-write the
+tokens file. To login and get tokens once, without starting a token manager daemon, run ``cortex
+auth login --no-daemon``.
 
 If the tokens file already exists, then running ``cortex auth login`` will first attempt to refresh
 the session without asking you for a login and password. If that fails (because existing tokens
@@ -108,7 +112,8 @@ Circuit validation
 
   $ cortex circuit validate my_circuit.qasm
 
-validates the quantum circuit in file `my_circuit.qasm`, and reports errors if the circuit is not valid OpenQASM 2.0. The exit code is 0 if and only if the circuit is valid.
+validates the quantum circuit in file ``my_circuit.qasm``, and reports errors if the circuit is not
+valid OpenQASM 2.0. The exit code is 0 if and only if the circuit is valid.
 
 Executing circuits on a quantum computer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -122,18 +127,19 @@ You can execute a quantum circuit on an IQM quantum computer with
 
 The server URL and settings path can be set either with command-line options or as environment variables.
 
-By default, authentication is handled the same way as with other Cortex CLI commands. You can override this and provide your own server url, username and password by setting environment variables IQM_AUTH_SERVER, IQM_AUTH_USERNAME and IQM_AUTH_PASSWORD.
+By default, authentication is handled the same way as with other Cortex CLI commands. You can
+override this and provide your own server URL, username and password by setting environment
+variables IQM_AUTH_SERVER, IQM_AUTH_USERNAME and IQM_AUTH_PASSWORD.
 
 Note that the circuit needs to be transpiled so that it only contains operations natively supported by the IQM quantum
 computer you are using.
 
-Run the following command:
+For information on all the parameters and their usage, run
 
 .. code-block:: bash
 
   $ cortex circuit run --help
 
-for information on all the parameters and their usage.
 
 The results of the measurements in the circuit are returned in JSON format:
 
@@ -142,7 +148,7 @@ The results of the measurements in the circuit are returned in JSON format:
   {"measurement_0":
     [
       [1, 0, 1, 1],
-      [1, 0, 1, 1],
+      [1, 0, 0, 1],
       [1, 0, 1, 1]
     ]
   }
