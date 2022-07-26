@@ -14,6 +14,7 @@
 """
 Tests for Cortex CLI's circuit commands
 """
+import json
 import os
 
 from click.testing import CliRunner
@@ -89,7 +90,7 @@ def test_circuit_validate_valid_circuit():
     assert f'File {valid_circuit_qasm} contains a valid quantum circuit' in result.output
 
 
-def test_circuit_run_invalid_circuit(mock_environment_vars_for_backend):  # pylint: disable=unused-argument
+def test_circuit_run_invalid_circuit(mock_environment_vars_for_backend, config_dict, tokens_dict):  # pylint: disable=unused-argument
     """
     Tests that ``circuit run`` fails with an invalid circuit.
     """
@@ -99,57 +100,85 @@ def test_circuit_run_invalid_circuit(mock_environment_vars_for_backend):  # pyli
             circuit_file.write('foo bar')
         with open('my_qubits.json', 'w', encoding='utf-8') as qubit_mapping_file:
             qubit_mapping_file.write('{}')
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        with open('tokens.json', 'w', encoding='utf-8') as file:
+            file.write(json.dumps(tokens_dict))
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', 'my_circuit.qasm',
-             '--qubit-mapping', 'my_qubits.json'])
+             '--config-file', 'config.json',
+             '--qubit-mapping', 'my_qubits.json',
+             '--no-auth'])
 
         assert result.exit_code != 0
         assert 'Invalid quantum circuit in my_circuit.qasm' in result.output
 
 
-def test_circuit_run_valid_qasm_circuit(credentials):
+def test_circuit_run_valid_qasm_circuit(credentials, config_dict, tokens_dict):
     """
     Tests that ``circuit run`` succeeds with valid QASM circuit.
     """
     base_url = credentials['base_url']
     expect_jobs_requests(base_url)
-    result = CliRunner().invoke(cortex_cli,
-        ['circuit', 'run', valid_circuit_qasm,
-         '--qubit-mapping', qubit_mapping_path,
-         '--settings', settings_path,
-         '--url', base_url,
-         '--no-auth'])
+
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        with open('tokens.json', 'w', encoding='utf-8') as file:
+            file.write(json.dumps(tokens_dict))
+        result = CliRunner().invoke(cortex_cli,
+            ['circuit', 'run', valid_circuit_qasm,
+             '--config-file', 'config.json',
+             '--qubit-mapping', qubit_mapping_path,
+             '--settings', settings_path,
+             '--url', base_url,
+             '--no-auth'])
     assert 'result' in result.output
     assert result.exit_code == 0
     unstub()
 
 
-def test_circuit_run_valid_json_circuit(credentials):
+def test_circuit_run_valid_json_circuit(credentials, config_dict, tokens_dict):
     """
     Tests that ``circuit run`` succeeds with valid JSON circuit.
     """
     base_url = credentials['base_url']
     expect_jobs_requests(base_url)
-    result = CliRunner().invoke(cortex_cli,
-        ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
-         '--qubit-mapping', qubit_mapping_path,
-         '--settings', settings_path, '--url', base_url,
-         '--no-auth'])
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        with open('tokens.json', 'w', encoding='utf-8') as file:
+            file.write(json.dumps(tokens_dict))
+        result = CliRunner().invoke(cortex_cli,
+            ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
+             '--config-file', 'config.json',
+             '--qubit-mapping', qubit_mapping_path,
+             '--settings', settings_path, '--url', base_url,
+             '--no-auth'])
     assert 'result' in result.output
     assert result.exit_code == 0
     unstub()
 
 
-def test_circuit_run_valid_json_circuit_with_default_settings_and_without_qubit_mapping(credentials):
+def test_circuit_run_valid_json_circuit_default_settings_no_qubit_mapping(credentials, config_dict, tokens_dict):
     """
     Tests that ``circuit run`` succeeds with valid qasm circuit and no qubit mapping.
     """
     base_url = credentials['base_url']
     expect_jobs_requests(base_url)
-    result = CliRunner().invoke(cortex_cli,
-        ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
-         '--url', base_url,
-         '--no-auth'])
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        with open('tokens.json', 'w', encoding='utf-8') as file:
+            file.write(json.dumps(tokens_dict))
+        result = CliRunner().invoke(cortex_cli,
+            ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
+             '--config-file', 'config.json',
+             '--url', base_url,
+             '--no-auth'])
     assert 'result' in result.output
     assert result.exit_code == 0
     unstub()
