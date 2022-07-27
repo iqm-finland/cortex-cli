@@ -508,7 +508,7 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
         )
 
     logger.debug('\nResults:')
-    logger.info(json.dumps(results.measurements[0]))
+    logger.info(json.dumps(results.measurements[0]))  # pylint: disable=unsubscriptable-object
 
 
 if __name__ == '__main__':
