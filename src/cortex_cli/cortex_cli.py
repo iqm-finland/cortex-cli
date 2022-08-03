@@ -455,8 +455,7 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
     """Execute a quantum circuit.
 
     The circuit is provided in the OpenQASM 2.0 file FILENAME. The circuit must only contain operations that are
-    natively supported by the quantum computer the execution happens on. You can use the separate IQM
-    Quantum Circuit Optimizer (QCO) to convert your circuit to a supported format.
+    natively supported by the quantum computer the execution happens on.
 
     Returns a JSON object whose keys correspond to the measurement operations in the circuit.
     The value for each key is a 2-D array of integers containing the corresponding measurement
