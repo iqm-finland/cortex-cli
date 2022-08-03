@@ -75,7 +75,7 @@ To see the current status of the token manager daemon, use:
 
 If the tokens file exists, ``cortex auth status`` will report whether the corresponding token
 manager daemon is running. It will also print the time of the last successful refresh request, and
-how much time is left until current tokens are expired.
+how much time is left until current tokens expire.
 
 See ``cortex auth status --help`` for more details.
 
@@ -101,7 +101,7 @@ See ``cortex auth logout --help`` for more details.
 Multiple configuration files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, all Cortex CLI commands read the configuration file from the default location ``~/.config/iqm-cortex-cli/config.json``. You can specify a different filepath by providing ``--config-file`` value, for example:
+By default, all Cortex CLI commands read the configuration file from the default location ``~/.config/iqm-cortex-cli/config.json``. You can specify a different filepath by providing the ``--config-file`` value, for example:
 
 .. code-block:: bash
 
@@ -132,7 +132,7 @@ You can execute a quantum circuit on an IQM quantum computer with
 The server URL and settings path can be set either with command-line options or as environment variables.
 
 By default, authentication is handled the same way as with other Cortex CLI commands. You can
-override this and provide your own server URL, username and password by setting environment
+override this and provide your own server URL, username, and password by setting environment
 variables IQM_AUTH_SERVER, IQM_AUTH_USERNAME and IQM_AUTH_PASSWORD.
 
 Note that the circuit needs to be transpiled so that it only contains operations natively supported by the IQM quantum
