@@ -7,7 +7,7 @@
 Cortex CLI
 ==========
 
-Command-line tool (CLI) for interacting with IQM quantum computers.
+Command-line interface (CLI) for interacting with an IQM quantum computer.
 
 Installing Cortex CLI
 ---------------------
@@ -44,21 +44,23 @@ Cortex CLI will ask a few questions. You can also pass the values via command li
 Login
 ^^^^^
 
-To login, use
+To log in, use
 
 .. code-block:: bash
 
   $ cortex auth login
 
-This will ask you to enter your login and password. After a successful authentication, tokens will
-be saved into a tokens file (path specified in the configuration file), and a token manager daemon
-will start in the background. Token manager will periodically refresh the session and re-write the
-tokens file. To login and get tokens once, without starting a token manager daemon, run ``cortex
-auth login --no-daemon``.
+This will ask you to enter your username and password.
 
-If the tokens file already exists, then running ``cortex auth login`` will first attempt to refresh
-the session without asking you for a login and password. If that fails (because existing tokens
-may already have expired), then you'll be asked to enter login and password.
+   After a successful authentication, tokens will
+   be saved into a tokens file (path specified in the configuration file), and a token manager daemon
+   will start in the background. Token manager will periodically refresh the session and re-write the
+   tokens file. To login and get tokens once, without starting a token manager daemon, run ``cortex
+   auth login --no-daemon``.
+
+   If the tokens file already exists, then running ``cortex auth login`` will first attempt to refresh
+   the session without asking you for a username and password. If that fails (because existing tokens
+   may already have expired), you'll be asked to re-enter your credentials.
 
 See ``cortex auth login --help`` for more details.
 
@@ -71,14 +73,16 @@ To see the current status of the token manager daemon, use:
 
   $ cortex auth status
 
-If tokens file exists, ``cortex auth status`` will report whether the corresponding token manager daemon is running. It will also print the time of the last successful refresh request, and how much time is left until current tokens are expired.
+If the tokens file exists, ``cortex auth status`` will report whether the corresponding token
+manager daemon is running. It will also print the time of the last successful refresh request, and
+how much time is left until current tokens are expired.
 
 See ``cortex auth status --help`` for more details.
 
 Logout
 ^^^^^^
 
-To logout, run
+To log out, run
 
 .. code-block:: bash
 
