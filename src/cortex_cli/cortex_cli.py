@@ -414,10 +414,10 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 @click.option('--shots', default=1, type=int, help='Number of times to sample the circuit.')
 @click.option('--settings', default=None, type=click.File(), envvar='IQM_SETTINGS_PATH',
-              help='Path to the settings file containing calibration data for the backend. Must be JSON formatted. '
+              help='Path to the settings file containing calibration data. Must be JSON formatted. '
                    'Can also be set using the IQM_SETTINGS_PATH environment variable:\n'
                    '`export IQM_SETTINGS_PATH=\"/path/to/settings/file.json\"`\n'
-                   'If not set, the default (latest) calibration data will be used.')
+                   'If not set, the latest available calibration will be used.')
 @click.option('--qubit-mapping', default=None, type=click.File(), envvar='IQM_QUBIT_MAPPING_PATH',
               help='Path to the qubit mapping JSON file. Must consist of a single JSON object, with logical '
                    'qubit names ("Alice", "Bob", ...) as keys, and physical qubit names (appearing in '
@@ -437,7 +437,7 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
               help='Location of the configuration file to be used.')
 @click.option('--no-auth', is_flag=True, default=False,
               help="Do not use Cortex CLI's auth functionality. "
-              'If True, then --config-file option is ignored. '
+              'If set, then --config-file option is ignored. '
               'When submitting a circuit job, Cortex CLI will use IQM Client without passing any auth tokens. '
               'Auth data can still be set using environment variables for IQM Client.')
 @click.argument('filename', type=click.Path())
@@ -455,8 +455,7 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
     """Execute a quantum circuit.
 
     The circuit is provided in the OpenQASM 2.0 file FILENAME. The circuit must only contain operations that are
-    natively supported by the quantum computer the execution happens on. You can use the separate IQM
-    Quantum Circuit Optimizer (QCO) to convert your circuit to a supported format.
+    natively supported by the quantum computer the execution happens on.
 
     Returns a JSON object whose keys correspond to the measurement operations in the circuit.
     The value for each key is a 2-D array of integers containing the corresponding measurement
