@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.3
+=============
+
+- Fix tests for iqm-client 4.3
+
 Version 0.2
 =============
 
