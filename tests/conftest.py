@@ -184,7 +184,7 @@ def expect_jobs_requests(base_url):
     when(success_submit_response).json().thenReturn(success_submit_result)
     when(requests).post(f'{base_url}/jobs', ...).thenReturn(success_submit_response)
 
-    running_result = {'status': 'pending'}
+    running_result = {'status': 'pending', 'metadata': {'circuits': [], 'shots': 42}}
     running_response = mock({'status_code': 200, 'text': json.dumps(running_result)})
     when(running_response).json().thenReturn(running_result)
 
@@ -192,7 +192,8 @@ def expect_jobs_requests(base_url):
         'status': 'ready',
         'measurements': [{
             'result': [[1, 0, 1, 1], [1, 0, 0, 1], [1, 0, 1, 1], [1, 0, 1, 1]]
-        }]
+        }],
+        'metadata': {'circuits': [], 'shots': 42}
     }
     success_get_response = mock({'status_code': 200, 'text': json.dumps(success_get_result)})
     when(success_get_response).json().thenReturn(success_get_result)
