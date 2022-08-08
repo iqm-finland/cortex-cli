@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Cortex CLI &#8212; Cortex CLI 0.2 documentation</title>
+    <title>Cortex CLI &#8212; Cortex CLI 0.3 documentation</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -21,7 +21,7 @@
     href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=62ba249389abaaa9ffc34bf36a076bdc1d65ee18" type="text/css" />
+    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
     
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
@@ -30,7 +30,7 @@
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/scripts/sphinx-book-theme.js?digest=f31d14ad54b65d19161ba51d4ffff3a77ae00456"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
     <link rel="shortcut icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -364,13 +364,13 @@ title="Print to PDF"
   <p id="readme"><img alt="CI badge" src="https://github.com/iqm-finland/cortex-cli/actions/workflows/ci.yml/badge.svg" /> <img alt="Release badge" src="https://img.shields.io/github/release/iqm-finland/cortex-cli.svg" /></p>
 <section id="cortex-cli">
 <h1>Cortex CLI<a class="headerlink" href="#cortex-cli" title="Permalink to this headline">#</a></h1>
-<p>Command-line tool (CLI) for interacting with IQM quantum computers.</p>
+<p>Command-line interface (CLI) for interacting with an IQM quantum computer.</p>
 <section id="installing-cortex-cli">
 <h2>Installing Cortex CLI<a class="headerlink" href="#installing-cortex-cli" title="Permalink to this headline">#</a></h2>
 <p>Requirements for installing:</p>
 <ul class="simple">
 <li><p>Python 3.9</p></li>
-<li><p><a class="reference external" href="https://pypi.org/project/pip/">Pip</a></p></li>
+<li><p><a class="reference external" href="https://pypi.org/project/pip/">pip</a></p></li>
 </ul>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip install iqm-cortex-cli
 </pre></div>
@@ -384,7 +384,7 @@ title="Print to PDF"
 </div>
 <section id="initialization">
 <h3>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">#</a></h3>
-<p>First, Cortex CLI needs initialization, which produces a configuration file. Run:</p>
+<p>First, Cortex CLI needs initialization, which produces a configuration file:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex init
 </pre></div>
 </div>
@@ -392,12 +392,21 @@ title="Print to PDF"
 </section>
 <section id="login">
 <h3>Login<a class="headerlink" href="#login" title="Permalink to this headline">#</a></h3>
-<p>To login, use:</p>
+<p>To log in, use</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex auth login
 </pre></div>
 </div>
-<p>This will ask you to enter your login and password. After a successful authentication, tokens will be saved into a tokens file (path specified in the configuration file), and a token manager daemon will start in the background. Token manager will periodically refresh the session and re-write the tokens file. To login and get tokens once, without starting a token manager daemon, run <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--no-daemon</span></code>.</p>
-<p>If the tokens file already exists, then running <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span></code> will first attempt to refresh the session without asking you for a login and password. If that fails (because existing tokens may’ve already expired), then you’ll be asked to enter login and password.</p>
+<p>This will ask you to enter your username and password.</p>
+<blockquote>
+<div><p>After a successful authentication, tokens will
+be saved into a tokens file (path specified in the configuration file), and a token manager daemon
+will start in the background. Token manager will periodically refresh the session and re-write the
+tokens file. To login and get tokens once, without starting a token manager daemon, run <code class="docutils literal notranslate"><span class="pre">cortex</span>
+<span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--no-daemon</span></code>.</p>
+<p>If the tokens file already exists, then running <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span></code> will first attempt to refresh
+the session without asking you for a username and password. If that fails (because existing tokens
+may already have expired), you’ll be asked to re-enter your credentials.</p>
+</div></blockquote>
 <p>See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--help</span></code> for more details.</p>
 </section>
 <section id="status">
@@ -406,12 +415,14 @@ title="Print to PDF"
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex auth status
 </pre></div>
 </div>
-<p>If tokens file exists, <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">status</span></code> will report whether the corresponding token manager daemon is running. It will also print the time of the last successful refresh request, and how much time is left until current tokens are expired.</p>
+<p>If the tokens file exists, <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">status</span></code> will report whether the corresponding token
+manager daemon is running. It will also print the time of the last successful refresh request, and
+how much time is left until current tokens expire.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">status</span> <span class="pre">--help</span></code> for more details.</p>
 </section>
 <section id="logout">
 <h3>Logout<a class="headerlink" href="#logout" title="Permalink to this headline">#</a></h3>
-<p>To logout, run:</p>
+<p>To log out, run</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex auth <span class="nb">logout</span>
 </pre></div>
 </div>
@@ -424,7 +435,7 @@ title="Print to PDF"
 </section>
 <section id="multiple-configuration-files">
 <h3>Multiple configuration files<a class="headerlink" href="#multiple-configuration-files" title="Permalink to this headline">#</a></h3>
-<p>By default, all Cortex CLI commands read the configuration file from the default location <code class="docutils literal notranslate"><span class="pre">~/.config/iqm-cortex-cli/config.json</span></code>. You can specify a different filepath by providing <code class="docutils literal notranslate"><span class="pre">--config-file</span></code> value, for example:</p>
+<p>By default, all Cortex CLI commands read the configuration file from the default location <code class="docutils literal notranslate"><span class="pre">~/.config/iqm-cortex-cli/config.json</span></code>. You can specify a different filepath by providing the <code class="docutils literal notranslate"><span class="pre">--config-file</span></code> value, for example:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex auth status --config-file /home/joe/config.json
 $ cortex auth login --config-file /home/joe/config.json
 $ cortex auth <span class="nb">logout</span> --config-file /home/joe/config.json
@@ -436,7 +447,8 @@ $ cortex auth <span class="nb">logout</span> --config-file /home/joe/config.json
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex circuit validate my_circuit.qasm
 </pre></div>
 </div>
-<p>validates the quantum circuit in file <cite>my_circuit.qasm</cite>, and reports errors if the circuit is not valid OpenQASM 2.0. The exit code is 0 if and only if the circuit is valid.</p>
+<p>validates the quantum circuit in file <code class="docutils literal notranslate"><span class="pre">my_circuit.qasm</span></code>, and reports errors if the circuit is not
+valid OpenQASM 2.0. The exit code is 0 if and only if the circuit is valid.</p>
 </section>
 <section id="executing-circuits-on-a-quantum-computer">
 <h3>Executing circuits on a quantum computer<a class="headerlink" href="#executing-circuits-on-a-quantum-computer" title="Permalink to this headline">#</a></h3>
@@ -446,19 +458,20 @@ $ cortex circuit run --settings <span class="s2">&quot;path/to/settings.json&quo
 </pre></div>
 </div>
 <p>The server URL and settings path can be set either with command-line options or as environment variables.</p>
-<p>By default, authentication is handled the same way as with other Cortex CLI commands. You can override this and provide your own server url, username and password by setting environment variables IQM_AUTH_SERVER, IQM_AUTH_USERNAME and IQM_AUTH_PASSWORD.</p>
+<p>By default, authentication is handled the same way as with other Cortex CLI commands. You can
+override this and provide your own server URL, username, and password by setting environment
+variables IQM_AUTH_SERVER, IQM_AUTH_USERNAME and IQM_AUTH_PASSWORD.</p>
 <p>Note that the circuit needs to be transpiled so that it only contains operations natively supported by the IQM quantum
 computer you are using.</p>
-<p>Run the following command:</p>
+<p>For information on all the parameters and their usage, run</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex circuit run --help
 </pre></div>
 </div>
-<p>for information on all the parameters and their usage.</p>
 <p>The results of the measurements in the circuit are returned in JSON format:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;measurement_0&quot;</span><span class="p">:</span><span class="w"></span>
 <span class="w">  </span><span class="p">[</span><span class="w"></span>
 <span class="w">    </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"></span>
-<span class="w">    </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"></span>
+<span class="w">    </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"></span>
 <span class="w">    </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="w"></span>
 <span class="w">  </span><span class="p">]</span><span class="w"></span>
 <span class="p">}</span><span class="w"></span>
@@ -501,7 +514,7 @@ example above, “measurement_0” is a 4-qubit measurement, and the number of s
         <footer class="col footer"><p>
   
       &copy; Copyright 2019-2022, IQM Finland Oy.<br/>
-    Last updated on 2022-07-20.<br/>
+    Last updated on 2022-08-08.<br/>
 </p>
         </footer>
     </div>
