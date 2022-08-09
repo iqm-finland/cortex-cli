@@ -491,10 +491,15 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
 
         # run the circuit on the backend
         if no_auth:
-            iqm_client = IQMClient(url, settings)
+            iqm_client = IQMClient(url)
         else:
-            iqm_client = IQMClient(url, settings, tokens_file = tokens_file)
-        job_id = iqm_client.submit_circuits([input_circuit], qubit_mapping, shots=shots)
+            iqm_client = IQMClient(url, tokens_file=tokens_file)
+        job_id = iqm_client.submit_circuits(
+            [input_circuit],
+            qubit_mapping=qubit_mapping,
+            shots=shots,
+            settings=settings
+        )
         results = iqm_client.wait_for_results(job_id)
         iqm_client.close()
     except Exception as ex:

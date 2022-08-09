@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.4
+=============
+
+- Bump iqm-client dependency to 5.0
+
 Version 0.3
 =============
 
