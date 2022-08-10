@@ -55,7 +55,7 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
 
         tokens = refresh_request(base_url, realm, client_id, refresh_token)
         if not tokens:
-            raise ClientAuthenticationError('Failed to update tokens. Proabably, they were expired.')
+            raise ClientAuthenticationError('Failed to update tokens. Probably, they were expired.')
 
         tokens_json = json.dumps({
             'pid': os.getpid(),

@@ -135,8 +135,8 @@ def test_auth_status_reports_no_tokens_file(config_dict):
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(config_dict))
         result = runner.invoke(cortex_cli, ['auth', 'status', '--config-file', 'config.json'])
-        assert result.exit_code != 0
-        assert 'Tokens file not found' in result.output
+        assert result.exit_code == 0
+        assert 'cortex auth login' in result.output
 
 def test_auth_status_reports_no_pid_in_tokens_file(config_dict, tokens_dict):
     """
@@ -521,8 +521,8 @@ def test_auth_logout_fails_without_tokens_file(config_dict):
             ['auth', 'logout',
             '--config-file', 'config.json'
             ])
-        assert result.exit_code != 0
-        assert 'not found' in result.output
+        assert result.exit_code == 0
+        assert 'Not logged in' in result.output
 
 # Logout Scenario 3 failure
 def test_auth_logout_fails_by_server_response(credentials, config_dict):

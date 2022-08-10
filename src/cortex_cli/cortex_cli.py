@@ -210,7 +210,8 @@ def status(config_file, verbose) -> None:
     config = read_json(config_file)
     tokens_file = config['tokens_file']
     if not Path(tokens_file).is_file():
-        raise click.ClickException(f'Tokens file not found: {tokens_file}')
+        click.echo('Not logged in. Use "cortex auth login" to login.')
+        return
 
     tokens_data = read_json(tokens_file)
 
@@ -321,6 +322,10 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     config = read_json(config_file)
     base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
     tokens_file = config['tokens_file']
+
+    if not Path(tokens_file).is_file():
+        click.echo('Not logged in.')
+        return
 
     tokens = read_json(tokens_file)
     pid = tokens['pid'] if 'pid' in tokens else None
@@ -470,7 +475,7 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
         config = read_json(config_file)
         tokens_file = config['tokens_file']
         if not Path(tokens_file).is_file():
-            raise click.ClickException(f'Tokens file not found: {tokens_file}')
+            raise click.ClickException('Not logged in. Run `cortex auth login` to log in.')
 
     try:
         # serialize the circuit and the qubit mapping
