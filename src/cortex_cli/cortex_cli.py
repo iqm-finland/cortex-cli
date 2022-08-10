@@ -26,7 +26,7 @@ from typing import Optional
 
 import cirq_iqm
 import click
-from cirq_iqm.iqm_sampler import serialize_circuit, serialize_qubit_mapping
+from cirq_iqm.iqm_sampler import serialize_circuit
 from iqm_client.iqm_client import Circuit, IQMClient
 
 from cortex_cli import __version__
@@ -47,6 +47,7 @@ CLIENT_ID = 'iqm_client'
 USERNAME = ''
 REFRESH_PERIOD = 3*60 # in seconds
 
+
 class ClickLoggingHandler(logging.Handler):
     """Simple log handler using click's echo function."""
     def __init__(self):
@@ -56,9 +57,11 @@ class ClickLoggingHandler(logging.Handler):
     def emit(self, record):
         click.echo(self.format(record))
 
+
 logger = logging.getLogger('cortex_cli')
 logger.addHandler(ClickLoggingHandler())
 logger.setLevel(logging.INFO)
+
 
 def _setLogLevelByVerbosity(verbose: bool) -> int:
     """Sets logger log level to DEBUG if verbose is True, to INFO otherwise.
@@ -72,6 +75,7 @@ def _setLogLevelByVerbosity(verbose: bool) -> int:
         return logging.DEBUG
     logger.setLevel(logging.INFO)
     return logging.INFO
+
 
 def _validate_path(ctx: click.Context, param: object, path: str) -> str:
     """Callback for CLI prompt. If needed, confirmation to overwrite is prompted.
@@ -105,11 +109,13 @@ def _validate_path(ctx: click.Context, param: object, path: str) -> str:
             continue
         return new_path
 
+
 @click.group()
 @click.version_option(__version__)
 def cortex_cli() -> None:
     """Interact with an IQM quantum computer with Cortex CLI."""
     return
+
 
 @cortex_cli.command()
 @click.option(
@@ -195,6 +201,7 @@ def auth() -> None:
     """Manage authentication."""
     return
 
+
 @auth.command()
 @click.option(
     '--config-file',
@@ -232,6 +239,7 @@ def status(config_file, verbose) -> None:
         click.echo(f'Token manager: {click.style("RUNNING", fg="green")} (PID {active_pid})')
     else:
         click.echo(f'Token manager: {click.style("NOT RUNNING", fg="red")}')
+
 
 @auth.command()
 @click.option(
@@ -307,6 +315,7 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
         daemonize_token_manager(refresh_period, config)
         logger.info('Token manager started.')
 
+
 @auth.command()
 @click.option(
     '--config-file',
@@ -375,11 +384,11 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     logger.info('Logout aborted.')
 
 
-
 @cortex_cli.group()
 def circuit() -> None:
     """Execute your quantum circuits with Cortex CLI."""
     return
+
 
 @circuit.command()
 @click.argument('filename')
@@ -489,17 +498,22 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
         logger.debug('\nInput circuit:\n%s', input_circuit)
 
         if qubit_mapping is not None:
-            qubit_mapping = serialize_qubit_mapping(json.load(qubit_mapping))
+            qubit_mapping = json.load(qubit_mapping)
 
         if settings is not None:
             settings = json.load(settings)
 
         # run the circuit on the backend
         if no_auth:
-            iqm_client = IQMClient(url, settings)
+            iqm_client = IQMClient(url)
         else:
-            iqm_client = IQMClient(url, settings, tokens_file = tokens_file)
-        job_id = iqm_client.submit_circuits([input_circuit], qubit_mapping, shots=shots)
+            iqm_client = IQMClient(url, tokens_file=tokens_file)
+        job_id = iqm_client.submit_circuits(
+            [input_circuit],
+            qubit_mapping=qubit_mapping,
+            shots=shots,
+            settings=settings
+        )
         results = iqm_client.wait_for_results(job_id)
         iqm_client.close()
     except Exception as ex:

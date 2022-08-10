@@ -36,9 +36,11 @@ from cortex_cli.cortex_cli import CLIENT_ID, REALM_NAME
 
 existing_run = UUID('3c3fcda3-e860-46bf-92a4-bcc59fa76ce9')
 
+
 def resources_path():
     """Get path to tests/resources directory from current location"""
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources')
+
 
 @pytest.fixture()
 def credentials():
@@ -49,6 +51,7 @@ def credentials():
         'password': 'some_password',
     }
 
+
 @pytest.fixture
 def config_dict():
     """Reads and parses config file into a dictionary"""
@@ -56,12 +59,14 @@ def config_dict():
     with open(config_file, 'r', encoding='utf-8') as file:
         return json.loads(file.read())
 
+
 @pytest.fixture
 def tokens_dict():
     """Reads and parses tokens file into a dictionary"""
     tokens_file = os.path.join(resources_path(), 'tokens.json')
     with open(tokens_file, 'r', encoding='utf-8') as file:
         return json.loads(file.read())
+
 
 @pytest.fixture()
 def mock_environment_vars_for_backend(credentials):
@@ -220,8 +225,10 @@ def expect_os_kill(pid:int, signal = signal.SIGTERM, result:bool = True):
     """
     when(os).kill(pid, signal).thenReturn(result)
 
+
 def expect_check_pid(pid:int, result:bool = True):
     expect_os_kill(pid, 0, result)
+
 
 def expect_kill_by_pid(pid:int, result:bool = True):
     expect_check_pid(pid, result = result)
