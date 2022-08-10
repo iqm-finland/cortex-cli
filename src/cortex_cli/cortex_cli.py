@@ -492,6 +492,9 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
 
         logger.debug('\nInput circuit:\n%s', input_circuit)
 
+        if qubit_mapping is not None:
+            qubit_mapping = json.load(qubit_mapping)
+
         if settings is not None:
             settings = json.load(settings)
 

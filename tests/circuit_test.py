@@ -25,6 +25,7 @@ from tests.conftest import expect_jobs_requests, resources_path
 
 valid_circuit_qasm = os.path.join(resources_path(), 'valid_circuit.qasm')
 qubit_mapping_path = os.path.join(resources_path(), 'qubit_mapping.json')
+qasm_qubit_mapping_path = os.path.join(resources_path(), 'qubit_mapping_qasm.json')
 settings_path = os.path.join(resources_path(), 'settings.json')
 
 
@@ -130,7 +131,7 @@ def test_circuit_run_valid_qasm_circuit(credentials, config_dict, tokens_dict):
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', valid_circuit_qasm,
              '--config-file', 'config.json',
-             '--qubit-mapping', qubit_mapping_path,
+             '--qubit-mapping', qasm_qubit_mapping_path,
              '--settings', settings_path,
              '--url', base_url,
              '--no-auth'])
@@ -164,7 +165,7 @@ def test_circuit_run_valid_json_circuit(credentials, config_dict, tokens_dict):
 
 def test_circuit_run_valid_json_circuit_default_settings_no_qubit_mapping(credentials, config_dict, tokens_dict):
     """
-    Tests that ``circuit run`` succeeds with valid qasm circuit and no qubit mapping.
+    Tests that ``circuit run`` succeeds with valid json circuit and no qubit mapping.
     """
     base_url = credentials['base_url']
     expect_jobs_requests(base_url)
