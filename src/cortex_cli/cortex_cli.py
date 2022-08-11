@@ -249,7 +249,7 @@ def status(config_file, verbose) -> None:
     help='Location of the configuration file to be used.')
 @click.option('--username', help='Username for authentication.')
 @click.option('--password', help='Password for authentication.')
-@click.option('--refresh-period', default=REFRESH_PERIOD, help='How often to reresh tokens (in seconds).')
+@click.option('--refresh-period', default=REFRESH_PERIOD, help='How often to refresh tokens (in seconds).')
 @click.option('--no-daemon', is_flag=True, default=False, help='Do not start token manager to refresh tokens.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 def login( #pylint: disable=too-many-arguments
