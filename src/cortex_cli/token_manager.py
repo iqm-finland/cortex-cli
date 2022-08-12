@@ -16,14 +16,16 @@ Token manager for authentication and authorization to IQM's quantum computers. P
 """
 import json
 import os
+import platform
 import signal
 import time
 from pathlib import Path
 from typing import Optional
 
-import daemon
-
 from cortex_cli.auth import ClientAuthenticationError, refresh_request
+
+if not platform.system().lower().startswith('win'):
+    import daemon
 
 
 def daemonize_token_manager(timeout: int, config: dict, errfile: str = '/tmp/stderr.txt') -> None:
@@ -35,6 +37,7 @@ def daemonize_token_manager(timeout: int, config: dict, errfile: str = '/tmp/std
     """
     with daemon.DaemonContext(stderr=open(errfile, 'w', encoding='UTF-8')):
         start_token_manager(timeout, config)
+
 
 def start_token_manager(timeout: int, config: dict, single_run: bool = False) -> None:
     """Refresh tokens periodically.
@@ -77,6 +80,7 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
 
         time.sleep(timeout)
 
+
 def check_daemon(tokens_file: str) -> Optional[int]:
     """Check whether a daemon related to the given tokens_file is running.
     Args:
@@ -92,6 +96,7 @@ def check_daemon(tokens_file: str) -> Optional[int]:
         return pid
     return None
 
+
 def check_pid(pid: int) -> bool:
     """Check for the existence of a unix PID.
     Args:
@@ -105,6 +110,7 @@ def check_pid(pid: int) -> bool:
         return False
     else:
         return True
+
 
 def kill_by_pid(pid: int) -> bool:
     """Kill process with given PID.

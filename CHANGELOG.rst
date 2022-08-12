@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 0.5
+=============
+
+- Partial Windows support (no token manager daemon)
+- Performance improvements for faster loading time
+
 Version 0.4
 =============
 

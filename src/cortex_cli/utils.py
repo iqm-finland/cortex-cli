@@ -35,6 +35,7 @@ def read_file(filename: str) -> str:
     except FileNotFoundError as error:
         raise click.ClickException(f'File {filename} not found') from error
 
+
 def read_json(filename: str) -> dict:
     """Opens and parses the given JSON file.
 
