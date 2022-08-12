@@ -313,7 +313,7 @@ export IQM_TOKENS_FILE={tokens_file}
 Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm-client/""")
 
     if no_daemon:
-        logger.info('Token manager not started.')
+        logger.info("Token manager not started due to '--no-daemon' flag.")
     else:
         daemonize_token_manager(refresh_period, config)
         logger.info('Token manager started.')
