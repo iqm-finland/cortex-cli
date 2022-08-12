@@ -65,7 +65,7 @@ class AuthRequest(BaseModel):
     "refresh token for grant type ``'refresh_token'`` and logout request"
 
 
-def login_request(url: str, realm:str, client_id:str, username:str, password:str) -> dict[str, str]:
+def login_request(url: str, realm: str, client_id: str, username: str, password: str) -> dict[str, str]:
     """Sends login request to the authentication server.
 
     Raises:
@@ -76,10 +76,10 @@ def login_request(url: str, realm:str, client_id:str, username:str, password:str
     """
 
     data = AuthRequest(
-        client_id = client_id,
-        grant_type = GrantType.PASSWORD,
-        username = username,
-        password = password
+        client_id=client_id,
+        grant_type=GrantType.PASSWORD,
+        username=username,
+        password=password
     )
 
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
@@ -89,7 +89,8 @@ def login_request(url: str, realm:str, client_id:str, username:str, password:str
     tokens = result.json()
     return tokens
 
-def refresh_request(url: str, realm:str, client_id:str, refresh_token:str) -> Optional[dict[str, str]]:
+
+def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) -> Optional[dict[str, str]]:
     """Sends refresh request to the authentication server.
 
     Raises:
@@ -104,7 +105,7 @@ def refresh_request(url: str, realm:str, client_id:str, refresh_token:str) -> Op
 
     # Update tokens using existing refresh_token
     data = AuthRequest(
-        client_id = client_id,
+        client_id=client_id,
         grant_type=GrantType.REFRESH,
         refresh_token=refresh_token
     )
@@ -116,7 +117,8 @@ def refresh_request(url: str, realm:str, client_id:str, refresh_token:str) -> Op
     tokens = result.json()
     return tokens
 
-def logout_request(url:str, realm:str, client_id:str, refresh_token:str) -> bool:
+
+def logout_request(url: str, realm: str, client_id: str, refresh_token: str) -> bool:
     """Sends logout request to the authentication server.
 
     Raises:
@@ -126,8 +128,8 @@ def logout_request(url:str, realm:str, client_id:str, refresh_token:str) -> bool
         True if logout was successful
     """
     data = AuthRequest(
-        client_id = client_id,
-        refresh_token = refresh_token
+        client_id=client_id,
+        refresh_token=refresh_token
     )
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/logout'
     result = requests.post(request_url, data=data.dict(exclude_none=True))
@@ -148,6 +150,7 @@ def time_left_seconds(token: str) -> int:
     body += '=' * (-len(body) % 4)
     exp_time = int(json.loads(b64decode(body)).get('exp', '0'))
     return max(0, exp_time - int(time.time()))
+
 
 def token_is_valid(refresh_token: str) -> bool:
     """Check if token is not about to expire.
