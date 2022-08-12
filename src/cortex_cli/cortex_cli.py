@@ -288,7 +288,8 @@ def login(  #pylint: disable=too-many-arguments
             save_tokens_file(tokens_file, new_tokens, base_url)
             logger.debug('Saved new tokens file: %s', tokens_file)
             if no_daemon:
-                logger.info('Existing token was used to refresh session. Token manager not started.')
+                msg = "Existing token was used to refresh session. Token manager not started due to '--no-daemon' flag."
+                logger.info(msg)
             else:
                 logger.info('Existing token was used to refresh the auth session. Token manager started.')
                 daemonize_token_manager(refresh_period, config)
