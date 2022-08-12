@@ -24,9 +24,7 @@ from typing import Optional
 
 from cortex_cli.auth import ClientAuthenticationError, refresh_request
 
-if platform.system().lower().startswith('win'):
-    print('WARNING: Currently, daemonizing the token manager is not possible on Windows.')
-else:
+if not platform.system().lower().startswith('win'):
     import daemon
 
 
