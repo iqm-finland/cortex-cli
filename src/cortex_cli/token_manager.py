@@ -16,14 +16,17 @@ Token manager for authentication and authorization to IQM's quantum computers. P
 """
 import json
 import os
+import platform
 import signal
 import time
 from pathlib import Path
 from typing import Optional
-
-import daemon
-
 from cortex_cli.auth import ClientAuthenticationError, refresh_request
+
+if platform.system().lower().startswith('win'):
+    print('WARNING: Currently, daemonizing the token manager is not possible on Windows.')
+else:
+    import daemon
 
 
 def daemonize_token_manager(timeout: int, config: dict, errfile: str = '/tmp/stderr.txt') -> None:

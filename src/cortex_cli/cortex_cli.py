@@ -18,6 +18,7 @@ import datetime
 import json
 import logging
 import os
+import platform
 import sys
 import time
 from io import TextIOWrapper
@@ -250,7 +251,7 @@ def status(config_file, verbose) -> None:
 @click.option('--username', help='Username for authentication.')
 @click.option('--password', help='Password for authentication.')
 @click.option('--refresh-period', default=REFRESH_PERIOD, help='How often to refresh tokens (in seconds).')
-@click.option('--no-daemon', is_flag=True, default=False, help='Do not start token manager to refresh tokens.')
+@click.option('--no-daemon', is_flag=True, default=False, help='Do not start token manager daemon to refresh tokens.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 def login( #pylint: disable=too-many-arguments
           config_file:str,
@@ -260,8 +261,12 @@ def login( #pylint: disable=too-many-arguments
           no_daemon: bool,
           verbose:bool
 ) -> None:
-    """Authenticate on the IQM server."""
+    """Authenticate on the IQM server, and optionally start a token manager daemon process to maintain the session."""
     _setLogLevelByVerbosity(verbose)
+
+    if platform.system().lower().startswith('win') and not no_daemon:
+        click.echo("Daemonizing is not yet possible on Windows. Please, use '--no-daemon' flag.")
+        return
 
     config = read_json(config_file)
     base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
