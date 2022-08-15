@@ -432,6 +432,7 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
                    'Can also be set using the IQM_SETTINGS_PATH environment variable:\n'
                    '`export IQM_SETTINGS_PATH=\"/path/to/settings/file.json\"`\n'
                    'If not set, the latest available calibration will be used.')
+@click.option('--calibration-set-id', type=int, help='ID of the calibration set to be used instead of settings.')
 @click.option('--qubit-mapping', default=None, type=click.File(), envvar='IQM_QUBIT_MAPPING_PATH',
               help='Path to the qubit mapping JSON file. Must consist of a single JSON object, with logical '
                    'qubit names ("Alice", "Bob", ...) as keys, and physical qubit names (appearing in '
@@ -459,6 +460,7 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
         verbose: bool,
         shots: int,
         settings: Optional[TextIOWrapper],
+        calibration_set_id: Optional[int],
         qubit_mapping: Optional[TextIOWrapper],
         url: str,
         filename: str,
@@ -512,7 +514,8 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
             [input_circuit],
             qubit_mapping=qubit_mapping,
             shots=shots,
-            settings=settings
+            settings=settings,
+            calibration_set_id=calibration_set_id
         )
         results = iqm_client.wait_for_results(job_id)
         iqm_client.close()
