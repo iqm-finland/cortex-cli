@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.6
+=============
+
+- iqm-client 6.0 support. `#14 <https://github.com/iqm-finland/cortex-cli/pull/14>`_
+
 Version 0.5
 =============
 
