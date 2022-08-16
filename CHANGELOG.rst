@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 0.5
+=============
+
+- Bump iqm-client dependency to 6.1
+- Allow user to provide a custom ``calibration_set_id`` when using ``cortex circuit run``
+
 Version 0.4
 =============
 
