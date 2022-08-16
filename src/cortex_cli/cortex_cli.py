@@ -518,7 +518,6 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
             calibration_set_id=calibration_set_id
         )
         results = iqm_client.wait_for_results(job_id)
-        iqm_client.close()
     except Exception as ex:
         # just show the error message, not a stack trace
         raise click.ClickException(str(ex)) from ex
