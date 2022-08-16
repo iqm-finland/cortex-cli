@@ -14,9 +14,7 @@
 """
 Submit circuit jobs to IQM quantum computers via Cortex CLI.
 """
-import cirq_iqm
 import click
-from cirq.contrib.qasm_import.exception import QasmException
 
 from cortex_cli.utils import read_file
 
@@ -29,6 +27,9 @@ def validate_circuit(filename: str) -> None:
     Raises:
         ClickException: if circuit is invalid or not found
     """
+    # pylint: disable=import-outside-toplevel
+    import cirq_iqm
+    from cirq.contrib.qasm_import.exception import QasmException
     try:
         cirq_iqm.circuit_from_qasm(read_file(filename))
     except QasmException as ex:

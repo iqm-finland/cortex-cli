@@ -18,16 +18,14 @@ import datetime
 import json
 import logging
 import os
+import platform
 import sys
 import time
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Optional
 
-import cirq_iqm
 import click
-from cirq_iqm.iqm_sampler import serialize_circuit
-from iqm_client.iqm_client import Circuit, IQMClient
 
 from cortex_cli import __version__
 from cortex_cli.auth import (ClientAuthenticationError, login_request,
@@ -45,7 +43,7 @@ BASE_URL = 'https://auth.demo.qc.iqm.fi'
 REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
-REFRESH_PERIOD = 3*60 # in seconds
+REFRESH_PERIOD = 3*60  # in seconds
 
 
 class ClickLoggingHandler(logging.Handler):
@@ -63,7 +61,7 @@ logger.addHandler(ClickLoggingHandler())
 logger.setLevel(logging.INFO)
 
 
-def _setLogLevelByVerbosity(verbose: bool) -> int:
+def _set_log_level_by_verbosity(verbose: bool) -> int:
     """Sets logger log level to DEBUG if verbose is True, to INFO otherwise.
     Args:
         verbose: whether logging should be verbose (i.e. DEBUG level)
@@ -89,7 +87,7 @@ def _validate_path(ctx: click.Context, param: object, path: str) -> str:
     """
     if ctx.obj and param.name in ctx.obj:
         return path
-    ctx.obj = { param.name: True }
+    ctx.obj = {param.name: True}
 
     # File doesn't exist, no need to confirm overwriting
     if not Path(path).is_file():
@@ -154,7 +152,7 @@ def cortex_cli() -> None:
     default=USERNAME,
     help='Username. If not provided, it will be asked for at login.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def init( #pylint: disable=too-many-arguments
+def init(  #pylint: disable=too-many-arguments
          config_file: str,
          tokens_file: str,
          base_url: str,
@@ -164,7 +162,7 @@ def init( #pylint: disable=too-many-arguments
          verbose: bool
 ) -> None:
     """Initialize configuration and authentication."""
-    _setLogLevelByVerbosity(verbose)
+    _set_log_level_by_verbosity(verbose)
 
     path_to_dir = Path(config_file).parent
     config_json = json.dumps(
@@ -211,7 +209,7 @@ def auth() -> None:
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 def status(config_file, verbose) -> None:
     """Check status of authentication."""
-    _setLogLevelByVerbosity(verbose)
+    _set_log_level_by_verbosity(verbose)
 
     logger.debug('Using configuration file: %s', config_file)
     config = read_json(config_file)
@@ -223,7 +221,7 @@ def status(config_file, verbose) -> None:
     tokens_data = read_json(tokens_file)
 
     click.echo(f'Tokens file: {tokens_file}')
-    if not 'pid' in tokens_data:
+    if 'pid' not in tokens_data:
         click.echo("Tokens file doesn't contain PID. Probably, 'cortex auth login' was launched with '--no-daemon'\n")
 
     click.echo(f"Last refresh: {tokens_data['timestamp']}")
@@ -250,18 +248,22 @@ def status(config_file, verbose) -> None:
 @click.option('--username', help='Username for authentication.')
 @click.option('--password', help='Password for authentication.')
 @click.option('--refresh-period', default=REFRESH_PERIOD, help='How often to refresh tokens (in seconds).')
-@click.option('--no-daemon', is_flag=True, default=False, help='Do not start token manager to refresh tokens.')
+@click.option('--no-daemon', is_flag=True, default=False, help='Do not start token manager daemon to refresh tokens.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def login( #pylint: disable=too-many-arguments
-          config_file:str,
-          username:str,
-          password:str,
-          refresh_period:int,
+def login(  #pylint: disable=too-many-arguments
+          config_file: str,
+          username: str,
+          password: str,
+          refresh_period: int,
           no_daemon: bool,
-          verbose:bool
+          verbose: bool
 ) -> None:
-    """Authenticate on the IQM server."""
-    _setLogLevelByVerbosity(verbose)
+    """Authenticate on the IQM server, and optionally start a token manager daemon process to maintain the session."""
+    _set_log_level_by_verbosity(verbose)
+
+    if platform.system().lower().startswith('win') and not no_daemon:
+        click.echo("Daemonizing is not yet possible on Windows. Please, use '--no-daemon' flag.")
+        return
 
     config = read_json(config_file)
     base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
@@ -286,7 +288,8 @@ def login( #pylint: disable=too-many-arguments
             save_tokens_file(tokens_file, new_tokens, base_url)
             logger.debug('Saved new tokens file: %s', tokens_file)
             if no_daemon:
-                logger.info('Existing token was used to refresh session. Token manager not started.')
+                logger.info(
+                    "Existing token used to refresh session. Token manager not started due to '--no-daemon' flag.")
             else:
                 logger.info('Existing token was used to refresh the auth session. Token manager started.')
                 daemonize_token_manager(refresh_period, config)
@@ -310,7 +313,7 @@ export IQM_TOKENS_FILE={tokens_file}
 Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm-client/""")
 
     if no_daemon:
-        logger.info('Token manager not started.')
+        logger.info("Token manager not started due to '--no-daemon' flag.")
     else:
         daemonize_token_manager(refresh_period, config)
         logger.info('Token manager started.')
@@ -392,7 +395,7 @@ def circuit() -> None:
 
 @circuit.command()
 @click.argument('filename')
-def validate(filename:str) -> None:
+def validate(filename: str) -> None:
     """Check if a quantum circuit is valid."""
     validate_circuit(filename)
     logger.info('File %s contains a valid quantum circuit', filename)
@@ -403,8 +406,8 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
 
     Args:
         path (str): path to the file to write
-        access_token(str): authorization access token
-        refresh_token(str): authorization refresh token
+        tokens (dict[str, str]): authorization access and refresh tokens
+        auth_server_url (str): base url of the authorization server
     Raises:
         OSError: if writing to file fails
     """
@@ -456,7 +459,7 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
               'When submitting a circuit job, Cortex CLI will use IQM Client without passing any auth tokens. '
               'Auth data can still be set using environment variables for IQM Client.')
 @click.argument('filename', type=click.Path())
-def run( #pylint: disable=too-many-arguments, too-many-locals
+def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-toplevel
         verbose: bool,
         shots: int,
         settings: Optional[TextIOWrapper],
@@ -478,7 +481,11 @@ def run( #pylint: disable=too-many-arguments, too-many-locals
     results. The first index of the array goes over the shots, and the second over the qubits
     included in the measurement.
     """
-    _setLogLevelByVerbosity(verbose)
+    import cirq_iqm
+    from cirq_iqm.iqm_sampler import serialize_circuit
+    from iqm_client.iqm_client import Circuit, IQMClient
+
+    _set_log_level_by_verbosity(verbose)
 
     raw_input = read_file(filename)
 
