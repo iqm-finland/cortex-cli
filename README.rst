@@ -39,7 +39,8 @@ First, Cortex CLI needs initialization, which produces a configuration file:
 
   $ cortex init
 
-Cortex CLI will ask a few questions. You can also pass the values via command line to avoid having an interactive prompt. See ``cortex init --help`` for details.
+Cortex CLI will ask a few questions. You can also pass the values via command line to avoid having an interactive
+prompt. See ``cortex init --help`` for details.
 
 Login
 ^^^^^
@@ -63,6 +64,22 @@ This will ask you to enter your username and password.
    may already have expired), you'll be asked to re-enter your credentials.
 
 See ``cortex auth login --help`` for more details.
+
+Use with Cirq-on-IQM, Qiskit-on-IQM, etc.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Adapters based on IQM Client, such as Cirq-on-IQM and Qiskit-on-IQM, can take advantage of the tokens file maintained by
+Cortex CLI. This way you won't need to provide the authentication server url, username and password to the adapter
+library itself. To achieve this, follow the instructions printed on the screen after running ``cortex auth login``.
+Namely, set the ``IQM_TOKENS_FILE`` environment variable to point to your tokens file, for example:
+
+.. code-block:: bash
+
+  $ export IQM_TOKENS_FILE=/home/user/iqm_tokens.json
+
+Once set, this environment variable is read by the instance of IQM Client associated with the adapter. As a result,
+from the point of view of the adapter it looks like authentication is simply disabled (i.e. no authentication-related
+information has to be provided to the adapter).
 
 Status
 ^^^^^^
@@ -88,9 +105,11 @@ To log out, run
 
   $ cortex auth logout
 
-This will send a logout request to the authentication server, kill the token manager daemon (if any), and delete the tokens file.
+This will send a logout request to the authentication server, kill the token manager daemon (if any), and delete the
+tokens file.
 
-You may want to stop the token manager, but maintain the session on the server and keep the tokens file intact. To do so, run:
+You may want to stop the token manager, but maintain the session on the server and keep the tokens file intact.
+To do so, run:
 
 .. code-block:: bash
 
@@ -101,7 +120,9 @@ See ``cortex auth logout --help`` for more details.
 Multiple configuration files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, all Cortex CLI commands read the configuration file from the default location ``~/.config/iqm-cortex-cli/config.json``. You can specify a different filepath by providing the ``--config-file`` value, for example:
+By default, all Cortex CLI commands read the configuration file from the default location
+``~/.config/iqm-cortex-cli/config.json``. You can specify a different filepath by providing the ``--config-file`` value,
+for example:
 
 .. code-block:: bash
 

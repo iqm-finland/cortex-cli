@@ -156,7 +156,32 @@ def test_circuit_run_valid_json_circuit(credentials, config_dict, tokens_dict):
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
              '--config-file', 'config.json',
              '--qubit-mapping', qubit_mapping_path,
-             '--settings', settings_path, '--url', base_url,
+             '--settings', settings_path,
+             '--url', base_url,
+             '--no-auth'])
+    assert 'result' in result.output
+    assert result.exit_code == 0
+    unstub()
+
+
+def test_circuit_run_valid_json_circuit_custom_calibration_set_id(credentials, config_dict, tokens_dict):
+    """
+    Tests that ``circuit run`` succeeds with valid JSON circuit and custom calibration set ID.
+    """
+    base_url = credentials['base_url']
+    expect_jobs_requests(base_url)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        with open('tokens.json', 'w', encoding='utf-8') as file:
+            file.write(json.dumps(tokens_dict))
+        result = CliRunner().invoke(cortex_cli,
+            ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
+             '--config-file', 'config.json',
+             '--qubit-mapping', qubit_mapping_path,
+             '--calibration-set-id', '24',
+             '--url', base_url,
              '--no-auth'])
     assert 'result' in result.output
     assert result.exit_code == 0
