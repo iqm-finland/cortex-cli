@@ -68,10 +68,10 @@ See ``cortex auth login --help`` for more details.
 Use with Cirq-on-IQM, Qiskit-on-IQM, etc.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Adapters based on IQM Client, such as Cirq-on-IQM and Qiskit-on-IQM, can use the tokens file maintained by Cortex CLI.
-This way you don't need to provide the authentication server url, username and password to the adapter library itself.
-To achieve this, follow the instructions printed on the screen after running ``cortex auth login``. Namely, set the
-``IQM_TOKENS_FILE`` environment variable to point to your tokens file, for example:
+Adapters based on IQM Client, such as Cirq-on-IQM and Qiskit-on-IQM, can take advantage of the tokens file maintained by
+Cortex CLI. This way you won't need to provide the authentication server url, username and password to the adapter
+library itself. To achieve this, follow the instructions printed on the screen after running ``cortex auth login``.
+Namely, set the ``IQM_TOKENS_FILE`` environment variable to point to your tokens file, for example:
 
 .. code-block:: bash
 
