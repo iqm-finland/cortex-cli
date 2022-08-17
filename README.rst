@@ -105,9 +105,11 @@ To log out, run
 
   $ cortex auth logout
 
-This will send a logout request to the authentication server, kill the token manager daemon (if any), and delete the tokens file.
+This will send a logout request to the authentication server, kill the token manager daemon (if any), and delete the
+tokens file.
 
-You may want to stop the token manager, but maintain the session on the server and keep the tokens file intact. To do so, run:
+You may want to stop the token manager, but maintain the session on the server and keep the tokens file intact.
+To do so, run:
 
 .. code-block:: bash
 
@@ -118,7 +120,9 @@ See ``cortex auth logout --help`` for more details.
 Multiple configuration files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, all Cortex CLI commands read the configuration file from the default location ``~/.config/iqm-cortex-cli/config.json``. You can specify a different filepath by providing the ``--config-file`` value, for example:
+By default, all Cortex CLI commands read the configuration file from the default location
+``~/.config/iqm-cortex-cli/config.json``. You can specify a different filepath by providing the ``--config-file`` value,
+for example:
 
 .. code-block:: bash
 
