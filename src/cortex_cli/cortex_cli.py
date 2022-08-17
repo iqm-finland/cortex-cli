@@ -435,7 +435,7 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
                    'Can also be set using the IQM_SETTINGS_PATH environment variable:\n'
                    '`export IQM_SETTINGS_PATH=\"/path/to/settings/file.json\"`\n'
                    'If not set, the latest available calibration will be used.')
-@click.option('--calibration-set-id', type=int, help='ID of the calibration set to be used instead of settings.')
+@click.option('--calibration-set-id', type=int, help='ID of the calibration set to use instead of settings.')
 @click.option('--qubit-mapping', default=None, type=click.File(), envvar='IQM_QUBIT_MAPPING_PATH',
               help='Path to the qubit mapping JSON file. Must consist of a single JSON object, with logical '
                    'qubit names ("Alice", "Bob", ...) as keys, and physical qubit names (appearing in '
