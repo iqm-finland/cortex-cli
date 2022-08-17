@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Cortex CLI &#8212; Cortex CLI 0.6 documentation</title>
+    <title>Cortex CLI &#8212; Cortex CLI 0.7 documentation</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -259,6 +259,11 @@ title="Print to PDF"
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#use-with-cirq-on-iqm-qiskit-on-iqm-etc">
+     Use with Cirq-on-IQM, Qiskit-on-IQM, etc.
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#status">
      Status
     </a>
@@ -325,6 +330,11 @@ title="Print to PDF"
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#use-with-cirq-on-iqm-qiskit-on-iqm-etc">
+     Use with Cirq-on-IQM, Qiskit-on-IQM, etc.
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#status">
      Status
     </a>
@@ -388,7 +398,8 @@ title="Print to PDF"
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex init
 </pre></div>
 </div>
-<p>Cortex CLI will ask a few questions. You can also pass the values via command line to avoid having an interactive prompt. See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">init</span> <span class="pre">--help</span></code> for details.</p>
+<p>Cortex CLI will ask a few questions. You can also pass the values via command line to avoid having an interactive
+prompt. See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">init</span> <span class="pre">--help</span></code> for details.</p>
 </section>
 <section id="login">
 <h3>Login<a class="headerlink" href="#login" title="Permalink to this headline">#</a></h3>
@@ -409,6 +420,19 @@ may already have expired), you’ll be asked to re-enter your credentials.</p>
 </div></blockquote>
 <p>See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--help</span></code> for more details.</p>
 </section>
+<section id="use-with-cirq-on-iqm-qiskit-on-iqm-etc">
+<h3>Use with Cirq-on-IQM, Qiskit-on-IQM, etc.<a class="headerlink" href="#use-with-cirq-on-iqm-qiskit-on-iqm-etc" title="Permalink to this headline">#</a></h3>
+<p>Adapters based on IQM Client, such as Cirq-on-IQM and Qiskit-on-IQM, can take advantage of the tokens file maintained by
+Cortex CLI. This way you won’t need to provide the authentication server url, username and password to the adapter
+library itself. To achieve this, follow the instructions printed on the screen after running <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span></code>.
+Namely, set the <code class="docutils literal notranslate"><span class="pre">IQM_TOKENS_FILE</span></code> environment variable to point to your tokens file, for example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">export</span> <span class="nv">IQM_TOKENS_FILE</span><span class="o">=</span>/home/user/iqm_tokens.json
+</pre></div>
+</div>
+<p>Once set, this environment variable is read by the instance of IQM Client associated with the adapter. As a result,
+from the point of view of the adapter it looks like authentication is simply disabled (i.e. no authentication-related
+information has to be provided to the adapter).</p>
+</section>
 <section id="status">
 <h3>Status<a class="headerlink" href="#status" title="Permalink to this headline">#</a></h3>
 <p>To see the current status of the token manager daemon, use:</p>
@@ -426,8 +450,10 @@ how much time is left until current tokens expire.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex auth <span class="nb">logout</span>
 </pre></div>
 </div>
-<p>This will send a logout request to the authentication server, kill the token manager daemon (if any), and delete the tokens file.</p>
-<p>You may want to stop the token manager, but maintain the session on the server and keep the tokens file intact. To do so, run:</p>
+<p>This will send a logout request to the authentication server, kill the token manager daemon (if any), and delete the
+tokens file.</p>
+<p>You may want to stop the token manager, but maintain the session on the server and keep the tokens file intact.
+To do so, run:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex auth <span class="nb">logout</span> --keep-tokens
 </pre></div>
 </div>
@@ -435,7 +461,9 @@ how much time is left until current tokens expire.</p>
 </section>
 <section id="multiple-configuration-files">
 <h3>Multiple configuration files<a class="headerlink" href="#multiple-configuration-files" title="Permalink to this headline">#</a></h3>
-<p>By default, all Cortex CLI commands read the configuration file from the default location <code class="docutils literal notranslate"><span class="pre">~/.config/iqm-cortex-cli/config.json</span></code>. You can specify a different filepath by providing the <code class="docutils literal notranslate"><span class="pre">--config-file</span></code> value, for example:</p>
+<p>By default, all Cortex CLI commands read the configuration file from the default location
+<code class="docutils literal notranslate"><span class="pre">~/.config/iqm-cortex-cli/config.json</span></code>. You can specify a different filepath by providing the <code class="docutils literal notranslate"><span class="pre">--config-file</span></code> value,
+for example:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex auth status --config-file /home/joe/config.json
 $ cortex auth login --config-file /home/joe/config.json
 $ cortex auth <span class="nb">logout</span> --config-file /home/joe/config.json
@@ -514,7 +542,7 @@ example above, “measurement_0” is a 4-qubit measurement, and the number of s
         <footer class="col footer"><p>
   
       &copy; Copyright 2019-2022, IQM Finland Oy.<br/>
-    Last updated on 2022-08-16.<br/>
+    Last updated on 2022-08-17.<br/>
 </p>
         </footer>
     </div>
