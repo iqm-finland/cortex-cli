@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Cortex CLI &#8212; Cortex CLI 0.7 documentation</title>
+    <title>Cortex CLI &#8212; Cortex CLI 0.8 documentation</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -260,7 +260,7 @@ title="Print to PDF"
    </li>
    <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#use-with-cirq-on-iqm-qiskit-on-iqm-etc">
-     Use with Cirq-on-IQM, Qiskit-on-IQM, etc.
+     Use with Cirq on IQM, Qiskit on IQM, etc.
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
@@ -331,7 +331,7 @@ title="Print to PDF"
    </li>
    <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#use-with-cirq-on-iqm-qiskit-on-iqm-etc">
-     Use with Cirq-on-IQM, Qiskit-on-IQM, etc.
+     Use with Cirq on IQM, Qiskit on IQM, etc.
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
@@ -421,16 +421,16 @@ may already have expired), you’ll be asked to re-enter your credentials.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--help</span></code> for more details.</p>
 </section>
 <section id="use-with-cirq-on-iqm-qiskit-on-iqm-etc">
-<h3>Use with Cirq-on-IQM, Qiskit-on-IQM, etc.<a class="headerlink" href="#use-with-cirq-on-iqm-qiskit-on-iqm-etc" title="Permalink to this headline">#</a></h3>
-<p>Adapters based on IQM Client, such as Cirq-on-IQM and Qiskit-on-IQM, can take advantage of the tokens file maintained by
-Cortex CLI. This way you won’t need to provide the authentication server url, username and password to the adapter
+<h3>Use with Cirq on IQM, Qiskit on IQM, etc.<a class="headerlink" href="#use-with-cirq-on-iqm-qiskit-on-iqm-etc" title="Permalink to this headline">#</a></h3>
+<p>Adapters based on IQM Client, such as Cirq on IQM and Qiskit on IQM, can take advantage of the tokens file maintained by
+Cortex CLI. This way you won’t need to provide the authentication server URL, username, or password to the adapter
 library itself. To achieve this, follow the instructions printed on the screen after running <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span></code>.
 Namely, set the <code class="docutils literal notranslate"><span class="pre">IQM_TOKENS_FILE</span></code> environment variable to point to your tokens file, for example:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">export</span> <span class="nv">IQM_TOKENS_FILE</span><span class="o">=</span>/home/user/iqm_tokens.json
 </pre></div>
 </div>
 <p>Once set, this environment variable is read by the instance of IQM Client associated with the adapter. As a result,
-from the point of view of the adapter it looks like authentication is simply disabled (i.e. no authentication-related
+from the point of view of the adapter it looks like authentication is simply not required (i.e. no authentication-related
 information has to be provided to the adapter).</p>
 </section>
 <section id="status">
@@ -542,7 +542,7 @@ example above, “measurement_0” is a 4-qubit measurement, and the number of s
         <footer class="col footer"><p>
   
       &copy; Copyright 2019-2022, IQM Finland Oy.<br/>
-    Last updated on 2022-08-17.<br/>
+    Last updated on 2022-08-18.<br/>
 </p>
         </footer>
     </div>
