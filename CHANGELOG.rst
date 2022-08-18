@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.8
+===========
+
+* Upgrade ``cirq-iqm`` to 7.3. `#15 <https://github.com/iqm-finland/cortex-cli/pull/15>`_
+
 Version 0.7
 ===========
 
