@@ -75,7 +75,7 @@ def _set_log_level_by_verbosity(verbose: bool) -> int:
     return logging.INFO
 
 
-def _validate_path(ctx: click.Context, param: object, path: str) -> str:
+def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
     """Callback for CLI prompt. If needed, confirmation to overwrite is prompted.
 
     Args:
@@ -506,11 +506,13 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
 
         logger.debug('\nInput circuit:\n%s', input_circuit)
 
+        parsed_qubit_mapping = None
         if qubit_mapping is not None:
-            qubit_mapping = json.load(qubit_mapping)
+            parsed_qubit_mapping = json.load(qubit_mapping)
 
+        parsed_settings = None
         if settings is not None:
-            settings = json.load(settings)
+            parsed_settings = json.load(settings)
 
         # run the circuit on the backend
         if no_auth:
@@ -519,9 +521,9 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
             iqm_client = IQMClient(url, tokens_file=tokens_file)
         job_id = iqm_client.submit_circuits(
             [input_circuit],
-            qubit_mapping=qubit_mapping,
+            qubit_mapping=parsed_qubit_mapping,
             shots=shots,
-            settings=settings,
+            settings=parsed_settings,
             calibration_set_id=calibration_set_id
         )
         results = iqm_client.wait_for_results(job_id)
