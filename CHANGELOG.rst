@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 0.9
+===========
+
+* Enable mypy checks. `#17 <https://github.com/iqm-finland/cortex-cli/pull/17>`_
+* Update source code according to new checks in pylint v2.15.0. `#17 <https://github.com/iqm-finland/cortex-cli/pull/17>`_
+
 Version 0.8
 ===========
 
