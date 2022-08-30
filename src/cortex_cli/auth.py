@@ -25,6 +25,7 @@ import requests
 from pydantic import BaseModel, Field
 
 REFRESH_MARGIN_SECONDS = 15
+AUTH_REQUESTS_TIMEOUT = 20
 
 
 class ClientAuthenticationError(RuntimeError):
@@ -83,7 +84,7 @@ def login_request(url: str, realm: str, client_id: str, username: str, password:
     )
 
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
-    result = requests.post(request_url, data=data.dict(exclude_none=True))
+    result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
     if result.status_code != 200:
         raise ClientAuthenticationError(f'Failed to authenticate, {result.text}')
     tokens = result.json()
@@ -111,7 +112,7 @@ def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) ->
     )
 
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
-    result = requests.post(request_url, data=data.dict(exclude_none=True))
+    result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
     if result.status_code != 200:
         raise ClientAuthenticationError(f'Failed to update tokens, {result.text}')
     tokens = result.json()
@@ -132,7 +133,7 @@ def logout_request(url: str, realm: str, client_id: str, refresh_token: str) -> 
         refresh_token=refresh_token
     )
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/logout'
-    result = requests.post(request_url, data=data.dict(exclude_none=True))
+    result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
 
     if result.status_code != 204:
         raise ClientAuthenticationError(f'Failed to logout, {result.text}')
