@@ -35,6 +35,7 @@ from cortex_cli.auth import AuthRequest, GrantType
 from cortex_cli.cortex_cli import CLIENT_ID, REALM_NAME
 
 existing_run = UUID('3c3fcda3-e860-46bf-92a4-bcc59fa76ce9')
+AUTH_REQUESTS_TIMEOUT = 20
 
 
 def resources_path():
@@ -151,7 +152,8 @@ def prepare_tokens(
     }
     when(requests).post(
         f'{credentials["base_url"]}/realms/{REALM_NAME}/protocol/openid-connect/token',
-        data=request_data.dict(exclude_none=True)
+        data=request_data.dict(exclude_none=True),
+        timeout=AUTH_REQUESTS_TIMEOUT
     ).thenReturn(MockJsonResponse(status_code, tokens))
 
     return tokens
@@ -174,7 +176,8 @@ def expect_logout(
     request_data = AuthRequest(client_id=client_id, refresh_token=refresh_token)
     expect(requests, times=1).post(
         f'{base_url}/realms/{realm}/protocol/openid-connect/logout',
-        data=request_data.dict(exclude_none=True)
+        data=request_data.dict(exclude_none=True),
+        timeout=AUTH_REQUESTS_TIMEOUT
     ).thenReturn(
         mock({'status_code': status_code, 'text': '{}'})
     )
