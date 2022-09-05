@@ -183,7 +183,7 @@ def expect_logout(
     )
 
 
-def expect_jobs_requests(base_url):
+def expect_jobs_requests(base_url, calibration_set_id=None):
     """
     Prepare for job submission requests.
     """
@@ -201,7 +201,7 @@ def expect_jobs_requests(base_url):
         'measurements': [{
             'result': [[1, 0, 1, 1], [1, 0, 0, 1], [1, 0, 1, 1], [1, 0, 1, 1]]
         }],
-        'metadata': {'circuits': [], 'shots': 42}
+        'metadata': {'circuits': [], 'shots': 42, 'calibration_set_id': calibration_set_id}
     }
     success_get_response = mock({'status_code': 200, 'text': json.dumps(success_get_result)})
     when(success_get_response).json().thenReturn(success_get_result)

@@ -537,6 +537,8 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
         )
 
     logger.debug('\nResults:')
+    if results.metadata.calibration_set_id is not None:
+        logger.info('Using calibration set %d', results.metadata.calibration_set_id)
     logger.info(json.dumps(results.measurements[0]))  # pylint: disable=unsubscriptable-object
 
 
