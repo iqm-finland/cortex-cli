@@ -169,7 +169,7 @@ def test_circuit_run_valid_json_circuit_custom_calibration_set_id(credentials, c
     Tests that ``circuit run`` succeeds with valid JSON circuit and custom calibration set ID.
     """
     base_url = credentials['base_url']
-    expect_jobs_requests(base_url)
+    expect_jobs_requests(base_url, calibration_set_id=24)
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
@@ -184,6 +184,7 @@ def test_circuit_run_valid_json_circuit_custom_calibration_set_id(credentials, c
              '--url', base_url,
              '--no-auth'])
     assert 'result' in result.output
+    assert 'calibration set 24' in result.output
     assert result.exit_code == 0
     unstub()
 
@@ -193,7 +194,7 @@ def test_circuit_run_valid_json_circuit_default_settings_no_qubit_mapping(creden
     Tests that ``circuit run`` succeeds with valid json circuit and no qubit mapping.
     """
     base_url = credentials['base_url']
-    expect_jobs_requests(base_url)
+    expect_jobs_requests(base_url, calibration_set_id=35)
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
@@ -206,5 +207,6 @@ def test_circuit_run_valid_json_circuit_default_settings_no_qubit_mapping(creden
              '--url', base_url,
              '--no-auth'])
     assert 'result' in result.output
+    assert 'calibration set 35' in result.output
     assert result.exit_code == 0
     unstub()
