@@ -37,8 +37,8 @@ from cortex_cli.token_manager import (check_daemon, daemonize_token_manager,
 from cortex_cli.utils import read_file, read_json
 
 HOME_PATH = str(Path.home())
-CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
-TOKENS_PATH = f'{HOME_PATH}/.cache/iqm-cortex-cli/tokens.json'
+DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
+DEFAULT_TOKENS_PATH = f'{HOME_PATH}/.cache/iqm-cortex-cli/tokens.json'
 BASE_URL = 'https://auth.demo.qc.iqm.fi'
 REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
@@ -120,14 +120,14 @@ def cortex_cli() -> None:
     '--config-file',
     prompt='Where to save config',
     callback=_validate_path,
-    default=CONFIG_PATH,
+    default=DEFAULT_CONFIG_PATH,
     type=click.Path(dir_okay=False, writable=True),
     help='Location where the configuration file will be saved.')
 @click.option(
     '--tokens-file',
     prompt='Where to save auth tokens',
     callback=_validate_path,
-    default=TOKENS_PATH,
+    default=DEFAULT_TOKENS_PATH,
     type=click.Path(dir_okay=False, writable=True),
     help='Location where the tokens file will be saved.')
 @click.option(
@@ -203,7 +203,7 @@ def auth() -> None:
 @auth.command()
 @click.option(
     '--config-file',
-    default=CONFIG_PATH,
+    default=DEFAULT_CONFIG_PATH,
     type=click.Path(exists=True, dir_okay=False),
     help='Location of the configuration file to be used.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
@@ -242,7 +242,7 @@ def status(config_file, verbose) -> None:
 @auth.command()
 @click.option(
     '--config-file',
-    default=CONFIG_PATH,
+    default=DEFAULT_CONFIG_PATH,
     type=click.Path(exists=True, dir_okay=False),
     help='Location of the configuration file to be used.')
 @click.option('--username', help='Username for authentication.')
@@ -323,7 +323,7 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 @click.option(
     '--config-file',
     type=click.Path(exists=True, dir_okay=False),
-    default=CONFIG_PATH)
+    default=DEFAULT_CONFIG_PATH)
 @click.option(
     '--keep-tokens',
     is_flag=True, default=False,
@@ -427,6 +427,54 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
         raise click.ClickException(f'Error writing tokens file, {error}') from error
 
 
+def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
+    """Checks if provided auth options are correct:
+       - no_auth and config_file are mutually exclusive
+       - if no_auth is not set, config_file must have the DEFAULT_CONFIG_PATH value
+       - config file must exist and contain a path to an existing tokens_file
+
+    Args:
+        no_auth (bool): --no-auth option value
+        config_file (str): --config-file option value
+    Raises:
+        click.UsageError: if user is not logged in or provided and invalid config
+        click.BadOptionUsage: if both mutually exclusive --no-auth and --config-file are set
+    Returns:
+        str: path to the tokens file if using cortex-cli auth and provided (or default)
+             config-file exists and valid, None if --no-auth is set
+    """
+
+    # --no-auth and --config-file are mutually exclusive
+    if no_auth and config_file:
+        raise click.BadOptionUsage('--no-auth', 'Cannot use both --no-auth and --config-file options.')
+
+    # no config_file to use, no tokens_file
+    if no_auth:
+        return None
+
+    # --config-file was not provided, but has a default value
+    if not config_file:
+        logger.debug('No auth options provided, using default config file: %s', DEFAULT_CONFIG_PATH)
+        config_file = DEFAULT_CONFIG_PATH
+
+    # config file, event the default one, should exist
+    if not Path(config_file).is_file():
+        raise click.UsageError('Not logged in. Run `cortex auth login` to log in.')
+
+    # config_file must be a valid json
+    try:
+        config = read_json(config_file)
+    except Exception as ex:
+        raise click.BadParameter(f'Provided config {config_file} is not a valid JSON file: {ex}')
+
+    # and at least contain an existing tokens_file
+    tokens_file = config['tokens_file']
+    if not Path(tokens_file).is_file():
+        raise click.UsageError('Not logged in. Run `cortex auth login` to log in.')
+
+    return tokens_file
+
+
 @circuit.command()
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 @click.option('--shots', default=1, type=int, help='Number of times to sample the circuit.')
@@ -450,12 +498,12 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
 @click.option('-i', '--iqm-json', is_flag=True,
               help='Set this flag if FILENAME is already in IQM JSON format (instead of being an OpenQASM file).')
 @click.option('--config-file',
-              default=CONFIG_PATH,
               type=click.Path(exists=True, dir_okay=False),
-              help='Location of the configuration file to be used.')
+              help='Location of the configuration file to be used.'
+              'If neither --no-auth, nor --config-file are set, the default configuration file is used.')
 @click.option('--no-auth', is_flag=True, default=False,
               help="Do not use Cortex CLI's auth functionality. "
-              'If set, then --config-file option is ignored. '
+              'Mutually exclusive with --config-file option. '
               'When submitting a circuit job, Cortex CLI will use IQM Client without passing any auth tokens. '
               'Auth data can still be set using environment variables for IQM Client.')
 @click.argument('filename', type=click.Path())
@@ -487,13 +535,10 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
 
     _set_log_level_by_verbosity(verbose)
 
-    raw_input = read_file(filename)
+    # check --no-auth and --config-file alignment
+    tokens_file = _validate_cortex_cli_auth(no_auth, config_file)
 
-    if not no_auth:
-        config = read_json(config_file)
-        tokens_file = config['tokens_file']
-        if not Path(tokens_file).is_file():
-            raise click.ClickException('Not logged in. Run `cortex auth login` to log in.')
+    raw_input = read_file(filename)
 
     try:
         # serialize the circuit and the qubit mapping
@@ -515,10 +560,7 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
             parsed_settings = json.load(settings)
 
         # run the circuit on the backend
-        if no_auth:
-            iqm_client = IQMClient(url)
-        else:
-            iqm_client = IQMClient(url, tokens_file=tokens_file)
+        iqm_client = IQMClient(url, tokens_file=tokens_file)
         job_id = iqm_client.submit_circuits(
             [input_circuit],
             qubit_mapping=parsed_qubit_mapping,
