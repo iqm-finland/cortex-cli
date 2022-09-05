@@ -3,7 +3,7 @@ Changelog
 =========
 
 Version 0.10
-===========
+============
 
 * Upgrade to iqm-client 7.0 `#18 <https://github.com/iqm-finland/cortex-cli/pull/18>`_
 * Report the ID of the calibration set that was used in circuit run when no settings were specified. `#18 <https://github.com/iqm-finland/cortex-cli/pull/18>`_
