@@ -207,7 +207,7 @@ def test_circuit_run_both_no_auth_and_config_file_provided(credentials, config_d
 
 def test_circuit_run_valid_config_file_provided(credentials, config_dict, tokens_dict):
     """
-        Tests that ``circuit run`` succeeds if a valid ``--config-file`` provided.
+    Tests that ``circuit run`` succeeds if a valid ``--config-file`` provided.
     """
     base_url = credentials['base_url']
     expect_jobs_requests(base_url)
@@ -228,7 +228,7 @@ def test_circuit_run_valid_config_file_provided(credentials, config_dict, tokens
 
 def test_circuit_run_invalid_config_file_provided(credentials, config_dict):
     """
-        Tests that ``circuit run`` fails if an invalid ``--config-file`` provided — missing tokens_file
+    Tests that ``circuit run`` fails if an invalid ``--config-file`` provided — missing tokens_file
     """
     base_url = credentials['base_url']
     expect_jobs_requests(base_url)
@@ -248,7 +248,7 @@ def test_circuit_run_invalid_config_file_provided(credentials, config_dict):
 
 def test_circuit_run_not_a_json_config_file_provided(credentials):
     """
-        Tests that ``circuit run`` fails if an invalid ``--config-file`` provided — not a json
+    Tests that ``circuit run`` fails if an invalid ``--config-file`` provided — not a json
     """
     base_url = credentials['base_url']
     expect_jobs_requests(base_url)
@@ -262,5 +262,51 @@ def test_circuit_run_not_a_json_config_file_provided(credentials):
                                      '--config-file', 'config.json',
                                      '--url', base_url])
     assert 'is not a valid JSON file' in result.output
+    assert result.exit_code == 2
+    unstub()
+
+
+def test_circuit_run_default_config_used_when_no_auth_provided(credentials, config_dict, tokens_dict):
+    """
+    Tests that ``circuit run`` takes the default config file when no auth is provided
+    """
+    base_url = credentials['base_url']
+    expect_jobs_requests(base_url)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        with open('tokens.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(tokens_dict))
+
+        # mock global var in cortex_cli
+        cortex_cli.__class__.default_config_path = 'config.json'
+
+        result = CliRunner().invoke(cortex_cli,
+                                    ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'),
+                                     '--iqm-json',
+                                     '--url', base_url])
+    assert 'result' in result.output
+    assert result.exit_code == 0
+    unstub()
+
+
+def test_circuit_run_default_config_used_when_no_auth_provided_not_logged_in(credentials):
+    """
+    Tests that ``circuit run`` takes the default config file when no auth is provided
+    """
+    base_url = credentials['base_url']
+    expect_jobs_requests(base_url)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+
+        # mock global var in cortex_cli
+        cortex_cli.__class__.default_config_path = 'config.json'
+
+        result = CliRunner().invoke(cortex_cli,
+                                    ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'),
+                                     '--iqm-json',
+                                     '--url', base_url])
+    assert 'Not logged in.' in result.output
     assert result.exit_code == 2
     unstub()

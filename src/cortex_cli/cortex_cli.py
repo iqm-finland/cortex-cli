@@ -457,9 +457,9 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
         logger.debug('No auth options provided, using default config file: %s', DEFAULT_CONFIG_PATH)
         config_file = DEFAULT_CONFIG_PATH
 
-    # config file, event the default one, should exist
+    # config file, even the default one, should exist
     if not Path(config_file).is_file():
-        raise click.UsageError('Not logged in. Run `cortex auth login` to log in.')
+        raise click.UsageError("Not logged in. Run 'cortex auth login' to log in.")
 
     # config_file must be a valid json
     try:
@@ -470,7 +470,7 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
     # and at least contain an existing tokens_file
     tokens_file = config['tokens_file']
     if not Path(tokens_file).is_file():
-        raise click.UsageError('Not logged in. Run `cortex auth login` to log in.')
+        raise click.UsageError("Not logged in. Run 'cortex auth login' to log in.")
 
     return tokens_file
 
