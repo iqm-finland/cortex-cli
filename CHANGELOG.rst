@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.11
+============
+
+* ``--no-auth`` and ``--config-file`` are now mutually exclusive `#19 <https://github.com/iqm-finland/cortex-cli/pull/19>`_
+
 Version 0.10
 ============
 

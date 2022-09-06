@@ -183,14 +183,14 @@ def expect_logout(
     )
 
 
-def expect_jobs_requests(base_url, calibration_set_id=None):
+def expect_jobs_requests(iqm_server_url, calibration_set_id=None):
     """
     Prepare for job submission requests.
     """
     success_submit_result = {'id': str(existing_run)}
     success_submit_response = mock({'status_code': 201, 'text': json.dumps(success_submit_result)})
     when(success_submit_response).json().thenReturn(success_submit_result)
-    when(requests).post(f'{base_url}/jobs', ...).thenReturn(success_submit_response)
+    when(requests).post(f'{iqm_server_url}/jobs', ...).thenReturn(success_submit_response)
 
     running_result = {'status': 'pending', 'metadata': {'circuits': [], 'shots': 42}}
     running_response = mock({'status_code': 200, 'text': json.dumps(running_result)})
@@ -207,7 +207,7 @@ def expect_jobs_requests(base_url, calibration_set_id=None):
     when(success_get_response).json().thenReturn(success_get_result)
 
     when(requests).get(
-        f'{base_url}/jobs/{existing_run}', ...
+        f'{iqm_server_url}/jobs/{existing_run}', ...
     ).thenReturn(
         running_response
     ).thenReturn(
