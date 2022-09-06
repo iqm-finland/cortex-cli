@@ -110,58 +110,57 @@ def test_circuit_run_invalid_circuit(mock_environment_vars_for_backend, config_d
         assert 'Invalid quantum circuit in my_circuit.qasm' in result.output
 
 
-def test_circuit_run_valid_qasm_circuit(credentials):
+def test_circuit_run_valid_qasm_circuit():
     """
     Tests that ``circuit run`` succeeds with valid QASM circuit.
     """
-    base_url = credentials['base_url']
-    expect_jobs_requests(base_url)
-
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url)
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', valid_circuit_qasm,
              '--qubit-mapping', qasm_qubit_mapping_path,
              '--settings', settings_path,
-             '--url', base_url,
+             '--url', iqm_server_url,
              '--no-auth'])
     assert 'result' in result.output
     assert result.exit_code == 0
     unstub()
 
 
-def test_circuit_run_valid_json_circuit(credentials):
+def test_circuit_run_valid_json_circuit():
     """
     Tests that ``circuit run`` succeeds with valid JSON circuit.
     """
-    base_url = credentials['base_url']
-    expect_jobs_requests(base_url)
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url)
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
              '--qubit-mapping', qubit_mapping_path,
              '--settings', settings_path,
-             '--url', base_url,
+             '--url', iqm_server_url,
              '--no-auth'])
     assert 'result' in result.output
     assert result.exit_code == 0
     unstub()
 
 
-def test_circuit_run_valid_json_circuit_custom_calibration_set_id(credentials):
+def test_circuit_run_valid_json_circuit_custom_calibration_set_id():
     """
     Tests that ``circuit run`` succeeds with valid JSON circuit and custom calibration set ID.
     """
-    base_url = credentials['base_url']
-    expect_jobs_requests(base_url, calibration_set_id=24)
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url, calibration_set_id=24)
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
              '--qubit-mapping', qubit_mapping_path,
              '--calibration-set-id', '24',
-             '--url', base_url,
+             '--url', iqm_server_url,
              '--no-auth'])
     assert 'result' in result.output
     assert 'calibration set 24' in result.output
@@ -169,28 +168,28 @@ def test_circuit_run_valid_json_circuit_custom_calibration_set_id(credentials):
     unstub()
 
 
-def test_circuit_run_valid_json_circuit_default_settings_no_qubit_mapping(credentials):
+def test_circuit_run_valid_json_circuit_default_settings_no_qubit_mapping():
     """
     Tests that ``circuit run`` succeeds with valid json circuit and no qubit mapping.
     """
-    base_url = credentials['base_url']
-    expect_jobs_requests(base_url, calibration_set_id=35)
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url, calibration_set_id=35)
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
-             '--url', base_url,
+             '--url', iqm_server_url,
              '--no-auth'])
     assert 'result' in result.output
     assert result.exit_code == 0
     unstub()
 
 
-def test_circuit_run_both_no_auth_and_config_file_provided(credentials, config_dict):
+def test_circuit_run_both_no_auth_and_config_file_provided(config_dict):
     """
     Tests that ``circuit run`` fails options validation if both ``--no-auth`` and ``--config-file`` are provided.
     """
-    base_url = credentials['base_url']
+    iqm_server_url = 'https://example.com'
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
@@ -198,19 +197,19 @@ def test_circuit_run_both_no_auth_and_config_file_provided(credentials, config_d
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
              '--config-file', 'config.json',
-             '--url', base_url,
+             '--url', iqm_server_url,
              '--no-auth'])
     assert 'Cannot use both --no-auth and --config-file options' in result.output
     assert result.exit_code == 2
     unstub()
 
 
-def test_circuit_run_valid_config_file_provided(credentials, config_dict, tokens_dict):
+def test_circuit_run_valid_config_file_provided(config_dict, tokens_dict):
     """
     Tests that ``circuit run`` succeeds if a valid ``--config-file`` provided.
     """
-    base_url = credentials['base_url']
-    expect_jobs_requests(base_url)
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url)
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
@@ -220,18 +219,18 @@ def test_circuit_run_valid_config_file_provided(credentials, config_dict, tokens
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
              '--config-file', 'config.json',
-             '--url', base_url])
+             '--url', iqm_server_url])
     assert 'result' in result.output
     assert result.exit_code == 0
     unstub()
 
 
-def test_circuit_run_invalid_config_file_provided(credentials, config_dict):
+def test_circuit_run_invalid_config_file_provided(config_dict):
     """
     Tests that ``circuit run`` fails if an invalid ``--config-file`` provided — missing tokens_file
     """
-    base_url = credentials['base_url']
-    expect_jobs_requests(base_url)
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url)
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
@@ -240,18 +239,18 @@ def test_circuit_run_invalid_config_file_provided(credentials, config_dict):
                                     ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'),
                                      '--iqm-json',
                                      '--config-file', 'config.json',
-                                     '--url', base_url])
+                                     '--url', iqm_server_url])
     assert 'Not logged in.' in result.output
     assert result.exit_code == 2
     unstub()
 
 
-def test_circuit_run_not_a_json_config_file_provided(credentials):
+def test_circuit_run_not_a_json_config_file_provided():
     """
     Tests that ``circuit run`` fails if an invalid ``--config-file`` provided — not a json
     """
-    base_url = credentials['base_url']
-    expect_jobs_requests(base_url)
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url)
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
@@ -260,18 +259,18 @@ def test_circuit_run_not_a_json_config_file_provided(credentials):
                                     ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'),
                                      '--iqm-json',
                                      '--config-file', 'config.json',
-                                     '--url', base_url])
+                                     '--url', iqm_server_url])
     assert 'is not a valid JSON file' in result.output
     assert result.exit_code == 2
     unstub()
 
 
-def test_circuit_run_default_config_used_when_no_auth_provided(credentials, config_dict, tokens_dict):
+def test_circuit_run_default_config_used_when_no_auth_provided(config_dict, tokens_dict):
     """
     Tests that ``circuit run`` takes the default config file when no auth is provided
     """
-    base_url = credentials['base_url']
-    expect_jobs_requests(base_url)
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url)
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
@@ -285,18 +284,18 @@ def test_circuit_run_default_config_used_when_no_auth_provided(credentials, conf
         result = CliRunner().invoke(cortex_cli,
                                     ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'),
                                      '--iqm-json',
-                                     '--url', base_url])
+                                     '--url', iqm_server_url])
     assert 'result' in result.output
     assert result.exit_code == 0
     unstub()
 
 
-def test_circuit_run_default_config_used_when_no_auth_provided_not_logged_in(credentials):
+def test_circuit_run_default_config_used_when_no_auth_provided_not_logged_in():
     """
     Tests that ``circuit run`` takes the default config file when no auth is provided
     """
-    base_url = credentials['base_url']
-    expect_jobs_requests(base_url)
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url)
     runner = CliRunner()
     with runner.isolated_filesystem():
 
@@ -306,7 +305,7 @@ def test_circuit_run_default_config_used_when_no_auth_provided_not_logged_in(cre
         result = CliRunner().invoke(cortex_cli,
                                     ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'),
                                      '--iqm-json',
-                                     '--url', base_url])
+                                     '--url', iqm_server_url])
     assert 'Not logged in.' in result.output
     assert result.exit_code == 2
     unstub()
