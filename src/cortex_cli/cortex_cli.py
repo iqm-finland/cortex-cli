@@ -108,7 +108,13 @@ def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
         return new_path
 
 
-@click.group()
+class CortexCliCommand(click.Group):
+    """A custom click command group class to wrap global constants."""
+    default_config_path: str = DEFAULT_CONFIG_PATH
+    default_tokens_path: str = DEFAULT_TOKENS_PATH
+
+
+@click.group(cls=CortexCliCommand)
 @click.version_option(__version__)
 def cortex_cli() -> None:
     """Interact with an IQM quantum computer with Cortex CLI."""
@@ -120,14 +126,14 @@ def cortex_cli() -> None:
     '--config-file',
     prompt='Where to save config',
     callback=_validate_path,
-    default=DEFAULT_CONFIG_PATH,
+    default=CortexCliCommand.default_config_path,
     type=click.Path(dir_okay=False, writable=True),
     help='Location where the configuration file will be saved.')
 @click.option(
     '--tokens-file',
     prompt='Where to save auth tokens',
     callback=_validate_path,
-    default=DEFAULT_TOKENS_PATH,
+    default=CortexCliCommand.default_tokens_path,
     type=click.Path(dir_okay=False, writable=True),
     help='Location where the tokens file will be saved.')
 @click.option(
@@ -203,7 +209,7 @@ def auth() -> None:
 @auth.command()
 @click.option(
     '--config-file',
-    default=DEFAULT_CONFIG_PATH,
+    default=CortexCliCommand.default_config_path,
     type=click.Path(exists=True, dir_okay=False),
     help='Location of the configuration file to be used.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
@@ -242,7 +248,7 @@ def status(config_file, verbose) -> None:
 @auth.command()
 @click.option(
     '--config-file',
-    default=DEFAULT_CONFIG_PATH,
+    default=CortexCliCommand.default_config_path,
     type=click.Path(exists=True, dir_okay=False),
     help='Location of the configuration file to be used.')
 @click.option('--username', help='Username for authentication.')
@@ -323,7 +329,7 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 @click.option(
     '--config-file',
     type=click.Path(exists=True, dir_okay=False),
-    default=DEFAULT_CONFIG_PATH)
+    default=CortexCliCommand.default_config_path)
 @click.option(
     '--keep-tokens',
     is_flag=True, default=False,
@@ -430,7 +436,7 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
 def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
     """Checks if provided auth options are correct:
        - no_auth and config_file are mutually exclusive
-       - if no_auth is not set, config_file must have the DEFAULT_CONFIG_PATH value
+       - if no_auth is not set, config_file must have the CortexCliCommand.default_config_path value
        - config file must exist and contain a path to an existing tokens_file
 
     Args:
@@ -454,8 +460,8 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
 
     # --config-file was not provided, but has a default value
     if not config_file:
-        logger.debug('No auth options provided, using default config file: %s', DEFAULT_CONFIG_PATH)
-        config_file = DEFAULT_CONFIG_PATH
+        logger.debug('No auth options provided, using default config file: %s', CortexCliCommand.default_config_path)
+        config_file = CortexCliCommand.default_config_path
 
     # config file, even the default one, should exist
     if not Path(config_file).is_file():
