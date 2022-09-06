@@ -60,9 +60,10 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
         if not tokens:
             raise ClientAuthenticationError('Failed to update tokens. Probably, they were expired.')
 
+        timestamp = time.ctime()
         tokens_json = json.dumps({
             'pid': os.getpid(),
-            'timestamp': time.ctime(),
+            'timestamp': timestamp,
             'access_token': tokens['access_token'],
             'refresh_token': tokens['refresh_token'],
             'auth_server_url': base_url
@@ -78,6 +79,7 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
         if single_run:
             break
 
+        print(f'{timestamp}: Tokens refreshed successfully.')
         time.sleep(timeout)
 
 

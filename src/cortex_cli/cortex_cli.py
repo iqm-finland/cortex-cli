@@ -33,7 +33,7 @@ from cortex_cli.auth import (ClientAuthenticationError, login_request,
                              time_left_seconds)
 from cortex_cli.circuit import validate_circuit
 from cortex_cli.token_manager import (check_daemon, daemonize_token_manager,
-                                      kill_by_pid)
+                                      kill_by_pid, start_token_manager)
 from cortex_cli.utils import read_file, read_json
 
 HOME_PATH = str(Path.home())
@@ -245,6 +245,48 @@ def status(config_file, verbose) -> None:
         click.echo(f'Token manager: {click.style("NOT RUNNING", fg="red")}')
 
 
+def _validate_cortex_cli_login(config_file, no_daemon, no_refresh) -> dict:
+    """Checks if provided combination of auth login optionsis valid:
+       - no_daemon and no_refresh are mutually exclusive
+       - daemon mode should not be requested on Windows
+       - config file must exist
+
+    Args:
+        config_file (str): --config-file option value
+        no_daemon (bool): --no-daemon option value
+        no_refresh (bool): --no-refresh option value
+    Raises:
+        click.BadOptionUsage: if both mutually exclusive --no-daemon and --no-refresh are set
+        click.UsageError: if daemon is requested on Windows
+        click.BadParameter: if provided config_file does not exist or is invalid
+    Returns:
+        dict: config dict loaded from config_file
+    """
+
+    # --no-refresh and --no-daemon are mutually exclusive
+    if no_refresh and no_daemon:
+        raise click.BadOptionUsage(
+            '--no-refresh',
+            "Cannot request a non-daemonic (foreground) token manager when using '--no-refresh'.")
+
+    # daemonizing is unavailable on Windows
+    if platform.system().lower().startswith('win') and not no_refresh and not no_daemon:
+        raise click.UsageError("Daemonizing is not yet possible on Windows. Please, use '--no-daemon' flag.")
+
+    # config file, even the default one, should exist
+    if not Path(config_file).is_file():
+        raise click.BadParameter(
+            f'Provided config {config_file} does not exist. ' +
+            "Provide a different file or run 'cortex auth init' to create a new config file.")
+
+    # config_file must be a valid json
+    try:
+        config = read_json(config_file)
+    except Exception as ex:
+        raise click.BadParameter(f'Provided config {config_file} is not a valid JSON file: {ex}')
+
+    return config
+
 @auth.command()
 @click.option(
     '--config-file',
@@ -253,31 +295,39 @@ def status(config_file, verbose) -> None:
     help='Location of the configuration file to be used.')
 @click.option('--username', help='Username for authentication.')
 @click.option('--password', help='Password for authentication.')
-@click.option('--refresh-period', default=REFRESH_PERIOD, help='How often to refresh tokens (in seconds).')
-@click.option('--no-daemon', is_flag=True, default=False, help='Do not start token manager daemon to refresh tokens.')
+@click.option(
+    '--refresh-period',
+    default=REFRESH_PERIOD,
+    show_default=True,
+    help='How often to refresh tokens (in seconds).')
+@click.option('--no-daemon', is_flag=True, default=False, help='Start token manager in foreground, not as daemon.')
+@click.option(
+    '--no-refresh',
+    is_flag=True,
+    default=False,
+    help='Login, but do not start token manager to refresh tokens.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def login(  #pylint: disable=too-many-arguments
+def login(  #pylint: disable=too-many-arguments, too-many-locals
           config_file: str,
           username: str,
           password: str,
           refresh_period: int,
           no_daemon: bool,
+          no_refresh: bool,
           verbose: bool
 ) -> None:
     """Authenticate on the IQM server, and optionally start a token manager daemon process to maintain the session."""
     _set_log_level_by_verbosity(verbose)
 
-    if platform.system().lower().startswith('win') and not no_daemon:
-        click.echo("Daemonizing is not yet possible on Windows. Please, use '--no-daemon' flag.")
-        return
+    # Validate whether the combination of options makes sense
+    config = _validate_cortex_cli_login(config_file, no_daemon, no_refresh)
 
-    config = read_json(config_file)
     base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
     tokens_file = config['tokens_file']
 
     if Path(tokens_file).is_file():
         if check_daemon(tokens_file):
-            logger.info("Login aborted, because token manager is already running. See 'cortex auth status'.")
+            logger.info("Login aborted, because token manager daemon is already running. See 'cortex auth status'.")
             return
 
         # Tokens file exists; Refresh tokens without username/password
@@ -293,11 +343,15 @@ def login(  #pylint: disable=too-many-arguments
         if new_tokens:
             save_tokens_file(tokens_file, new_tokens, base_url)
             logger.debug('Saved new tokens file: %s', tokens_file)
-            if no_daemon:
+            if no_refresh:
                 logger.info(
-                    "Existing token used to refresh session. Token manager not started due to '--no-daemon' flag.")
+                    "Existing token used to refresh session. Token manager not started due to '--no-refresh' flag.")
+            elif no_daemon:
+                logger.info(
+                    'Existing token was used to refresh the auth session. Token manager started in foreground...')
+                start_token_manager(refresh_period, config)
             else:
-                logger.info('Existing token was used to refresh the auth session. Token manager started.')
+                logger.info('Existing token was used to refresh the auth session. Token manager daemon started.')
                 daemonize_token_manager(refresh_period, config)
             return
 
@@ -314,15 +368,22 @@ def login(  #pylint: disable=too-many-arguments
 
     logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_file, tokens, base_url)
-    click.echo(f"""To use the tokens file with IQM Client or IQM Client-based software, set the environment variable:
-export IQM_TOKENS_FILE={tokens_file}
-Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm-client/""")
+    click.echo(f"""
+To use the tokens file with IQM Client or IQM Client-based software, set the environment variable:
 
-    if no_daemon:
-        logger.info("Token manager not started due to '--no-daemon' flag.")
+export IQM_TOKENS_FILE={tokens_file}
+
+Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm-client/
+""")
+
+    if no_refresh:
+        logger.info("Token manager not started due to '--no-refresh' flag.")
+    elif no_daemon:
+        logger.info('Token manager started in foreground...')
+        start_token_manager(refresh_period, config)
     else:
         daemonize_token_manager(refresh_period, config)
-        logger.info('Token manager started.')
+        logger.info('Token manager daemon started.')
 
 
 @auth.command()

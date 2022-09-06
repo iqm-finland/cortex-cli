@@ -215,7 +215,7 @@ def test_auth_login_succeeds(config_dict, credentials):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         assert result.exit_code == 0
@@ -245,7 +245,7 @@ def test_auth_login_fails(config_dict, credentials):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         assert result.exit_code != 0
@@ -268,10 +268,10 @@ def test_auth_login_handles_running_daemon(config_dict, tokens_dict, credentials
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
-        assert 'aborted, because token manager is already running' in result.output
+        assert 'aborted, because token manager daemon is already running' in result.output
 
 
 def test_auth_login_succeeds_without_password(config_dict, tokens_dict, credentials):
@@ -294,7 +294,7 @@ def test_auth_login_succeeds_without_password(config_dict, tokens_dict, credenti
         result = runner.invoke(cortex_cli,
             ['auth', 'login',
             '--config-file', 'config.json',
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         assert result.exit_code == 0
@@ -336,7 +336,7 @@ def test_auth_logout_handles_keep_tokens_and_pid(config_dict, credentials):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
         with open('tokens.json', 'r', encoding='utf-8') as file:
             tokens = json.loads(file.read())
@@ -390,7 +390,7 @@ def test_auth_logout_handles_keep_tokens_and_no_pid(config_dict, credentials):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         result = runner.invoke(cortex_cli,
@@ -434,7 +434,7 @@ def test_auth_logout_handles_no_keep_tokens_and_pid(config_dict, credentials):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         with open('tokens.json', 'r', encoding='utf-8') as file:
@@ -553,7 +553,7 @@ def test_auth_logout_fails_by_server_response(credentials, config_dict):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         result = runner.invoke(cortex_cli,
@@ -598,7 +598,7 @@ def test_auth_logout_fails_by_server_response_no_pid(credentials, config_dict, t
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         result = runner.invoke(cortex_cli,
