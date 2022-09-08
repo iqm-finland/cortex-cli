@@ -65,8 +65,8 @@ on all shells.
 To login and get tokens once, without starting a token manager at all, run ``cortex auth login --no-refresh``.
 
 If the tokens file already exists, then running ``cortex auth login`` will first attempt to refresh the session without
- asking you for a username and password. If that fails (because existing tokens
-may already have expired), you'll be asked to re-enter your credentials.
+asking you for a username and password. If that fails (because existing tokens may already have expired), you'll be
+asked to re-enter your credentials.
 
 See ``cortex auth login --help`` for more details.
 
