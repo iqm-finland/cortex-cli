@@ -53,20 +53,19 @@ To log in, use
 
 This will ask you to enter your username and password.
 
-After a successful authentication, tokens will
-be saved into a tokens file (path specified in the configuration file), and a token manager daemon
-will start in the background. Token manager will periodically refresh the session and re-write the
-tokens file.
+After a successful authentication, tokens will be saved into a tokens file (path specified in the configuration file),
+and a token manager daemon will start in the background. Token manager will periodically refresh the session and
+re-write the tokens file.
 
-To use the token manager in a foreground mode (not as daemon), run ``cortex auth login --no-daemon``.
-This requires keeping the shell session alive. However, you can start the process in the background by
-adding ``&`` after the command: ``cortex auth login --no-daemon &``. This applies to Bash, zsh and similar
-shells, but may not be available on all shells.
+To use the token manager in a foreground mode (not as daemon), run ``cortex auth login --no-daemon``. This requires
+keeping the shell session alive. However, you can start the process in the background by adding ``&`` after the
+command: ``cortex auth login --no-daemon &``. This applies to Bash, zsh and similar shells, but may not be available
+on all shells.
 
 To login and get tokens once, without starting a token manager at all, run ``cortex auth login --no-refresh``.
 
-If the tokens file already exists, then running ``cortex auth login`` will first attempt to refresh
-the session without asking you for a username and password. If that fails (because existing tokens
+If the tokens file already exists, then running ``cortex auth login`` will first attempt to refresh the session without
+ asking you for a username and password. If that fails (because existing tokens
 may already have expired), you'll be asked to re-enter your credentials.
 
 See ``cortex auth login --help`` for more details.
@@ -84,8 +83,8 @@ Namely, set the ``IQM_TOKENS_FILE`` environment variable to point to your tokens
   $ export IQM_TOKENS_FILE=/home/user/iqm_tokens.json
 
 Once set, this environment variable is read by the instance of IQM Client associated with the adapter. As a result,
-from the point of view of the adapter it looks like authentication is simply not required (i.e. no authentication-related
-information has to be provided to the adapter).
+from the point of view of the adapter it looks like authentication is simply not required (i.e. no
+authentication-related information has to be provided to the adapter).
 
 Status
 ^^^^^^
