@@ -32,8 +32,9 @@ from cortex_cli.auth import (ClientAuthenticationError, login_request,
                              logout_request, refresh_request,
                              time_left_seconds)
 from cortex_cli.circuit import validate_circuit
-from cortex_cli.token_manager import (check_token_manager, daemonize_token_manager,
-                                      kill_by_pid, start_token_manager)
+from cortex_cli.token_manager import (check_token_manager,
+                                      daemonize_token_manager, kill_by_pid,
+                                      start_token_manager)
 from cortex_cli.utils import read_file, read_json
 
 HOME_PATH = str(Path.home())
