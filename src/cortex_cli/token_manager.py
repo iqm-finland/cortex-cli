@@ -83,8 +83,8 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
         time.sleep(timeout)
 
 
-def check_daemon(tokens_file: str) -> Optional[int]:
-    """Check whether a daemon related to the given tokens_file is running.
+def check_token_manager(tokens_file: str) -> Optional[int]:
+    """Check whether a token manager related to the given tokens_file is running.
     Args:
         tokens_file: Path to a tokens JSON file.
     Returns:

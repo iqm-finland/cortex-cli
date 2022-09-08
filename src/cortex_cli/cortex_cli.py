@@ -32,14 +32,14 @@ from cortex_cli.auth import (ClientAuthenticationError, login_request,
                              logout_request, refresh_request,
                              time_left_seconds)
 from cortex_cli.circuit import validate_circuit
-from cortex_cli.token_manager import (check_daemon, daemonize_token_manager,
+from cortex_cli.token_manager import (check_token_manager, daemonize_token_manager,
                                       kill_by_pid, start_token_manager)
 from cortex_cli.utils import read_file, read_json
 
 HOME_PATH = str(Path.home())
 DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
 DEFAULT_TOKENS_PATH = f'{HOME_PATH}/.cache/iqm-cortex-cli/tokens.json'
-BASE_URL = 'https://auth.demo.qc.iqm.fi'
+AUTH_SERVER_URL = 'https://auth.demo.qc.iqm.fi'
 REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
@@ -139,7 +139,7 @@ def cortex_cli() -> None:
 @click.option(
     '--base-url',
     prompt='Base URL of IQM auth server',
-    default=BASE_URL,
+    default=AUTH_SERVER_URL,
     help='Base URL of IQM authentication server.')
 @click.option(
     '--realm',
@@ -182,9 +182,9 @@ def init(  #pylint: disable=too-many-arguments
         indent=2,
     )
 
-    # Tokens file exist, so daemon may be running. Notify user and kill daemon.
+    # Tokens file exist, so token manager may be running. Notify user and kill token manager.
     if Path(tokens_file).is_file():
-        pid = check_daemon(tokens_file)
+        pid = check_token_manager(tokens_file)
         if pid:
             logger.info('Active token manager (PID %s) will be killed.', pid)
             kill_by_pid(pid)
@@ -228,7 +228,7 @@ def status(config_file, verbose) -> None:
 
     click.echo(f'Tokens file: {tokens_file}')
     if 'pid' not in tokens_data:
-        click.echo("Tokens file doesn't contain PID. Probably, 'cortex auth login' was launched with '--no-daemon'\n")
+        click.echo("Tokens file doesn't contain PID. Probably, 'cortex auth login' was launched with '--no-refresh'\n")
 
     click.echo(f"Last refresh: {tokens_data['timestamp']}")
     seconds_at = time_left_seconds(tokens_data['access_token'])
@@ -238,7 +238,7 @@ def status(config_file, verbose) -> None:
     time_left_rt = str(datetime.timedelta(seconds=seconds_rt))
     click.echo(f'Time left on refresh token (hh:mm:ss): {time_left_rt}')
 
-    active_pid = check_daemon(tokens_file)
+    active_pid = check_token_manager(tokens_file)
     if active_pid:
         click.echo(f'Token manager: {click.style("RUNNING", fg="green")} (PID {active_pid})')
     else:
@@ -316,7 +316,7 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
           no_refresh: bool,
           verbose: bool
 ) -> None:
-    """Authenticate on the IQM server, and optionally start a token manager daemon process to maintain the session."""
+    """Authenticate on the IQM server, and optionally start a token manager to maintain the session."""
     _set_log_level_by_verbosity(verbose)
 
     # Validate whether the combination of options makes sense
@@ -326,8 +326,8 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
     tokens_file = config['tokens_file']
 
     if Path(tokens_file).is_file():
-        if check_daemon(tokens_file):
-            logger.info("Login aborted, because token manager daemon is already running. See 'cortex auth status'.")
+        if check_token_manager(tokens_file):
+            logger.info("Login aborted, because token manager is already running. See 'cortex auth status'.")
             return
 
         # Tokens file exists; Refresh tokens without username/password
@@ -394,7 +394,7 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 @click.option(
     '--keep-tokens',
     is_flag=True, default=False,
-    help="Don't delete tokens file, but kill token manager daemon.")
+    help="Don't delete tokens file, but kill token manager.")
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
 def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
@@ -410,9 +410,9 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     pid = tokens['pid'] if 'pid' in tokens else None
     refresh_token = tokens['refresh_token']
 
-    extra_msg = ' and kill token manager' if check_daemon(tokens_file) else ''
+    extra_msg = ' and kill token manager' if check_token_manager(tokens_file) else ''
 
-    if keep_tokens and not check_daemon(tokens_file):
+    if keep_tokens and not check_token_manager(tokens_file):
         click.echo('Token manager is not running, and you chose to keep tokens. Nothing to do, exiting.')
         return
 

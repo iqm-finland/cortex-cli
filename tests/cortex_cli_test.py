@@ -92,7 +92,7 @@ def test_init_overwrites_config_file(config_dict):
 
 def test_init_kills_daemon(config_dict, tokens_dict):
     """
-    Tests that ``cortex init`` kills active token manager daemon.
+    Tests that ``cortex init`` kills active token manager.
     """
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -271,7 +271,7 @@ def test_auth_login_handles_running_daemon(config_dict, tokens_dict, credentials
             '--no-refresh', # do not start token manager
             ])
 
-        assert 'aborted, because token manager daemon is already running' in result.output
+        assert 'aborted, because token manager is already running' in result.output
 
 
 def test_auth_login_succeeds_without_password(config_dict, tokens_dict, credentials):
