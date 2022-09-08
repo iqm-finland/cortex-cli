@@ -272,7 +272,7 @@ def _validate_cortex_cli_login(config_file, no_daemon, no_refresh) -> dict:
 
     # daemonizing is unavailable on Windows
     if platform.system().lower().startswith('win') and not no_refresh and not no_daemon:
-        raise click.UsageError("Daemonizing is not yet possible on Windows. Please, use '--no-daemon' flag.")
+        raise click.UsageError("Daemonizing is not yet possible on Windows. Please, use '--no-daemon' or '--no-refresh' flag.")
 
     # config file, even the default one, should exist
     if not Path(config_file).is_file():
