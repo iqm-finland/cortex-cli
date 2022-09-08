@@ -247,7 +247,7 @@ def status(config_file, verbose) -> None:
 
 
 def _validate_cortex_cli_login(config_file, no_daemon, no_refresh) -> dict:
-    """Checks if provided combination of auth login optionsis valid:
+    """Checks if provided combination of auth login options is valid:
        - no_daemon and no_refresh are mutually exclusive
        - daemon mode should not be requested on Windows
        - config file must exist
