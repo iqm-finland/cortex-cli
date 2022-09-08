@@ -2,6 +2,13 @@
 Changelog
 =========
 
+Version 1.0
+===========
+
+* Token manager can run in foreground mode.
+* Flag  ``--no-daemon`` of the ``cortex auth login`` command is renamed to ``--no-refresh``.
+* Flag ``--no-daemon`` now starts the token manager in foreground mode.
+
 Version 0.11
 ============
 
