@@ -26,11 +26,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-          sudo apt-get install graphviz
       - name: Run tests for Python ${{ matrix.python-version }}
         run: |
           # Constructing Tox environment names from Github Python version strings should become unnecessary once/if this ticket gets implemented: https://github.com/tox-dev/tox/issues/2115
           PYVER=${{matrix.python-version}}; TOXENV="py"${PYVER//.}
           tox -e "${TOXENV}"
+
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
       - name: Test docs can be built
         run: tox -e docs
