@@ -18,7 +18,6 @@ Mocks server and system calls for testing
 
 import json
 import os
-import signal
 import time
 from base64 import b64encode
 from typing import Optional
@@ -220,19 +219,3 @@ def expect_token_is_valid(token:str, result:bool = True):
     Prepare for token_is_valid call
     """
     when(auth).token_is_valid(token).thenReturn(result)
-
-
-def expect_os_kill(pid:int, signal = signal.SIGTERM, result:bool = True):
-    """
-    Prepare for os.kill call
-    """
-    when(os).kill(pid, signal).thenReturn(result)
-
-
-def expect_check_pid(pid:int, result:bool = True):
-    expect_os_kill(pid, 0, result)
-
-
-def expect_kill_by_pid(pid:int, result:bool = True):
-    expect_check_pid(pid, result = result)
-    expect_os_kill(pid, result = result)

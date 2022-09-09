@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from psutil import Process
 
 from cortex_cli import __version__
 from cortex_cli.auth import (ClientAuthenticationError, login_request,
@@ -33,7 +34,7 @@ from cortex_cli.auth import (ClientAuthenticationError, login_request,
                              time_left_seconds)
 from cortex_cli.circuit import validate_circuit
 from cortex_cli.token_manager import (check_token_manager,
-                                      daemonize_token_manager, kill_by_pid,
+                                      daemonize_token_manager,
                                       start_token_manager)
 from cortex_cli.utils import read_file, read_json
 
@@ -188,7 +189,7 @@ def init(  #pylint: disable=too-many-arguments
         pid = check_token_manager(tokens_file)
         if pid:
             logger.info('Active token manager (PID %s) will be killed.', pid)
-            kill_by_pid(pid)
+            Process(pid).terminate()
 
     try:
         path_to_dir.mkdir(parents=True, exist_ok=True)
@@ -420,7 +421,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     # 1. Keep tokens, kill daemon
     if keep_tokens and pid:
         if force or click.confirm(f'Keep tokens file{extra_msg}. OK?', default=None):
-            kill_by_pid(pid)
+            Process(pid).terminate()
             return
 
     # 2. Keep tokens, do nothing
@@ -434,7 +435,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
                 logout_request(base_url, realm, client_id, refresh_token)
             except ClientAuthenticationError as error:
                 raise click.ClickException(f'Error when logging out: {error}') from error
-            kill_by_pid(pid)
+            Process(pid).terminate()
             os.remove(tokens_file)
             logger.info('Logged out successfully.')
             return

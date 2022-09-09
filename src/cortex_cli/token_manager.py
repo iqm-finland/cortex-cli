@@ -17,10 +17,11 @@ Token manager for authentication and authorization to IQM's quantum computers. P
 import json
 import os
 import platform
-import signal
 import time
 from pathlib import Path
 from typing import Optional
+
+from psutil import pid_exists
 
 from cortex_cli.auth import ClientAuthenticationError, refresh_request
 
@@ -94,34 +95,6 @@ def check_token_manager(tokens_file: str) -> Optional[int]:
         tokens_data = json.load(file)
     pid = tokens_data['pid'] if 'pid' in tokens_data else None
 
-    if pid and check_pid(pid):
+    if pid and pid_exists(pid):
         return pid
     return None
-
-
-def check_pid(pid: int) -> bool:
-    """Check for the existence of a unix PID.
-    Args:
-        pid: PID in question
-    Returns:
-        bool: True if process with given PID is running, False otherwise.
-    """
-    try:
-        os.kill(pid, 0)
-    except OSError:
-        return False
-    else:
-        return True
-
-
-def kill_by_pid(pid: int) -> bool:
-    """Kill process with given PID.
-    Args:
-        pid: PID in question
-    Returns:
-        bool: True if process with given PID is has been killed, False otherwise.
-    """
-    if check_pid(pid):
-        os.kill(int(pid), signal.SIGTERM)
-        return True
-    return False

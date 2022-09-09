@@ -16,15 +16,12 @@ Tests for Cortex CLI's auth logic
 """
 
 import json
-import os
 
 from click.testing import CliRunner
 from mockito import unstub
 
-from cortex_cli.token_manager import (check_pid, kill_by_pid,
-                                      start_token_manager)
-from tests.conftest import (expect_os_kill, expect_token_is_valid,
-                            prepare_tokens)
+from cortex_cli.token_manager import start_token_manager
+from tests.conftest import expect_token_is_valid, prepare_tokens
 
 
 def test_start_token_manager(credentials, config_dict, tokens_dict):
@@ -47,35 +44,3 @@ def test_start_token_manager(credentials, config_dict, tokens_dict):
             assert saved_tokens['access_token'] == expected_tokens['access_token']
             assert saved_tokens['refresh_token'] == expected_tokens['refresh_token']
     unstub()
-
-
-def test_check_pid_returns_true():
-    """
-    Tests that check_pid returns True for real PID.
-    """
-    real_pid = os.getpid()
-    assert check_pid(real_pid) is True
-
-def test_check_pid_returns_false():
-    """
-    Tests that check_pid returns False for non-existing PID.
-    """
-    bad_pid = 1
-    assert check_pid(bad_pid) is False
-
-def test_kill_by_pid_succeeds():
-    """
-    Tests that kill_by_pid succeeds and returns True.
-    """
-    good_pid = 42
-    expect_os_kill(good_pid, 0) # for check_pid call
-    expect_os_kill(good_pid)    # for kill_by_pid call
-    assert kill_by_pid(good_pid) is True
-    unstub()
-
-def test_kill_by_pid_fails_invalid_pid():
-    """
-    Tests that kill_by_pid fails and returns False for non-existing PID.
-    """
-    bad_pid = 1
-    assert kill_by_pid(bad_pid) is False
