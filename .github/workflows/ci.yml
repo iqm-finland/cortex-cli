@@ -27,7 +27,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
           python -m pip install tox-gh-actions
-          sudo apt-get install graphviz
       - name: Run tests
         run: tox
 
@@ -50,5 +49,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
+          python -m pip install tox-gh-actions
+          sudo apt-get install graphviz
       - name: Test docs can be built
         run: tox -e docs
