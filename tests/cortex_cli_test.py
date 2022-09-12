@@ -114,7 +114,6 @@ def test_init_kills_daemon(config_dict, tokens_dict):
                 input='y')
             assert result.exit_code == 0
             assert 'will be killed' in result.output
-    unstub()
 
 # Tests for 'cortex auth status'
 
