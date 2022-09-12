@@ -41,7 +41,6 @@ from cortex_cli.utils import read_file, read_json
 HOME_PATH = str(Path.home())
 DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
 DEFAULT_TOKENS_PATH = f'{HOME_PATH}/.cache/iqm-cortex-cli/tokens.json'
-AUTH_SERVER_URL = 'https://auth.demo.qc.iqm.fi'
 REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
@@ -141,7 +140,6 @@ def cortex_cli() -> None:
 @click.option(
     '--base-url',
     prompt='Base URL of IQM auth server',
-    default=AUTH_SERVER_URL,
     help='Base URL of IQM authentication server.')
 @click.option(
     '--realm',
