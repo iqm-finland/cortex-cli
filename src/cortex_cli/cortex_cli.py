@@ -138,7 +138,7 @@ def cortex_cli() -> None:
     type=click.Path(dir_okay=False, writable=True),
     help='Location where the tokens file will be saved.')
 @click.option(
-    '--base-url',
+    '--auth-server-url',
     prompt='Base URL of IQM auth server',
     help='Base URL of IQM authentication server.')
 @click.option(
@@ -161,7 +161,7 @@ def cortex_cli() -> None:
 def init(  #pylint: disable=too-many-arguments
          config_file: str,
          tokens_file: str,
-         base_url: str,
+         auth_server_url: str,
          realm: str,
          client_id: str,
          username: str,
@@ -173,7 +173,7 @@ def init(  #pylint: disable=too-many-arguments
     path_to_dir = Path(config_file).parent
     config_json = json.dumps(
         {
-            'base_url': base_url,
+            'auth_server_url': auth_server_url,
             'realm': realm,
             'client_id': client_id,
             'username': username,
@@ -323,7 +323,7 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
     # Validate whether the combination of options makes sense
     config = _validate_cortex_cli_login(config_file, no_daemon, no_refresh)
 
-    base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
+    auth_server_url, realm, client_id = config['auth_server_url'], config['realm'], config['client_id']
     tokens_file = config['tokens_file']
 
     if Path(tokens_file).is_file():
@@ -337,12 +337,12 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
 
         new_tokens = None
         try:
-            new_tokens = refresh_request(base_url, realm, client_id, refresh_token)
+            new_tokens = refresh_request(auth_server_url, realm, client_id, refresh_token)
         except ClientAuthenticationError:
             logger.info('Failed to refresh tokens by using existing token. Switching to username/password.')
 
         if new_tokens:
-            save_tokens_file(tokens_file, new_tokens, base_url)
+            save_tokens_file(tokens_file, new_tokens, auth_server_url)
             logger.debug('Saved new tokens file: %s', tokens_file)
             if no_refresh:
                 logger.info(
@@ -363,12 +363,12 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
     password = password or click.prompt('Password', hide_input=True)
 
     try:
-        tokens = login_request(base_url, realm, client_id, username, password)
+        tokens = login_request(auth_server_url, realm, client_id, username, password)
     except ClientAuthenticationError as error:
         raise click.ClickException('Invalid username and/or password') from error
 
     logger.info('Logged in successfully as %s', username)
-    save_tokens_file(tokens_file, tokens, base_url)
+    save_tokens_file(tokens_file, tokens, auth_server_url)
     click.echo(f"""
 To use the tokens file with IQM Client or IQM Client-based software, set the environment variable:
 
@@ -400,7 +400,7 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
     config = read_json(config_file)
-    base_url, realm, client_id = config['base_url'], config['realm'], config['client_id']
+    auth_server_url, realm, client_id = config['auth_server_url'], config['realm'], config['client_id']
     tokens_file = config['tokens_file']
 
     if not Path(tokens_file).is_file():
@@ -431,7 +431,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     if not keep_tokens and pid:
         if force or click.confirm(f'Logout from server, delete tokens{extra_msg}. OK?', default=None):
             try:
-                logout_request(base_url, realm, client_id, refresh_token)
+                logout_request(auth_server_url, realm, client_id, refresh_token)
             except ClientAuthenticationError as error:
                 raise click.ClickException(f'Error when logging out: {error}') from error
             Process(pid).terminate()
@@ -444,7 +444,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
         logger.info('No PID found in tokens file. Token manager daemon is not running, so tokens may be stale.')
         if force or click.confirm('Logout from server and delete tokens. OK?', default=None):
             try:
-                logout_request(base_url, realm, client_id, refresh_token)
+                logout_request(auth_server_url, realm, client_id, refresh_token)
             except ClientAuthenticationError as error:
                 raise click.ClickException(f'Error when logging out: {error}') from error
 
@@ -559,7 +559,7 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
                    'Can also be set using the IQM_QUBIT_MAPPING_PATH environment variable:\n'
                    '`export IQM_QUBIT_MAPPING_PATH=\"/path/to/qubit/mapping.json\"`\n'
                    'If not set, the qubit names are assumed to be physical names.')
-@click.option('--url', envvar='IQM_SERVER_URL', type=str, required=True,
+@click.option('--iqm-server-url', envvar='IQM_SERVER_URL', type=str, required=True,
               help='URL of the IQM server interface for running circuits. Must start with http or https. '
                    'Can also be set using the IQM_SERVER_URL environment variable:\n'
                    '`export IQM_SERVER_URL=\"https://example.com\"`')
@@ -581,7 +581,7 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
         settings: Optional[TextIOWrapper],
         calibration_set_id: Optional[int],
         qubit_mapping: Optional[TextIOWrapper],
-        url: str,
+        iqm_server_url: str,
         filename: str,
         iqm_json: bool,
         config_file: str,
@@ -628,7 +628,7 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
             parsed_settings = json.load(settings)
 
         # run the circuit on the backend
-        iqm_client = IQMClient(url, tokens_file=tokens_file)
+        iqm_client = IQMClient(iqm_server_url, tokens_file=tokens_file)
         job_id = iqm_client.submit_circuits(
             [input_circuit],
             qubit_mapping=parsed_qubit_mapping,

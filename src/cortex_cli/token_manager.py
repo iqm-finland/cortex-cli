@@ -49,7 +49,7 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
     """
     path_to_tokens_dir = Path(config['tokens_file']).parent
     path_to_tokens_file = config['tokens_file']
-    base_url = config['base_url']
+    auth_server_url = config['auth_server_url']
     realm = config['realm']
     client_id = config['client_id']
 
@@ -57,7 +57,7 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
         with open(path_to_tokens_file, 'r', encoding='utf-8') as file:
             refresh_token = json.load(file)['refresh_token']
 
-        tokens = refresh_request(base_url, realm, client_id, refresh_token)
+        tokens = refresh_request(auth_server_url, realm, client_id, refresh_token)
         if not tokens:
             raise ClientAuthenticationError('Failed to update tokens. Probably, they were expired.')
 
@@ -67,7 +67,7 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
             'timestamp': timestamp,
             'access_token': tokens['access_token'],
             'refresh_token': tokens['refresh_token'],
-            'auth_server_url': base_url
+            'auth_server_url': auth_server_url
         })
 
         try:

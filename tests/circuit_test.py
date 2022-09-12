@@ -122,7 +122,7 @@ def test_circuit_run_valid_qasm_circuit():
             ['circuit', 'run', valid_circuit_qasm,
              '--qubit-mapping', qasm_qubit_mapping_path,
              '--settings', settings_path,
-             '--url', iqm_server_url,
+             '--iqm-server-url', iqm_server_url,
              '--no-auth'])
     assert 'result' in result.output
     assert result.exit_code == 0
@@ -141,7 +141,7 @@ def test_circuit_run_valid_json_circuit():
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
              '--qubit-mapping', qubit_mapping_path,
              '--settings', settings_path,
-             '--url', iqm_server_url,
+             '--iqm-server-url', iqm_server_url,
              '--no-auth'])
     assert 'result' in result.output
     assert result.exit_code == 0
@@ -160,7 +160,7 @@ def test_circuit_run_valid_json_circuit_custom_calibration_set_id():
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
              '--qubit-mapping', qubit_mapping_path,
              '--calibration-set-id', '24',
-             '--url', iqm_server_url,
+             '--iqm-server-url', iqm_server_url,
              '--no-auth'])
     assert 'result' in result.output
     assert 'calibration set 24' in result.output
@@ -178,7 +178,7 @@ def test_circuit_run_valid_json_circuit_default_settings_no_qubit_mapping():
     with runner.isolated_filesystem():
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
-             '--url', iqm_server_url,
+             '--iqm-server-url', iqm_server_url,
              '--no-auth'])
     assert 'result' in result.output
     assert result.exit_code == 0
@@ -197,7 +197,7 @@ def test_circuit_run_both_no_auth_and_config_file_provided(config_dict):
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
              '--config-file', 'config.json',
-             '--url', iqm_server_url,
+             '--iqm-server-url', iqm_server_url,
              '--no-auth'])
     assert 'Cannot use both --no-auth and --config-file options' in result.output
     assert result.exit_code == 2
@@ -219,7 +219,7 @@ def test_circuit_run_valid_config_file_provided(config_dict, tokens_dict):
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
              '--config-file', 'config.json',
-             '--url', iqm_server_url])
+             '--iqm-server-url', iqm_server_url])
     assert 'result' in result.output
     assert result.exit_code == 0
     unstub()
@@ -239,7 +239,7 @@ def test_circuit_run_invalid_config_file_provided(config_dict):
                                     ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'),
                                      '--iqm-json',
                                      '--config-file', 'config.json',
-                                     '--url', iqm_server_url])
+                                     '--iqm-server-url', iqm_server_url])
     assert 'Not logged in.' in result.output
     assert result.exit_code == 2
     unstub()
@@ -259,7 +259,7 @@ def test_circuit_run_not_a_json_config_file_provided():
                                     ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'),
                                      '--iqm-json',
                                      '--config-file', 'config.json',
-                                     '--url', iqm_server_url])
+                                     '--iqm-server-url', iqm_server_url])
     assert 'is not a valid JSON file' in result.output
     assert result.exit_code == 2
     unstub()
@@ -284,7 +284,7 @@ def test_circuit_run_default_config_used_when_no_auth_provided(config_dict, toke
         result = CliRunner().invoke(cortex_cli,
                                     ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'),
                                      '--iqm-json',
-                                     '--url', iqm_server_url])
+                                     '--iqm-server-url', iqm_server_url])
     assert 'result' in result.output
     assert result.exit_code == 0
     unstub()
@@ -305,7 +305,7 @@ def test_circuit_run_default_config_used_when_no_auth_provided_not_logged_in():
         result = CliRunner().invoke(cortex_cli,
                                     ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'),
                                      '--iqm-json',
-                                     '--url', iqm_server_url])
+                                     '--iqm-server-url', iqm_server_url])
     assert 'Not logged in.' in result.output
     assert result.exit_code == 2
     unstub()

@@ -52,7 +52,7 @@ def test_init_saves_config_file(config_dict):
             ['init',
             '--config-file', 'config.json',
             '--tokens-file', config_dict['tokens_file'],
-            '--base-url', config_dict['base_url'],
+            '--auth-server-url', config_dict['auth_server_url'],
             '--realm', config_dict['realm'],
             '--client-id', config_dict['client_id']
             ])
@@ -69,7 +69,7 @@ def test_init_overwrites_config_file(config_dict):
     runner = CliRunner()
     with runner.isolated_filesystem():
         old_config_dict = config_dict.copy()
-        old_config_dict['base_url'] = 'https://to.be.overwritten.com'
+        old_config_dict['auth_server_url'] = 'https://to.be.overwritten.com'
         old_config_dict['username'] = 'to_be_overwritten'
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(old_config_dict))
@@ -78,7 +78,7 @@ def test_init_overwrites_config_file(config_dict):
             ['init',
             '--config-file', 'config.json',
             '--tokens-file', config_dict['tokens_file'],
-            '--base-url', config_dict['base_url'],
+            '--auth-server-url', config_dict['auth_server_url'],
             '--realm', config_dict['realm'],
             '--client-id', config_dict['client_id']
             ],
@@ -107,7 +107,7 @@ def test_init_kills_daemon(config_dict, tokens_dict):
                 ['init',
                 '--config-file', 'config.json',
                 '--tokens-file', config_dict['tokens_file'],
-                '--base-url', config_dict['base_url'],
+                '--auth-server-url', config_dict['auth_server_url'],
                 '--realm', config_dict['realm'],
                 '--client-id', config_dict['client_id']
                 ],
@@ -422,11 +422,11 @@ def test_auth_logout_handles_no_keep_tokens_and_pid(config_dict, credentials):
     Tests that `cortex auth logout` performs logout request, deletes tokens and kills daemon.
     """
     tokens = prepare_tokens(300, 3600, **credentials)
-    url = credentials['base_url']
+    auth_server_url = credentials['auth_server_url']
     realm = config_dict['realm']
     client_id = config_dict['client_id']
     refresh_token = tokens['refresh_token']
-    expect_logout(url, realm, client_id, refresh_token)
+    expect_logout(auth_server_url, realm, client_id, refresh_token)
 
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -479,7 +479,7 @@ def test_auth_logout_handles_no_keep_tokens_and_no_pid(config_dict, tokens_dict,
         with open('tokens.json', 'w', encoding='utf-8') as file:
             file.write(json.dumps(tokens_dict))
 
-        url = credentials['base_url']
+        url = credentials['auth_server_url']
         realm = config_dict['realm']
         client_id = config_dict['client_id']
         refresh_token = tokens_dict['refresh_token']
@@ -536,7 +536,7 @@ def test_auth_logout_fails_by_server_response(credentials, config_dict):
     Tests that ``cortex auth logout`` reports error when server fails to process request.
     """
     tokens = prepare_tokens(300, 3600, **credentials)
-    url = credentials['base_url']
+    url = credentials['auth_server_url']
     realm = config_dict['realm']
     client_id = config_dict['client_id']
     refresh_token = tokens['refresh_token']
@@ -582,7 +582,7 @@ def test_auth_logout_fails_by_server_response_no_pid(credentials, config_dict, t
     Tests that ``cortex auth logout`` reports error when server fails to process request.
     """
     tokens = prepare_tokens(300, 3600, **credentials)
-    url = credentials['base_url']
+    url = credentials['auth_server_url']
     realm = config_dict['realm']
     client_id = config_dict['client_id']
     refresh_token = tokens['refresh_token']
