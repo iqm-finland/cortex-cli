@@ -18,6 +18,7 @@ import json
 import os
 import platform
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -61,10 +62,10 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
         if not tokens:
             raise ClientAuthenticationError('Failed to update tokens. Probably, they were expired.')
 
-        timestamp = time.ctime()
+        timestamp = datetime.now()
         tokens_json = json.dumps({
             'pid': os.getpid(),
-            'timestamp': timestamp,
+            'timestamp': timestamp.isoformat(),
             'access_token': tokens['access_token'],
             'refresh_token': tokens['refresh_token'],
             'auth_server_url': auth_server_url
@@ -80,7 +81,8 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
         if single_run:
             break
 
-        print(f'{timestamp}: Tokens refreshed successfully.')
+        human_timestamp = timestamp.strftime('%m/%d/%Y %H:%M:%S')
+        print(f'{human_timestamp}: Tokens refreshed successfully.')
         time.sleep(timeout)
 
 

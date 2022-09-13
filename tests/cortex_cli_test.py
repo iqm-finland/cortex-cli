@@ -127,6 +127,33 @@ def test_auth_status_reports_no_config_file():
         assert result.exit_code != 0
         assert 'does not exist' in result.output
 
+def test_auth_status_reports_invalid_json_config():
+    """
+    Tests that ``cortex auth status`` reports error when tokens file is not valid JSON.
+    """
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write('NOT A JSON')
+        result = runner.invoke(cortex_cli, ['auth', 'status', '--config-file', 'config.json'])
+        assert result.exit_code != 0
+        assert 'not a valid JSON file' in result.output
+
+
+def test_auth_status_reports_incorrect_json_config(config_dict):
+    """
+    Tests that ``cortex auth status`` reports error when tokens file does not satisfy Cortex CLI format.
+    """
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        config_dict['auth_server_url'] = 'not a url'
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        result = runner.invoke(cortex_cli, ['auth', 'status', '--config-file', 'config.json'])
+        assert result.exit_code != 0
+        assert 'does not satisfy Cortex CLI format' in result.output
+
+
 def test_auth_status_reports_no_tokens_file(config_dict):
     """
     Tests that ``cortex auth status`` reports error when tokens file doesn't exist.
@@ -531,7 +558,7 @@ def test_auth_logout_fails_without_tokens_file(config_dict):
         assert 'Not logged in' in result.output
 
 # Logout Scenario 3 failure
-def test_auth_logout_fails_by_server_response(credentials, config_dict):
+def test_auth_logout_fails_by_server_response(credentials, config_dict, tokens_dict):
     """
     Tests that ``cortex auth logout`` reports error when server fails to process request.
     """
@@ -542,15 +569,14 @@ def test_auth_logout_fails_by_server_response(credentials, config_dict):
     refresh_token = tokens['refresh_token']
     expect_logout(url, realm, client_id, refresh_token, status_code = 401)
 
-    good_pid = 42
-
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(config_dict))
-        tokens['pid'] = good_pid
+        tokens_dict['access_token'] = tokens['access_token']
+        tokens_dict['refresh_token'] = tokens['refresh_token']
         with open('tokens.json', 'w', encoding='utf-8') as file:
-            file.write(json.dumps(tokens))
+            file.write(json.dumps(tokens_dict))
 
         runner.invoke(cortex_cli,
             ['auth', 'login',

@@ -14,19 +14,19 @@
 """
 Command line interface for interacting with IQM's quantum computers.
 """
-import datetime
 import json
 import logging
 import os
 import platform
 import sys
-import time
+from datetime import datetime, timedelta
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Optional
 
 import click
 from psutil import Process
+from pydantic import AnyUrl, BaseModel, ValidationError
 
 from cortex_cli import __version__
 from cortex_cli.auth import (ClientAuthenticationError, login_request,
@@ -45,6 +45,23 @@ REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
 REFRESH_PERIOD = 3*60  # in seconds
+
+class ConfigFile(BaseModel):
+    """Model of configuration file, used for validating JSON."""
+    auth_server_url: AnyUrl
+    realm: str
+    client_id: str
+    username: Optional[str]
+    tokens_file: Path
+
+
+class TokensFile(BaseModel):
+    """Model of tokens file, used for validating JSON."""
+    pid: Optional[int]
+    timestamp: datetime
+    access_token: str
+    refresh_token: str
+    auth_server_url: AnyUrl
 
 
 class ClickLoggingHandler(logging.Handler):
@@ -108,6 +125,81 @@ def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
             continue
         return new_path
 
+
+def _validate_config_file(config_file: str) -> dict:
+    """Checks if provided config file is valid, i.e. it:
+       - is valid JSON
+       - satisfies Cortex CLI format
+
+    Args:
+        config_file (str): --config-file option value
+    Raises:
+        click.FileError: if config_file is not valid JSON
+        click.FileError: if config_file does not satisfy Cortex CLI format
+    Returns:
+        dict: config dict loaded from config_file
+    """
+
+    # config_file must be a valid JSON
+    try:
+        config = read_json(config_file)
+    except Exception as ex:
+        raise click.FileError(config_file, f'Provided config is not a valid JSON file: {ex}')
+
+    # config_file must be in correct format
+    try:
+        ConfigFile(**config)
+    except ValidationError as ex:
+        raise click.FileError(
+            config_file,
+            f"""Provided config file is valid JSON, but does not satisfy Cortex CLI format. Possible reasons:
+- Cortex CLI was upgraded and config file format is changed. Check the changelog.
+- Config file was manually edited by someone.
+
+Re-generate a valid config file by running 'cortex init'.
+
+Full validation error:
+{ex}""")
+
+    return config
+
+
+def _validate_tokens_file(tokens_file: str) -> dict:
+    """Checks if provided tokens file is valid, i.e. it:
+       - is valid JSON
+       - satisfies Cortex CLI format
+
+    Args:
+        tokens_file (str): path to tokens file
+    Raises:
+        click.FileError: if tokens file is not valid JSON
+        click.FileError: if tokens file does not satisfy Cortex CLI format
+    Returns:
+        dict: tokens dict loaded from tokens_file
+    """
+
+    # tokens_file must be a valid JSON
+    try:
+        config = read_json(tokens_file)
+    except Exception as ex:
+        raise click.FileError(tokens_file, f'Provided tokens file is not a valid JSON file: {ex}')
+
+    # tokens_file must be in correct format
+    try:
+        TokensFile(**config)
+    except ValidationError as ex:
+        raise click.FileError(
+            tokens_file,
+            f"""Provided tokens file is valid JSON, but does not satisfy Cortex CLI format. Possible reasons:
+- Cortex CLI was upgraded and tokens file format is changed. Check the changelog.
+- Tokens file was manually edited by someone.
+
+Re-generate a valid config file by running 'cortex auth login'.
+
+Full validation error:
+{ex}""")
+
+    return config
 
 class CortexCliCommand(click.Group):
     """A custom click command group class to wrap global constants."""
@@ -218,13 +310,13 @@ def status(config_file, verbose) -> None:
     _set_log_level_by_verbosity(verbose)
 
     logger.debug('Using configuration file: %s', config_file)
-    config = read_json(config_file)
+    config = _validate_config_file(config_file)
     tokens_file = config['tokens_file']
     if not Path(tokens_file).is_file():
         click.echo('Not logged in. Use "cortex auth login" to login.')
         return
 
-    tokens_data = read_json(tokens_file)
+    tokens_data = _validate_tokens_file(tokens_file)
 
     click.echo(f'Tokens file: {tokens_file}')
     if 'pid' not in tokens_data:
@@ -232,10 +324,10 @@ def status(config_file, verbose) -> None:
 
     click.echo(f"Last refresh: {tokens_data['timestamp']}")
     seconds_at = time_left_seconds(tokens_data['access_token'])
-    time_left_at = str(datetime.timedelta(seconds=seconds_at))
+    time_left_at = str(timedelta(seconds=seconds_at))
     click.echo(f'Time left on access token (hh:mm:ss): {time_left_at}')
     seconds_rt = time_left_seconds(tokens_data['refresh_token'])
-    time_left_rt = str(datetime.timedelta(seconds=seconds_rt))
+    time_left_rt = str(timedelta(seconds=seconds_rt))
     click.echo(f'Time left on refresh token (hh:mm:ss): {time_left_rt}')
 
     active_pid = check_token_manager(tokens_file)
@@ -245,11 +337,11 @@ def status(config_file, verbose) -> None:
         click.echo(f'Token manager: {click.style("NOT RUNNING", fg="red")}')
 
 
-def _validate_cortex_cli_login(config_file, no_daemon, no_refresh) -> dict:
+def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> dict:
     """Checks if provided combination of auth login options is valid:
        - no_daemon and no_refresh are mutually exclusive
        - daemon mode should not be requested on Windows
-       - config file must exist
+       - config file should pass validation
 
     Args:
         config_file (str): --config-file option value
@@ -258,7 +350,6 @@ def _validate_cortex_cli_login(config_file, no_daemon, no_refresh) -> dict:
     Raises:
         click.BadOptionUsage: if both mutually exclusive --no-daemon and --no-refresh are set
         click.UsageError: if daemon is requested on Windows
-        click.BadParameter: if provided config_file does not exist or is invalid
     Returns:
         dict: config dict loaded from config_file
     """
@@ -280,13 +371,11 @@ def _validate_cortex_cli_login(config_file, no_daemon, no_refresh) -> dict:
             f'Provided config {config_file} does not exist. ' +
             "Provide a different file or run 'cortex auth init' to create a new config file.")
 
-    # config_file must be a valid json
-    try:
-        config = read_json(config_file)
-    except Exception as ex:
-        raise click.BadParameter(f'Provided config {config_file} is not a valid JSON file: {ex}')
+    # config file should be valid JSON and satisfy Cortex CLI format
+    config = _validate_config_file(config_file)
 
     return config
+
 
 @auth.command()
 @click.option(
@@ -321,7 +410,7 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
     _set_log_level_by_verbosity(verbose)
 
     # Validate whether the combination of options makes sense
-    config = _validate_cortex_cli_login(config_file, no_daemon, no_refresh)
+    config = _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file)
 
     auth_server_url, realm, client_id = config['auth_server_url'], config['realm'], config['client_id']
     tokens_file = config['tokens_file']
@@ -332,7 +421,7 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
             return
 
         # Tokens file exists; Refresh tokens without username/password
-        refresh_token = read_json(tokens_file)['refresh_token']
+        refresh_token = _validate_tokens_file(tokens_file)['refresh_token']
         logger.debug('Attempting to refresh tokens by using existing refresh token from file: %s', tokens_file)
 
         new_tokens = None
@@ -399,7 +488,7 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
 def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
-    config = read_json(config_file)
+    config = _validate_config_file(config_file)
     auth_server_url, realm, client_id = config['auth_server_url'], config['realm'], config['client_id']
     tokens_file = config['tokens_file']
 
@@ -407,7 +496,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
         click.echo('Not logged in.')
         return
 
-    tokens = read_json(tokens_file)
+    tokens = _validate_tokens_file(tokens_file)
     pid = tokens['pid'] if 'pid' in tokens else None
     refresh_token = tokens['refresh_token']
 
@@ -481,7 +570,7 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
     """
     path_to_dir = Path(path).parent
     tokens_data = {
-        'timestamp': time.ctime(),
+        'timestamp': datetime.now().isoformat(),
         'access_token': tokens['access_token'],
         'refresh_token': tokens['refresh_token'],
         'auth_server_url': auth_server_url
@@ -529,11 +618,8 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
     if not Path(config_file).is_file():
         raise click.UsageError("Not logged in. Run 'cortex auth login' to log in.")
 
-    # config_file must be a valid json
-    try:
-        config = read_json(config_file)
-    except Exception as ex:
-        raise click.BadParameter(f'Provided config {config_file} is not a valid JSON file: {ex}')
+    # config file should exist, be valid and satisfy Cortex CLI format
+    config = _validate_config_file(config_file)
 
     # and at least contain an existing tokens_file
     tokens_file = config['tokens_file']

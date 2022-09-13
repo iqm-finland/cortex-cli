@@ -260,8 +260,8 @@ def test_circuit_run_not_a_json_config_file_provided():
                                      '--iqm-json',
                                      '--config-file', 'config.json',
                                      '--iqm-server-url', iqm_server_url])
-    assert 'is not a valid JSON file' in result.output
-    assert result.exit_code == 2
+    assert result.exit_code != 0
+    assert 'not a valid JSON file' in result.output
     unstub()
 
 
