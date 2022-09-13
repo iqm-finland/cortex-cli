@@ -148,15 +148,7 @@ def _validate_config_file(config_file: str) -> dict:
 
     # config_file must be in correct format
     try:
-        ConfigFile(
-            auth_server_url = config['auth_server_url'],
-            realm = config['realm'],
-            client_id = config['client_id'],
-            username = config['username'],
-            tokens_file = config['tokens_file']
-            )
-        # Replace the above with ``ConfigFile(**config)`` after mypy bug is fixed:
-        # https://github.com/python/mypy/issues/13627
+        ConfigFile(**config)
     except ValidationError as ex:
         raise click.FileError(
             config_file,
@@ -194,15 +186,7 @@ def _validate_tokens_file(tokens_file: str) -> dict:
 
     # tokens_file must be in correct format
     try:
-        TokensFile(
-            pid = tokens['pid'] if 'pid' in tokens else None,
-            timestamp = tokens['timestamp'],
-            access_token = tokens['access_token'],
-            refresh_token = tokens['refresh_token'],
-            auth_server_url = tokens['auth_server_url'],
-            )
-        # Replace the above with ``TokensFile(**config)`` after mypy bug is fixed:
-        # https://github.com/python/mypy/issues/13627
+        TokensFile(**tokens)
     except ValidationError as ex:
         raise click.FileError(
             tokens_file,
