@@ -148,7 +148,15 @@ def _validate_config_file(config_file: str) -> dict:
 
     # config_file must be in correct format
     try:
-        ConfigFile(**config)
+        ConfigFile(
+            auth_server_url = config['auth_server_url'],
+            realm = config['realm'],
+            client_id = config['client_id'],
+            username = config['username'],
+            tokens_file = config['tokens_file']
+            )
+        # Replace the above with ``ConfigFile(**config)`` after mypy bug is fixed:
+        # https://github.com/python/mypy/issues/13627
     except ValidationError as ex:
         raise click.FileError(
             config_file,
@@ -180,13 +188,21 @@ def _validate_tokens_file(tokens_file: str) -> dict:
 
     # tokens_file must be a valid JSON
     try:
-        config = read_json(tokens_file)
+        tokens = read_json(tokens_file)
     except Exception as ex:
         raise click.FileError(tokens_file, f'Provided tokens file is not a valid JSON file: {ex}')
 
     # tokens_file must be in correct format
     try:
-        TokensFile(**config)
+        TokensFile(
+            pid = tokens['pid'] if 'pid' in tokens else None,
+            timestamp = tokens['timestamp'],
+            access_token = tokens['access_token'],
+            refresh_token = tokens['refresh_token'],
+            auth_server_url = tokens['auth_server_url'],
+            )
+        # Replace the above with ``TokensFile(**config)`` after mypy bug is fixed:
+        # https://github.com/python/mypy/issues/13627
     except ValidationError as ex:
         raise click.FileError(
             tokens_file,
@@ -194,12 +210,13 @@ def _validate_tokens_file(tokens_file: str) -> dict:
 - Cortex CLI was upgraded and tokens file format is changed. Check the changelog.
 - Tokens file was manually edited by someone.
 
-Re-generate a valid config file by running 'cortex auth login'.
+Re-generate a valid tokens file by running 'cortex auth login'.
 
 Full validation error:
 {ex}""")
 
-    return config
+    return tokens
+
 
 class CortexCliCommand(click.Group):
     """A custom click command group class to wrap global constants."""
