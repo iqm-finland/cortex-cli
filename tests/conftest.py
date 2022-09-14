@@ -27,6 +27,7 @@ from uuid import UUID
 import pytest
 import requests
 from mockito import expect, mock, when
+from psutil import Process
 from requests import HTTPError
 
 from cortex_cli import auth
@@ -219,3 +220,10 @@ def expect_token_is_valid(token:str, result:bool = True):
     Prepare for token_is_valid call
     """
     when(auth).token_is_valid(token).thenReturn(result)
+
+
+def expect_process_terminate():
+    """
+    Prepare for Process(pid).terminate call
+    """
+    when(Process).terminate().thenReturn(None)

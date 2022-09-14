@@ -512,6 +512,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     if keep_tokens and pid:
         if force or click.confirm(f'Keep tokens file{extra_msg}. OK?', default=None):
             Process(pid).terminate()
+            logger.info('Token manager killed.')
             return
 
     # 2. Keep tokens, do nothing
