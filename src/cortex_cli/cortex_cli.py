@@ -351,6 +351,7 @@ def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> dict:
     Raises:
         click.BadOptionUsage: if both mutually exclusive --no-daemon and --no-refresh are set
         click.UsageError: if daemon is requested on Windows
+        click.BadParameter: if config_file does not exist
     Returns:
         dict: config dict loaded from config_file
     """
