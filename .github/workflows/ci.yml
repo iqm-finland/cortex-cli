@@ -7,11 +7,14 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform }}
 
     strategy:
       matrix:
-        python-version: ['3.9', '3.10']
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10.6']
+        # Replace 3.10.6 with 3.10 when mypy bug is fixed
+        # https://github.com/python/mypy/issues/13627
 
     steps:
       - uses: actions/checkout@v2
@@ -25,11 +28,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-          sudo apt-get install graphviz
-      - name: Run tests for Python ${{ matrix.python-version }}
-        run: |
-          # Constructing Tox environment names from Github Python version strings should become unnecessary once/if this ticket gets implemented: https://github.com/tox-dev/tox/issues/2115
-          PYVER=${{matrix.python-version}}; TOXENV="py"${PYVER//.}
-          tox -e "${TOXENV}"
+          python -m pip install tox-gh-actions
+      - name: Run tests
+        run: tox
       - name: Test docs can be built
         run: tox -e docs

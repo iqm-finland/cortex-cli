@@ -17,10 +17,12 @@ Token manager for authentication and authorization to IQM's quantum computers. P
 import json
 import os
 import platform
-import signal
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+from psutil import pid_exists
 
 from cortex_cli.auth import ClientAuthenticationError, refresh_request
 
@@ -48,7 +50,7 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
     """
     path_to_tokens_dir = Path(config['tokens_file']).parent
     path_to_tokens_file = config['tokens_file']
-    base_url = config['base_url']
+    auth_server_url = config['auth_server_url']
     realm = config['realm']
     client_id = config['client_id']
 
@@ -56,16 +58,17 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
         with open(path_to_tokens_file, 'r', encoding='utf-8') as file:
             refresh_token = json.load(file)['refresh_token']
 
-        tokens = refresh_request(base_url, realm, client_id, refresh_token)
+        tokens = refresh_request(auth_server_url, realm, client_id, refresh_token)
         if not tokens:
             raise ClientAuthenticationError('Failed to update tokens. Probably, they were expired.')
 
+        timestamp = datetime.now()
         tokens_json = json.dumps({
             'pid': os.getpid(),
-            'timestamp': time.ctime(),
+            'timestamp': timestamp.isoformat(),
             'access_token': tokens['access_token'],
             'refresh_token': tokens['refresh_token'],
-            'auth_server_url': base_url
+            'auth_server_url': auth_server_url
         })
 
         try:
@@ -78,11 +81,13 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
         if single_run:
             break
 
+        human_timestamp = timestamp.strftime('%m/%d/%Y %H:%M:%S')
+        print(f'{human_timestamp}: Tokens refreshed successfully.')
         time.sleep(timeout)
 
 
-def check_daemon(tokens_file: str) -> Optional[int]:
-    """Check whether a daemon related to the given tokens_file is running.
+def check_token_manager(tokens_file: str) -> Optional[int]:
+    """Check whether a token manager related to the given tokens_file is running.
     Args:
         tokens_file: Path to a tokens JSON file.
     Returns:
@@ -92,34 +97,6 @@ def check_daemon(tokens_file: str) -> Optional[int]:
         tokens_data = json.load(file)
     pid = tokens_data['pid'] if 'pid' in tokens_data else None
 
-    if pid and check_pid(pid):
+    if pid and pid_exists(pid):
         return pid
     return None
-
-
-def check_pid(pid: int) -> bool:
-    """Check for the existence of a unix PID.
-    Args:
-        pid: PID in question
-    Returns:
-        bool: True if process with given PID is running, False otherwise.
-    """
-    try:
-        os.kill(pid, 0)
-    except OSError:
-        return False
-    else:
-        return True
-
-
-def kill_by_pid(pid: int) -> bool:
-    """Kill process with given PID.
-    Args:
-        pid: PID in question
-    Returns:
-        bool: True if process with given PID is has been killed, False otherwise.
-    """
-    if check_pid(pid):
-        os.kill(int(pid), signal.SIGTERM)
-        return True
-    return False

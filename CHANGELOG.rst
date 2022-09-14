@@ -2,6 +2,16 @@
 Changelog
 =========
 
+Version 1.0
+===========
+
+* Enable foreground mode for token manager. `#20 <https://github.com/iqm-finland/cortex-cli/pull/20>`_
+* Flag ``--no-daemon`` of the ``cortex auth login`` command is renamed to ``--no-refresh``. `#20 <https://github.com/iqm-finland/cortex-cli/pull/20>`_
+* Flag ``--no-daemon`` now starts the token manager in foreground mode. `#20 <https://github.com/iqm-finland/cortex-cli/pull/20>`_
+* Breaking change. The format of the configuration file is changed: ``base_url`` renamed to ``auth_server_url``. `#20 <https://github.com/iqm-finland/cortex-cli/pull/20>`_
+* Breaking change. The format of the tokens file is changed: ``timestamp`` format is changed to ISO. `#20 <https://github.com/iqm-finland/cortex-cli/pull/20>`_
+* Configuration and tokens files' formats are now validated by Cortex CLI. `#20 <https://github.com/iqm-finland/cortex-cli/pull/20>`_
+
 Version 0.11
 ============
 
