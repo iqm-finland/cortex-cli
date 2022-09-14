@@ -129,7 +129,7 @@ def test_auth_status_reports_no_config_file():
 
 def test_auth_status_reports_invalid_json_config():
     """
-    Tests that ``cortex auth status`` reports error when tokens file is not valid JSON.
+    Tests that ``cortex auth status`` reports error when config file is not valid JSON.
     """
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -142,7 +142,7 @@ def test_auth_status_reports_invalid_json_config():
 
 def test_auth_status_reports_incorrect_json_config(config_dict):
     """
-    Tests that ``cortex auth status`` reports error when tokens file does not satisfy Cortex CLI format.
+    Tests that ``cortex auth status`` reports error when config file does not satisfy Cortex CLI format.
     """
     runner = CliRunner()
     with runner.isolated_filesystem():
