@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Cortex CLI &#8212; Cortex CLI 0.11 documentation</title>
+    <title>Cortex CLI &#8212; Cortex CLI 1.0 documentation</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -408,16 +408,17 @@ prompt. See <code class="docutils literal notranslate"><span class="pre">cortex<
 </pre></div>
 </div>
 <p>This will ask you to enter your username and password.</p>
-<blockquote>
-<div><p>After a successful authentication, tokens will
-be saved into a tokens file (path specified in the configuration file), and a token manager daemon
-will start in the background. Token manager will periodically refresh the session and re-write the
-tokens file. To login and get tokens once, without starting a token manager daemon, run <code class="docutils literal notranslate"><span class="pre">cortex</span>
-<span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--no-daemon</span></code>.</p>
-<p>If the tokens file already exists, then running <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span></code> will first attempt to refresh
-the session without asking you for a username and password. If that fails (because existing tokens
-may already have expired), you’ll be asked to re-enter your credentials.</p>
-</div></blockquote>
+<p>After a successful authentication, tokens will be saved into a tokens file (path specified in the configuration file),
+and a token manager daemon will start in the background. Token manager will periodically refresh the session and
+re-write the tokens file.</p>
+<p>To use the token manager in a foreground mode (not as daemon), run <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--no-daemon</span></code>. This requires
+keeping the shell session alive. However, you can start the process in the background by adding <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> after the
+command: <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--no-daemon</span> <span class="pre">&amp;</span></code>. This applies to Bash, zsh and similar shells, but may not be available
+on all shells.</p>
+<p>To login and get tokens once, without starting a token manager at all, run <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--no-refresh</span></code>.</p>
+<p>If the tokens file already exists, then running <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span></code> will first attempt to refresh the session without
+asking you for a username and password. If that fails (because existing tokens may already have expired), you’ll be
+asked to re-enter your credentials.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--help</span></code> for more details.</p>
 </section>
 <section id="use-with-cirq-on-iqm-qiskit-on-iqm-etc">
@@ -430,17 +431,17 @@ Namely, set the <code class="docutils literal notranslate"><span class="pre">IQM
 </pre></div>
 </div>
 <p>Once set, this environment variable is read by the instance of IQM Client associated with the adapter. As a result,
-from the point of view of the adapter it looks like authentication is simply not required (i.e. no authentication-related
-information has to be provided to the adapter).</p>
+from the point of view of the adapter it looks like authentication is simply not required (i.e. no
+authentication-related information has to be provided to the adapter).</p>
 </section>
 <section id="status">
 <h3>Status<a class="headerlink" href="#status" title="Permalink to this headline">#</a></h3>
-<p>To see the current status of the token manager daemon, use:</p>
+<p>To see the current status of the token manager, use:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex auth status
 </pre></div>
 </div>
 <p>If the tokens file exists, <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">status</span></code> will report whether the corresponding token
-manager daemon is running. It will also print the time of the last successful refresh request, and
+manager is running. It will also print the time of the last successful refresh request, and
 how much time is left until current tokens expire.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">status</span> <span class="pre">--help</span></code> for more details.</p>
 </section>
@@ -542,7 +543,7 @@ example above, “measurement_0” is a 4-qubit measurement, and the number of s
         <footer class="col footer"><p>
   
       &copy; Copyright 2019-2022, IQM Finland Oy.<br/>
-    Last updated on 2022-09-06.<br/>
+    Last updated on 2022-09-14.<br/>
 </p>
         </footer>
     </div>

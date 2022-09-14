@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Changelog &#8212; Cortex CLI 0.11 documentation</title>
+    <title>Changelog &#8212; Cortex CLI 1.0 documentation</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -238,6 +238,11 @@ title="Print to PDF"
     <nav id="bd-toc-nav" aria-label="Page">
         <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-0">
+   Version 1.0
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#version-0-11">
    Version 0.11
   </a>
@@ -312,6 +317,11 @@ title="Print to PDF"
                         <nav aria-label="Page">
                             <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-0">
+   Version 1.0
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#version-0-11">
    Version 0.11
   </a>
@@ -378,6 +388,17 @@ title="Print to PDF"
                 
   <section id="changelog">
 <span id="changes"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">#</a></h1>
+<section id="version-1-0">
+<h2>Version 1.0<a class="headerlink" href="#version-1-0" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Enable foreground mode for token manager. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+<li><p>Flag <code class="docutils literal notranslate"><span class="pre">--no-daemon</span></code> of the <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span></code> command is renamed to <code class="docutils literal notranslate"><span class="pre">--no-refresh</span></code>. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+<li><p>Flag <code class="docutils literal notranslate"><span class="pre">--no-daemon</span></code> now starts the token manager in foreground mode. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+<li><p>Breaking change. The format of the configuration file is changed: <code class="docutils literal notranslate"><span class="pre">base_url</span></code> renamed to <code class="docutils literal notranslate"><span class="pre">auth_server_url</span></code>. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+<li><p>Breaking change. The format of the tokens file is changed: <code class="docutils literal notranslate"><span class="pre">timestamp</span></code> format is changed to ISO. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+<li><p>Configuration and tokens files’ formats are now validated by Cortex CLI. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+</ul>
+</section>
 <section id="version-0-11">
 <h2>Version 0.11<a class="headerlink" href="#version-0-11" title="Permalink to this headline">#</a></h2>
 <ul class="simple">
@@ -476,7 +497,7 @@ title="Print to PDF"
         <footer class="col footer"><p>
   
       &copy; Copyright 2019-2022, IQM Finland Oy.<br/>
-    Last updated on 2022-09-06.<br/>
+    Last updated on 2022-09-14.<br/>
 </p>
         </footer>
     </div>
