@@ -74,14 +74,16 @@ def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> N
         except Timeout:
             tokens = {'access_token': access_token, 'refresh_token': refresh_token}
             refresh_request_timed_out = True
+        if not tokens:
+            raise ClientAuthenticationError('Failed to update tokens. Probably, they were expired.')
 
         timestamp = datetime.now()
         tokens_json = json.dumps({
             'pid': os.getpid(),
             'timestamp': timestamp.isoformat(),
             'refresh_status': 'FAILED' if tokens is None or refresh_request_timed_out else 'SUCCESS',
-            'access_token': tokens['access_token'] if tokens is not None else access_token,
-            'refresh_token': tokens['refresh_token'] if tokens is not None else refresh_token,
+            'access_token': tokens['access_token'],
+            'refresh_token': tokens['refresh_token'],
             'auth_server_url': auth_server_url
         })
 
@@ -91,9 +93,6 @@ def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> N
                 file.write(tokens_json)
         except OSError as error:
             print('Error writing tokens file', error)
-
-        if not tokens:
-            raise ClientAuthenticationError('Failed to update tokens. Probably, they were expired.')
 
         if single_run:
             break
