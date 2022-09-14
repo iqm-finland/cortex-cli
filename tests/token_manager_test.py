@@ -40,7 +40,7 @@ def test_start_token_manager(credentials, config_dict, tokens_dict):
         with open('tokens.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(tokens_dict))
 
-        start_token_manager(timeout = 1, config = config_dict, single_run = True)
+        start_token_manager(cycle = 1, config = config_dict, single_run = True)
 
         with open('tokens.json', 'r', encoding='utf-8') as file:
             saved_tokens = json.loads(file.read())
@@ -56,12 +56,14 @@ def test_check_pid_returns_true():
     real_pid = os.getpid()
     assert check_pid(real_pid) is True
 
+
 def test_check_pid_returns_false():
     """
     Tests that check_pid returns False for non-existing PID.
     """
     bad_pid = 1
     assert check_pid(bad_pid) is False
+
 
 def test_kill_by_pid_succeeds():
     """
@@ -72,6 +74,7 @@ def test_kill_by_pid_succeeds():
     expect_os_kill(good_pid)    # for kill_by_pid call
     assert kill_by_pid(good_pid) is True
     unstub()
+
 
 def test_kill_by_pid_fails_invalid_pid():
     """

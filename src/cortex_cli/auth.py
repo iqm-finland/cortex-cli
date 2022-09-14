@@ -95,6 +95,7 @@ def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) ->
     """Sends refresh request to the authentication server.
 
     Raises:
+        Timeout: no response from auth server within the timeout period
         ClientAuthenticationError: updating the tokens failed
 
     Returns:

@@ -22,29 +22,41 @@ import time
 from pathlib import Path
 from typing import Optional
 
+from requests.exceptions import Timeout
+
 from cortex_cli.auth import ClientAuthenticationError, refresh_request
 
 if not platform.system().lower().startswith('win'):
     import daemon
 
 
-def daemonize_token_manager(timeout: int, config: dict, errfile: str = '/tmp/stderr.txt') -> None:
+def daemonize_token_manager(cycle: int, config: dict, errfile: str = '/tmp/stderr.txt') -> None:
     """Start a daemon process.
     Args:
-        timeout: refresh timeout (period) in seconds
+        cycle: refresh cycle in seconds
         config: Cortex CLI configuration dict
         errfile: path to file for writing errors
     """
     with daemon.DaemonContext(stderr=open(errfile, 'w', encoding='UTF-8')):
-        start_token_manager(timeout, config)
+        start_token_manager(cycle, config)
 
 
-def start_token_manager(timeout: int, config: dict, single_run: bool = False) -> None:
+def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> None:
     """Refresh tokens periodically.
+
+    For each refresh cycle new tokens are requested from auth server.
+    - If refresh is successful next refresh is attempted in the next cycle.
+    - If auth server does not respond within the timeout period, refresh is attempted again immediately until
+      it succeeds or the existing refresh token expires.
+    - If auth server responds but returns an error code a ClientAuthenticationError is raised.
+
     Args:
-        timeout: refresh timeout (period) in seconds
+        cycle: refresh cycle in seconds
         config: Cortex CLI configuration dict
         single_run: if True, refresh tokens only once and exit; otherwise repeat refreshing indefinitely
+
+    Raises:
+        ClientAuthenticationError: auth server was connected but no valid tokens were obtained
     """
     path_to_tokens_dir = Path(config['tokens_file']).parent
     path_to_tokens_file = config['tokens_file']
@@ -54,17 +66,23 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
 
     while True:
         with open(path_to_tokens_file, 'r', encoding='utf-8') as file:
-            refresh_token = json.load(file)['refresh_token']
+            tokens = json.load(file)
+            access_token = tokens['access_token']
+            refresh_token = tokens['refresh_token']
 
-        tokens = refresh_request(base_url, realm, client_id, refresh_token)
-        if not tokens:
-            raise ClientAuthenticationError('Failed to update tokens. Probably, they were expired.')
+        try:
+            tokens = refresh_request(base_url, realm, client_id, refresh_token)
+            refresh_request_timed_out = False
+        except Timeout:
+            tokens = {'access_token': access_token, 'refresh_token': refresh_token}
+            refresh_request_timed_out = True
 
         tokens_json = json.dumps({
             'pid': os.getpid(),
             'timestamp': time.ctime(),
-            'access_token': tokens['access_token'],
-            'refresh_token': tokens['refresh_token'],
+            'refresh_status': 'FAILED' if tokens is None or refresh_request_timed_out else 'SUCCESS',
+            'access_token': tokens['access_token'] if tokens is not None else access_token,
+            'refresh_token': tokens['refresh_token'] if tokens is not None else refresh_token,
             'auth_server_url': base_url
         })
 
@@ -75,10 +93,14 @@ def start_token_manager(timeout: int, config: dict, single_run: bool = False) ->
         except OSError as error:
             print('Error writing tokens file', error)
 
+        if not tokens:
+            raise ClientAuthenticationError('Failed to update tokens. Probably, they were expired.')
+
         if single_run:
             break
 
-        time.sleep(timeout)
+        if not refresh_request_timed_out:
+            time.sleep(cycle)
 
 
 def check_daemon(tokens_file: str) -> Optional[int]:

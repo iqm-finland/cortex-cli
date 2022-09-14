@@ -230,7 +230,9 @@ def status(config_file, verbose) -> None:
     if 'pid' not in tokens_data:
         click.echo("Tokens file doesn't contain PID. Probably, 'cortex auth login' was launched with '--no-daemon'\n")
 
-    click.echo(f"Last refresh: {tokens_data['timestamp']}")
+    refresh_status = tokens_data.get('refresh_status', 'SUCCESS').upper()
+    styled_status = click.style(refresh_status, fg='green' if refresh_status == 'SUCCESS' else 'red')
+    click.echo(f"Last refresh: {tokens_data['timestamp']} from {tokens_data['auth_server_url']} {styled_status}")
     seconds_at = time_left_seconds(tokens_data['access_token'])
     time_left_at = str(datetime.timedelta(seconds=seconds_at))
     click.echo(f'Time left on access token (hh:mm:ss): {time_left_at}')
