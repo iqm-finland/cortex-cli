@@ -22,13 +22,13 @@ import os
 import click
 from click.testing import CliRunner
 from mockito import unstub
+from psutil import pid_exists
 from pytest import raises
 
 from cortex_cli.auth import time_left_seconds
 from cortex_cli.cortex_cli import _validate_path, cortex_cli
-from tests.conftest import (expect_check_pid, expect_kill_by_pid,
-                            expect_logout, expect_token_is_valid,
-                            prepare_tokens)
+from tests.conftest import (expect_logout, expect_process_terminate,
+                            expect_token_is_valid, make_token, prepare_tokens)
 
 
 def test_no_command():
@@ -52,7 +52,7 @@ def test_init_saves_config_file(config_dict):
             ['init',
             '--config-file', 'config.json',
             '--tokens-file', config_dict['tokens_file'],
-            '--base-url', config_dict['base_url'],
+            '--auth-server-url', config_dict['auth_server_url'],
             '--realm', config_dict['realm'],
             '--client-id', config_dict['client_id']
             ])
@@ -69,7 +69,7 @@ def test_init_overwrites_config_file(config_dict):
     runner = CliRunner()
     with runner.isolated_filesystem():
         old_config_dict = config_dict.copy()
-        old_config_dict['base_url'] = 'https://to.be.overwritten.com'
+        old_config_dict['auth_server_url'] = 'https://to.be.overwritten.com'
         old_config_dict['username'] = 'to_be_overwritten'
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(old_config_dict))
@@ -78,7 +78,7 @@ def test_init_overwrites_config_file(config_dict):
             ['init',
             '--config-file', 'config.json',
             '--tokens-file', config_dict['tokens_file'],
-            '--base-url', config_dict['base_url'],
+            '--auth-server-url', config_dict['auth_server_url'],
             '--realm', config_dict['realm'],
             '--client-id', config_dict['client_id']
             ],
@@ -96,23 +96,24 @@ def test_init_kills_daemon(config_dict, tokens_dict):
     """
     runner = CliRunner()
     with runner.isolated_filesystem():
+        # emulate a running daemon by storing a real PID
+        tokens_dict['pid'] = os.getpid()
+
         with open('tokens.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(tokens_dict))
-        good_pid = 1
-        expect_check_pid(good_pid)
-        expect_kill_by_pid(good_pid)
+
+        expect_process_terminate()
         result = runner.invoke(cortex_cli,
             ['init',
             '--config-file', 'config.json',
             '--tokens-file', config_dict['tokens_file'],
-            '--base-url', config_dict['base_url'],
+            '--auth-server-url', config_dict['auth_server_url'],
             '--realm', config_dict['realm'],
             '--client-id', config_dict['client_id']
             ],
             input='y')
         assert result.exit_code == 0
         assert 'will be killed' in result.output
-    unstub()
 
 # Tests for 'cortex auth status'
 
@@ -125,6 +126,33 @@ def test_auth_status_reports_no_config_file():
         result = runner.invoke(cortex_cli, ['auth', 'status', '--config-file', 'config.json'])
         assert result.exit_code != 0
         assert 'does not exist' in result.output
+
+def test_auth_status_reports_invalid_json_config():
+    """
+    Tests that ``cortex auth status`` reports error when config file is not valid JSON.
+    """
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write('NOT A JSON')
+        result = runner.invoke(cortex_cli, ['auth', 'status', '--config-file', 'config.json'])
+        assert result.exit_code != 0
+        assert 'not a valid JSON file' in result.output
+
+
+def test_auth_status_reports_incorrect_json_config(config_dict):
+    """
+    Tests that ``cortex auth status`` reports error when config file does not satisfy Cortex CLI format.
+    """
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        config_dict['auth_server_url'] = 'not a url'
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        result = runner.invoke(cortex_cli, ['auth', 'status', '--config-file', 'config.json'])
+        assert result.exit_code != 0
+        assert 'does not satisfy Cortex CLI format' in result.output
+
 
 def test_auth_status_reports_no_tokens_file(config_dict):
     """
@@ -189,6 +217,7 @@ def test_auth_status_reports_not_running_daemon(config_dict, tokens_dict):
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(config_dict))
+        del tokens_dict['pid']
         with open('tokens.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(tokens_dict))
         result = runner.invoke(cortex_cli,['auth', 'status', '--config-file', 'config.json'])
@@ -215,7 +244,7 @@ def test_auth_login_succeeds(config_dict, credentials):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         assert result.exit_code == 0
@@ -245,7 +274,7 @@ def test_auth_login_fails(config_dict, credentials):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         assert result.exit_code != 0
@@ -268,7 +297,7 @@ def test_auth_login_handles_running_daemon(config_dict, tokens_dict, credentials
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         assert 'aborted, because token manager is already running' in result.output
@@ -279,8 +308,15 @@ def test_auth_login_succeeds_without_password(config_dict, tokens_dict, credenti
     Tests that ``cortex auth login`` performs authentication without username and password
     when valid tokens are present.
     """
-    refresh_token = tokens_dict['refresh_token']
-    expected_tokens = prepare_tokens(300, 3600, previous_refresh_token = refresh_token, **credentials)
+    refresh_token_lifetime = 3600
+    access_token_lifetime = 300
+    refresh_token = make_token('Refresh', refresh_token_lifetime)
+    access_token = make_token('Bearer', access_token_lifetime)
+    expected_tokens = prepare_tokens(
+        access_token_lifetime,
+        refresh_token_lifetime,
+        previous_refresh_token = refresh_token,
+        **credentials)
     expect_token_is_valid(refresh_token)
     runner = CliRunner()
 
@@ -288,13 +324,15 @@ def test_auth_login_succeeds_without_password(config_dict, tokens_dict, credenti
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(config_dict))
 
+        tokens_dict['refresh_token'] = refresh_token
+        tokens_dict['access_token'] = access_token
         with open('tokens.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(tokens_dict))
 
         result = runner.invoke(cortex_cli,
             ['auth', 'login',
             '--config-file', 'config.json',
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         assert result.exit_code == 0
@@ -321,11 +359,8 @@ def test_auth_logout_handles_keep_tokens_and_pid(config_dict, credentials):
     Tests that ``cortex auth logout --keep-tokens`` handles running PID.
     """
     expected_tokens = prepare_tokens(300, 3600, **credentials)
-    good_pid = 42
-    expect_check_pid(good_pid)
-    expect_kill_by_pid(good_pid)
-
     runner = CliRunner()
+
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(config_dict))
@@ -336,13 +371,13 @@ def test_auth_logout_handles_keep_tokens_and_pid(config_dict, credentials):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
         with open('tokens.json', 'r', encoding='utf-8') as file:
             tokens = json.loads(file.read())
 
-        # emulate having a daemon by adding a PID to tokens.json
-        tokens['pid'] = good_pid
+        # emulate a running daemon by storing a real PID
+        tokens['pid'] = os.getpid()
         with open('tokens.json', 'w', encoding='utf-8') as file:
             file.write(json.dumps(tokens))
 
@@ -357,6 +392,7 @@ def test_auth_logout_handles_keep_tokens_and_pid(config_dict, credentials):
         assert 'Logout aborted.' in result.output
 
         # user runs logout, confirms via --force
+        expect_process_terminate()
         result = runner.invoke(cortex_cli,
             ['auth', 'logout',
             '--config-file', 'config.json',
@@ -364,6 +400,9 @@ def test_auth_logout_handles_keep_tokens_and_pid(config_dict, credentials):
             '--force'
             ])
         assert result.exit_code == 0
+        assert 'Token manager killed' in result.output
+
+        assert pid_exists(tokens['pid'])
 
         # tokens file kept unchanged
         with open('tokens.json', 'r', encoding='utf-8') as file:
@@ -390,7 +429,7 @@ def test_auth_logout_handles_keep_tokens_and_no_pid(config_dict, credentials):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         result = runner.invoke(cortex_cli,
@@ -399,6 +438,7 @@ def test_auth_logout_handles_keep_tokens_and_no_pid(config_dict, credentials):
             '--keep-tokens'
             ])
         assert result.exit_code == 0
+        assert 'Nothing to do, exiting' in result.output
 
         # tokens file left unchanged
         with open('tokens.json', 'r', encoding='utf-8') as file:
@@ -414,17 +454,13 @@ def test_auth_logout_handles_no_keep_tokens_and_pid(config_dict, credentials):
     Tests that `cortex auth logout` performs logout request, deletes tokens and kills daemon.
     """
     tokens = prepare_tokens(300, 3600, **credentials)
-    url = credentials['base_url']
+    auth_server_url = credentials['auth_server_url']
     realm = config_dict['realm']
     client_id = config_dict['client_id']
     refresh_token = tokens['refresh_token']
-    expect_logout(url, realm, client_id, refresh_token)
-
-    good_pid = 42
-    expect_check_pid(good_pid)
-    expect_kill_by_pid(good_pid)
-
+    expect_logout(auth_server_url, realm, client_id, refresh_token)
     runner = CliRunner()
+
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(config_dict))
@@ -434,16 +470,18 @@ def test_auth_logout_handles_no_keep_tokens_and_pid(config_dict, credentials):
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         with open('tokens.json', 'r', encoding='utf-8') as file:
             tokens = json.loads(file.read())
 
-        tokens['pid'] = good_pid
+        # emulate a running daemon by storing a real PID
+        tokens['pid'] = os.getpid()
         with open('tokens.json', 'w', encoding='utf-8') as file:
             file.write(json.dumps(tokens))
 
+        expect_process_terminate()
         result = runner.invoke(cortex_cli,
             ['auth', 'logout',
             '--config-file', 'config.json',
@@ -452,10 +490,10 @@ def test_auth_logout_handles_no_keep_tokens_and_pid(config_dict, credentials):
         assert result.exit_code == 0
         assert 'Logged out successfully' in result.output
 
-    # tokens file deleted
-    with raises(FileNotFoundError):
-        with open('tokens.json', 'r', encoding='UTF-8') as file:
-            file.read()
+        # tokens file deleted
+        with raises(FileNotFoundError):
+            with open('tokens.json', 'r', encoding='UTF-8') as file:
+                file.read()
 
     unstub()
 
@@ -465,6 +503,7 @@ def test_auth_logout_handles_no_keep_tokens_and_no_pid(config_dict, tokens_dict,
     Tests that ``cortex auth logout`` attempts to logout without daemon running.
     """
     runner = CliRunner()
+
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(config_dict))
@@ -473,7 +512,7 @@ def test_auth_logout_handles_no_keep_tokens_and_no_pid(config_dict, tokens_dict,
         with open('tokens.json', 'w', encoding='utf-8') as file:
             file.write(json.dumps(tokens_dict))
 
-        url = credentials['base_url']
+        url = credentials['auth_server_url']
         realm = config_dict['realm']
         client_id = config_dict['client_id']
         refresh_token = tokens_dict['refresh_token']
@@ -525,35 +564,32 @@ def test_auth_logout_fails_without_tokens_file(config_dict):
         assert 'Not logged in' in result.output
 
 # Logout Scenario 3 failure
-def test_auth_logout_fails_by_server_response(credentials, config_dict):
+def test_auth_logout_fails_by_server_response(credentials, config_dict, tokens_dict):
     """
     Tests that ``cortex auth logout`` reports error when server fails to process request.
     """
     tokens = prepare_tokens(300, 3600, **credentials)
-    url = credentials['base_url']
+    url = credentials['auth_server_url']
     realm = config_dict['realm']
     client_id = config_dict['client_id']
     refresh_token = tokens['refresh_token']
     expect_logout(url, realm, client_id, refresh_token, status_code = 401)
 
-    good_pid = 42
-    expect_check_pid(good_pid)
-    expect_kill_by_pid(good_pid)
-
     runner = CliRunner()
     with runner.isolated_filesystem():
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(config_dict))
-        tokens['pid'] = good_pid
+        tokens_dict['access_token'] = tokens['access_token']
+        tokens_dict['refresh_token'] = tokens['refresh_token']
         with open('tokens.json', 'w', encoding='utf-8') as file:
-            file.write(json.dumps(tokens))
+            file.write(json.dumps(tokens_dict))
 
         runner.invoke(cortex_cli,
             ['auth', 'login',
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         result = runner.invoke(cortex_cli,
@@ -578,7 +614,7 @@ def test_auth_logout_fails_by_server_response_no_pid(credentials, config_dict, t
     Tests that ``cortex auth logout`` reports error when server fails to process request.
     """
     tokens = prepare_tokens(300, 3600, **credentials)
-    url = credentials['base_url']
+    url = credentials['auth_server_url']
     realm = config_dict['realm']
     client_id = config_dict['client_id']
     refresh_token = tokens['refresh_token']
@@ -598,7 +634,7 @@ def test_auth_logout_fails_by_server_response_no_pid(credentials, config_dict, t
             '--config-file', 'config.json',
             '--username', credentials['username'],
             '--password', credentials['password'],
-            '--no-daemon', # do not daemonize
+            '--no-refresh', # do not start token manager
             ])
 
         result = runner.invoke(cortex_cli,

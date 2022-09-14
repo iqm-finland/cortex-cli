@@ -18,7 +18,6 @@ Mocks server and system calls for testing
 
 import json
 import os
-import signal
 import time
 from base64 import b64encode
 from typing import Optional
@@ -28,6 +27,7 @@ from uuid import UUID
 import pytest
 import requests
 from mockito import expect, mock, when
+from psutil import Process
 from requests import HTTPError
 
 from cortex_cli import auth
@@ -47,7 +47,7 @@ def resources_path():
 def credentials():
     """Sample credentials for logging in"""
     return {
-        'base_url': 'http://example.com',
+        'auth_server_url': 'http://example.com',
         'username': 'some_username',
         'password': 'some_password',
     }
@@ -75,7 +75,7 @@ def mock_environment_vars_for_backend(credentials):
     Mocks environment variables
     """
     settings_path = os.path.join(resources_path(), 'settings.json')
-    with (umock.patch.dict(os.environ, {'IQM_SERVER_URL': credentials['base_url']}),
+    with (umock.patch.dict(os.environ, {'IQM_SERVER_URL': credentials['auth_server_url']}),
           umock.patch.dict(os.environ, {'IQM_SETTINGS_PATH': settings_path})):
         yield
 
@@ -127,7 +127,7 @@ def prepare_tokens(
         refresh_token_lifetime: seconds from current time to refresh token expire time
         previous_refresh_token: refresh token to be used in refresh request
         status_code: status code to return for token request
-        credentials: dict containing base_url, username and password
+        credentials: dict containing auth_server_url, username and password
 
     Returns:
          Prepared tokens as a dict.
@@ -151,7 +151,7 @@ def prepare_tokens(
         'refresh_token': make_token('Refresh', refresh_token_lifetime)
     }
     when(requests).post(
-        f'{credentials["base_url"]}/realms/{REALM_NAME}/protocol/openid-connect/token',
+        f'{credentials["auth_server_url"]}/realms/{REALM_NAME}/protocol/openid-connect/token',
         data=request_data.dict(exclude_none=True),
         timeout=AUTH_REQUESTS_TIMEOUT
     ).thenReturn(MockJsonResponse(status_code, tokens))
@@ -160,7 +160,7 @@ def prepare_tokens(
 
 
 def expect_logout(
-        base_url: str,
+        auth_server_url: str,
         realm: str,
         client_id: str,
         refresh_token: str,
@@ -168,14 +168,14 @@ def expect_logout(
     """Prepare for logout request.
 
     Args:
-        base_url: base URL of the authentication server
+        auth_server_url: base URL of the authentication server
         realm: realm name on the authentication server
         client_id: cliend ID on the authentication srver
         refresh_token: refresh token to be used in the request
     """
     request_data = AuthRequest(client_id=client_id, refresh_token=refresh_token)
     expect(requests, times=1).post(
-        f'{base_url}/realms/{realm}/protocol/openid-connect/logout',
+        f'{auth_server_url}/realms/{realm}/protocol/openid-connect/logout',
         data=request_data.dict(exclude_none=True),
         timeout=AUTH_REQUESTS_TIMEOUT
     ).thenReturn(
@@ -222,17 +222,8 @@ def expect_token_is_valid(token:str, result:bool = True):
     when(auth).token_is_valid(token).thenReturn(result)
 
 
-def expect_os_kill(pid:int, signal = signal.SIGTERM, result:bool = True):
+def expect_process_terminate():
     """
-    Prepare for os.kill call
+    Prepare for Process(pid).terminate call
     """
-    when(os).kill(pid, signal).thenReturn(result)
-
-
-def expect_check_pid(pid:int, result:bool = True):
-    expect_os_kill(pid, 0, result)
-
-
-def expect_kill_by_pid(pid:int, result:bool = True):
-    expect_check_pid(pid, result = result)
-    expect_os_kill(pid, result = result)
+    when(Process).terminate().thenReturn(None)
