@@ -59,11 +59,8 @@ def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> N
     Raises:
         ClientAuthenticationError: auth server was connected but no valid tokens were obtained
     """
-    path_to_tokens_dir = Path(config['tokens_file']).parent
     path_to_tokens_file = config['tokens_file']
     auth_server_url = config['auth_server_url']
-    realm = config['realm']
-    client_id = config['client_id']
 
     while True:
         with open(path_to_tokens_file, 'r', encoding='utf-8') as file:
@@ -72,7 +69,7 @@ def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> N
             refresh_token = tokens['refresh_token']
 
         try:
-            tokens = refresh_request(auth_server_url, realm, client_id, refresh_token)
+            tokens = refresh_request(auth_server_url, config['realm'], config['client_id'], refresh_token)
             refresh_request_timed_out = False
         except Timeout:
             tokens = {'access_token': access_token, 'refresh_token': refresh_token}
@@ -89,7 +86,7 @@ def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> N
         })
 
         try:
-            path_to_tokens_dir.mkdir(parents=True, exist_ok=True)
+            Path(config['tokens_file']).parent.mkdir(parents=True, exist_ok=True)
             with open(Path(path_to_tokens_file), 'w', encoding='UTF-8') as file:
                 file.write(tokens_json)
         except OSError as error:
