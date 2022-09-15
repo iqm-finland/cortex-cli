@@ -56,9 +56,10 @@ def test_refresh_request_handles_expired_token(config_dict, tokens_dict):
     """
     auth_server_url, realm, client_id = config_dict['auth_server_url'], config_dict['realm'], config_dict['client_id']
     refresh_token = tokens_dict['refresh_token']
-    result = refresh_request(auth_server_url, realm, client_id, refresh_token)
 
-    assert result is None
+    with raises(ClientAuthenticationError):
+        refresh_request(auth_server_url, realm, client_id, refresh_token)
+
     unstub()
 
 

@@ -20,27 +20,29 @@ import platform
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 from psutil import pid_exists
-from requests.exceptions import Timeout
+from requests.exceptions import (  # pylint: disable=redefined-builtin
+    ConnectionError, Timeout)
 
-from cortex_cli.auth import ClientAuthenticationError, refresh_request
-from urllib3.exceptions import MaxRetryError
+from cortex_cli.auth import (AUTH_REQUESTS_TIMEOUT, ClientAuthenticationError,
+                             refresh_request)
 
 if not platform.system().lower().startswith('win'):
     import daemon
 
 
-def daemonize_token_manager(cycle: int, config: dict, errfile: str = '/tmp/stderr.txt') -> None:
+def daemonize_token_manager(cycle: int, config: dict, logfile: str = '/tmp/token_manager.log') -> None:
     """Start a daemon process.
     Args:
         cycle: refresh cycle in seconds
         config: Cortex CLI configuration dict
-        errfile: path to file for writing errors
+        logfile: path to file for writing errors
     """
-    with daemon.DaemonContext(stderr=open(errfile, 'w', encoding='UTF-8')):
-        start_token_manager(cycle, config)
+    with open(logfile, 'w', encoding='UTF-8') as output:
+        with daemon.DaemonContext(stdout=output, stderr=output):
+            start_token_manager(cycle, config)
 
 
 def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> None:
@@ -48,62 +50,126 @@ def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> N
 
     For each refresh cycle new tokens are requested from auth server.
     - If refresh is successful next refresh is attempted in the next cycle.
-    - If auth server does not respond within the timeout period, refresh is attempted again immediately until
-      it succeeds or the existing refresh token expires.
-    - If auth server responds but returns an error code a ClientAuthenticationError is raised.
+    - If auth server does not respond refresh is attempted repeatedly until it succeeds or
+      the existing refresh token expires.
+    - If auth server responds but returns an error code or invalid tokens token manager is stopped.
 
     Args:
         cycle: refresh cycle in seconds
         config: Cortex CLI configuration dict
         single_run: if True, refresh tokens only once and exit; otherwise repeat refreshing indefinitely
-
-    Raises:
-        ClientAuthenticationError: auth server was connected but no valid tokens were obtained
     """
-    path_to_tokens_file = config['tokens_file']
-    auth_server_url = config['auth_server_url']
 
     while True:
-        with open(path_to_tokens_file, 'r', encoding='utf-8') as file:
-            tokens = json.load(file)
-            access_token = tokens['access_token']
-            refresh_token = tokens['refresh_token']
+        tokens = read_tokens(config['tokens_file'])
 
-        try:
-            tokens = refresh_request(auth_server_url, config['realm'], config['client_id'], refresh_token)
-            refresh_request_timed_out = False
-        except (Timeout, MaxRetryError):
-            tokens = {'access_token': access_token, 'refresh_token': refresh_token}
-            refresh_request_timed_out = True
-        if not tokens:
-            raise ClientAuthenticationError('Failed to update tokens. Probably, they were expired.')
+        new_tokens, status, sleep_time = refresh_tokens(config, tokens, cycle)
+        if new_tokens is None:
+            break
 
-        timestamp = datetime.now()
-        tokens_json = json.dumps({
-            'pid': os.getpid(),
-            'timestamp': timestamp.isoformat(),
-            'refresh_status': 'FAILED' if tokens is None or refresh_request_timed_out else 'SUCCESS',
-            'access_token': tokens['access_token'],
-            'refresh_token': tokens['refresh_token'],
-            'auth_server_url': auth_server_url
-        })
-
-        try:
-            Path(config['tokens_file']).parent.mkdir(parents=True, exist_ok=True)
-            with open(Path(path_to_tokens_file), 'w', encoding='UTF-8') as file:
-                file.write(tokens_json)
-        except OSError as error:
-            print('Error writing tokens file', error)
+        write_tokens(config['tokens_file'], config['auth_server_url'], status, **new_tokens)
 
         if single_run:
             break
 
-        human_timestamp = timestamp.strftime('%m/%d/%Y %H:%M:%S')
-        if refresh_request_timed_out:
-            print(f'{human_timestamp}: No response from auth server.')
+        time.sleep(sleep_time)
+
+    print(f'{datetime.now().strftime("%m/%d/%Y %H:%M:%S")}: Token manager stopped')
+
+
+def read_tokens(path_to_tokens_file: str) -> dict:
+    """
+    Read current tokens from the tokens file.
+
+    Args:
+        path_to_tokens_file: path to the tokens file
+
+    Returns:
+        dict containing the tokens
+    """
+    with open(path_to_tokens_file, 'r', encoding='utf-8') as file:
+        tokens = json.load(file)
+    return tokens
+
+
+def refresh_tokens(config: dict, current_tokens: dict, cycle: int) -> Tuple[Optional[dict], bool, int]:
+    """
+    Request new tokens from auth server.
+
+    Args:
+        config: dict containing token manager configuration
+        current_tokens: dict containing the current tokens from the tokens file
+        cycle: refresh cycle length in seconds
+
+    Returns:
+        Tuple[Optional[dict], bool, int] = (tokens, status, sleep_time)
+        tokens: dict containing new tokens or current tokens if auth server could not be connected or
+                None if auth server refused to provide new tokens.
+        status: bool, True if tokens were refreshed successfully, False otherwise
+        sleep_time: time to sleep before next refresh attempt
+    """
+    access_token = current_tokens.get('access_token', '')
+    refresh_token = current_tokens.get('refresh_token', '')
+    try:
+        tokens = refresh_request(config['auth_server_url'], config['realm'], config['client_id'], refresh_token)
+        status = True
+        sleep_time = cycle
+        log_timestamp = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        print(f'{log_timestamp}: Tokens refreshed successfully.')
+    except (Timeout, ConnectionError) as ex:
+        # No connection to auth server or auth server did not respond, keep current tokens
+        tokens = {'access_token': access_token, 'refresh_token': refresh_token}
+        status = False
+        if isinstance(ex, ConnectionError):
+            sleep_time = AUTH_REQUESTS_TIMEOUT
         else:
-            print(f'{human_timestamp}: Tokens refreshed successfully.')
-            time.sleep(cycle)
+            sleep_time = 1
+        log_timestamp = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        print(f'{log_timestamp}: No response from auth server: {ex}')
+    except ClientAuthenticationError as ex:
+        # Auth server responded but no valid tokens were received
+        tokens = None
+        status = False
+        sleep_time = cycle
+        log_timestamp = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        print(f'{log_timestamp}: Failed to authenticate with auth server: {ex}')
+
+    return tokens, status, sleep_time
+
+
+def write_tokens(
+        path_to_tokens_file: str,
+        auth_server_url: str,
+        status: bool,
+        *,
+        access_token: str = '',
+        refresh_token: str = '',
+) -> None:
+    """
+    Write new tokens into the tokens file.
+
+    Args:
+        path_to_tokens_file: path to the tokens file
+        auth_server_url: base URL of the auth server
+        status: refresh status, True when successful, False otherwise
+        access_token: new access token
+        refresh_token: new refresh token
+    """
+    tokens_json = json.dumps({
+        'pid': os.getpid(),
+        'timestamp': datetime.now().isoformat(),
+        'refresh_status': 'SUCCESS' if status else 'FAILED',
+        'access_token': access_token,
+        'refresh_token': refresh_token,
+        'auth_server_url': auth_server_url
+    })
+
+    try:
+        Path(path_to_tokens_file).parent.mkdir(parents=True, exist_ok=True)
+        with open(Path(path_to_tokens_file), 'w', encoding='UTF-8') as file:
+            file.write(tokens_json)
+    except OSError as error:
+        print('Error writing tokens file', error)
 
 
 def check_token_manager(tokens_file: str) -> Optional[int]:

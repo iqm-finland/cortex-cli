@@ -27,6 +27,8 @@ from typing import Optional
 import click
 from psutil import Process
 from pydantic import AnyUrl, BaseModel, ValidationError
+from requests.exceptions import (  # pylint: disable=redefined-builtin
+    ConnectionError, Timeout)
 
 from cortex_cli import __version__
 from cortex_cli.auth import (ClientAuthenticationError, login_request,
@@ -45,6 +47,7 @@ REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
 REFRESH_PERIOD = 3*60  # in seconds
+
 
 class ConfigFile(BaseModel):
     """Model of configuration file, used for validating JSON."""
@@ -325,7 +328,8 @@ def status(config_file, verbose) -> None:
 
     refresh_status = tokens_data.get('refresh_status', 'SUCCESS').upper()
     styled_status = click.style(refresh_status, fg='green' if refresh_status == 'SUCCESS' else 'red')
-    click.echo(f"Last refresh: {tokens_data['timestamp']} from {tokens_data['auth_server_url']} {styled_status}")
+    refresh_timestamp = datetime.fromisoformat(tokens_data['timestamp']).strftime('%m/%d/%Y %H:%M:%S')
+    click.echo(f"Last refresh: {refresh_timestamp} from {tokens_data['auth_server_url']} {styled_status}")
     seconds_at = time_left_seconds(tokens_data['access_token'])
     time_left_at = str(timedelta(seconds=seconds_at))
     click.echo(f'Time left on access token (hh:mm:ss): {time_left_at}')
@@ -431,7 +435,7 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
         new_tokens = None
         try:
             new_tokens = refresh_request(auth_server_url, realm, client_id, refresh_token)
-        except ClientAuthenticationError:
+        except (Timeout, ConnectionError, ClientAuthenticationError):
             logger.info('Failed to refresh tokens by using existing token. Switching to username/password.')
 
         if new_tokens:
@@ -473,11 +477,11 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
     if no_refresh:
         logger.info("Token manager not started due to '--no-refresh' flag.")
     elif no_daemon:
-        logger.info('Token manager started in foreground...')
+        logger.info('Starting token manager in foreground...')
         start_token_manager(refresh_period, config)
     else:
+        logger.info('Starting token manager daemon...')
         daemonize_token_manager(refresh_period, config)
-        logger.info('Token manager daemon started.')
 
 
 @auth.command()

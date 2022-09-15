@@ -24,7 +24,6 @@ from typing import Optional
 import requests
 from pydantic import BaseModel, Field
 
-
 REFRESH_MARGIN_SECONDS = 15
 AUTH_REQUESTS_TIMEOUT = 20
 
@@ -97,6 +96,7 @@ def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) ->
 
     Raises:
         Timeout: no response from auth server within the timeout period
+        ConnectionError: connecting the auth server failed on all retries
         ClientAuthenticationError: updating the tokens failed
 
     Returns:
@@ -104,7 +104,7 @@ def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) ->
     """
 
     if not token_is_valid(refresh_token):
-        return None
+        raise ClientAuthenticationError('Refresh token has expired')
 
     # Update tokens using existing refresh_token
     data = AuthRequest(
@@ -118,6 +118,8 @@ def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) ->
     if result.status_code != 200:
         raise ClientAuthenticationError(f'Failed to update tokens, {result.text}')
     tokens = result.json()
+    if not tokens or 'access_token' not in tokens or 'refresh_token' not in tokens:
+        raise ClientAuthenticationError('Failed to get new tokens')
     return tokens
 
 
