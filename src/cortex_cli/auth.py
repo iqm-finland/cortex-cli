@@ -24,6 +24,7 @@ from typing import Optional
 import requests
 from pydantic import BaseModel, Field
 
+
 REFRESH_MARGIN_SECONDS = 15
 AUTH_REQUESTS_TIMEOUT = 20
 

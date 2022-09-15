@@ -1,0 +1,7 @@
+{
+  "auth_server_url": "http://localhost:8080",
+  "realm": "cortex",
+  "client_id": "iqm_client",
+  "username": "",
+  "tokens_file": "~/.cache/iqm-cortex-cli/local-tokens.json"
+}

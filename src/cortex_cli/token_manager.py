@@ -26,6 +26,7 @@ from psutil import pid_exists
 from requests.exceptions import Timeout
 
 from cortex_cli.auth import ClientAuthenticationError, refresh_request
+from urllib3.exceptions import MaxRetryError
 
 if not platform.system().lower().startswith('win'):
     import daemon
@@ -71,7 +72,7 @@ def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> N
         try:
             tokens = refresh_request(auth_server_url, config['realm'], config['client_id'], refresh_token)
             refresh_request_timed_out = False
-        except Timeout:
+        except (Timeout, MaxRetryError):
             tokens = {'access_token': access_token, 'refresh_token': refresh_token}
             refresh_request_timed_out = True
         if not tokens:
