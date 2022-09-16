@@ -405,7 +405,7 @@ def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> dict:
     default=False,
     help='Login, but do not start token manager to refresh tokens.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def login(  #pylint: disable=too-many-arguments, too-many-locals
+def login(  #pylint: disable=too-many-arguments, too-many-locals, too-many-branches
           config_file: str,
           username: str,
           password: str,
@@ -461,6 +461,8 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
 
     try:
         tokens = login_request(auth_server_url, realm, client_id, username, password)
+    except (Timeout, ConnectionError) as error:
+        raise click.ClickException(f'Error when logging in: {error}') from error
     except ClientAuthenticationError as error:
         raise click.ClickException('Invalid username and/or password') from error
 
@@ -530,7 +532,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
         if force or click.confirm(f'Logout from server, delete tokens{extra_msg}. OK?', default=None):
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
-            except ClientAuthenticationError as error:
+            except (Timeout, ConnectionError, ClientAuthenticationError) as error:
                 raise click.ClickException(f'Error when logging out: {error}') from error
             Process(pid).terminate()
             os.remove(tokens_file)
@@ -543,7 +545,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
         if force or click.confirm('Logout from server and delete tokens. OK?', default=None):
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
-            except ClientAuthenticationError as error:
+            except (Timeout, ConnectionError, ClientAuthenticationError) as error:
                 raise click.ClickException(f'Error when logging out: {error}') from error
 
             os.remove(tokens_file)
