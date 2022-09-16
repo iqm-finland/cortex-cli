@@ -5,7 +5,7 @@ Changelog
 Version 1.1
 ===========
 
-* Token manager will keep trying indefinitely to re-connect to auth server. `#21 <https://github.com/iqm-finland/cortex-cli/pull/21>`_
+* Token manager will keep trying indefinitely to re-connect to auth server. `#22 <https://github.com/iqm-finland/cortex-cli/pull/22>`_
 
 Version 1.0
 ===========
