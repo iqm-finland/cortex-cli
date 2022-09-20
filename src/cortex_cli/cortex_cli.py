@@ -27,6 +27,8 @@ from typing import Optional
 import click
 from psutil import Process
 from pydantic import AnyUrl, BaseModel, ValidationError
+from requests.exceptions import (  # pylint: disable=redefined-builtin
+    ConnectionError, Timeout)
 
 from cortex_cli import __version__
 from cortex_cli.auth import (ClientAuthenticationError, login_request,
@@ -45,6 +47,7 @@ REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
 REFRESH_PERIOD = 3*60  # in seconds
+
 
 class ConfigFile(BaseModel):
     """Model of configuration file, used for validating JSON."""
@@ -323,7 +326,10 @@ def status(config_file, verbose) -> None:
     if 'pid' not in tokens_data:
         click.echo("Tokens file doesn't contain PID. Probably, 'cortex auth login' was launched with '--no-refresh'\n")
 
-    click.echo(f"Last refresh: {tokens_data['timestamp']}")
+    refresh_status = tokens_data.get('refresh_status', 'SUCCESS').upper()
+    styled_status = click.style(refresh_status, fg='green' if refresh_status == 'SUCCESS' else 'red')
+    refresh_timestamp = datetime.fromisoformat(tokens_data['timestamp']).strftime('%m/%d/%Y %H:%M:%S')
+    click.echo(f"Last refresh: {refresh_timestamp} from {tokens_data['auth_server_url']} {styled_status}")
     seconds_at = time_left_seconds(tokens_data['access_token'])
     time_left_at = str(timedelta(seconds=seconds_at))
     click.echo(f'Time left on access token (hh:mm:ss): {time_left_at}')
@@ -399,7 +405,7 @@ def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> dict:
     default=False,
     help='Login, but do not start token manager to refresh tokens.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def login(  #pylint: disable=too-many-arguments, too-many-locals
+def login(  #pylint: disable=too-many-arguments, too-many-locals, too-many-branches
           config_file: str,
           username: str,
           password: str,
@@ -429,7 +435,7 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
         new_tokens = None
         try:
             new_tokens = refresh_request(auth_server_url, realm, client_id, refresh_token)
-        except ClientAuthenticationError:
+        except (Timeout, ConnectionError, ClientAuthenticationError):
             logger.info('Failed to refresh tokens by using existing token. Switching to username/password.')
 
         if new_tokens:
@@ -455,6 +461,8 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals
 
     try:
         tokens = login_request(auth_server_url, realm, client_id, username, password)
+    except (Timeout, ConnectionError) as error:
+        raise click.ClickException(f'Error when logging in: {error}') from error
     except ClientAuthenticationError as error:
         raise click.ClickException('Invalid username and/or password') from error
 
@@ -471,11 +479,11 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
     if no_refresh:
         logger.info("Token manager not started due to '--no-refresh' flag.")
     elif no_daemon:
-        logger.info('Token manager started in foreground...')
+        logger.info('Starting token manager in foreground...')
         start_token_manager(refresh_period, config)
     else:
+        logger.info('Starting token manager daemon...')
         daemonize_token_manager(refresh_period, config)
-        logger.info('Token manager daemon started.')
 
 
 @auth.command()
@@ -524,7 +532,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
         if force or click.confirm(f'Logout from server, delete tokens{extra_msg}. OK?', default=None):
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
-            except ClientAuthenticationError as error:
+            except (Timeout, ConnectionError, ClientAuthenticationError) as error:
                 raise click.ClickException(f'Error when logging out: {error}') from error
             Process(pid).terminate()
             os.remove(tokens_file)
@@ -537,7 +545,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
         if force or click.confirm('Logout from server and delete tokens. OK?', default=None):
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
-            except ClientAuthenticationError as error:
+            except (Timeout, ConnectionError, ClientAuthenticationError) as error:
                 raise click.ClickException(f'Error when logging out: {error}') from error
 
             os.remove(tokens_file)
