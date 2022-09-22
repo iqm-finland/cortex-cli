@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.2
+===========
+
+* Fix a bug in handling tokens received from auth server. `#23 <https://github.com/iqm-finland/cortex-cli/pull/23>`_
+
 Version 1.1
 ===========
 

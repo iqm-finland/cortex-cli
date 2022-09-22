@@ -88,6 +88,7 @@ def login_request(url: str, realm: str, client_id: str, username: str, password:
     if result.status_code != 200:
         raise ClientAuthenticationError(f'Failed to authenticate, {result.text}')
     tokens = result.json()
+    tokens = {key: tokens.get(key, '') for key in ['access_token', 'refresh_token']}
     return tokens
 
 
@@ -120,6 +121,7 @@ def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) ->
     tokens = result.json()
     if not tokens or 'access_token' not in tokens or 'refresh_token' not in tokens:
         raise ClientAuthenticationError('Failed to get new tokens')
+    tokens = {key: tokens.get(key, '') for key in ['access_token', 'refresh_token']}
     return tokens
 
 
