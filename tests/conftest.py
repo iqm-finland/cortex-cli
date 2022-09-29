@@ -74,9 +74,7 @@ def mock_environment_vars_for_backend(credentials):
     """
     Mocks environment variables
     """
-    settings_path = os.path.join(resources_path(), 'settings.json')
-    with (umock.patch.dict(os.environ, {'IQM_SERVER_URL': credentials['auth_server_url']}),
-          umock.patch.dict(os.environ, {'IQM_SETTINGS_PATH': settings_path})):
+    with umock.patch.dict(os.environ, {'IQM_SERVER_URL': credentials['auth_server_url']}):
         yield
 
 

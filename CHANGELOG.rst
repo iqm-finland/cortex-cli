@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 1.3
+===========
+
+* Remove settings from circuit run command. `#24 <https://github.com/iqm-finland/cortex-cli/pull/24>`_
+* Upgrade to iqm-client 8.0. `#24 <https://github.com/iqm-finland/cortex-cli/pull/24>`_
+
 Version 1.2
 ===========
 
