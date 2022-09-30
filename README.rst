@@ -153,9 +153,9 @@ You can execute a quantum circuit on an IQM quantum computer with
 .. code-block:: bash
 
   $ export IQM_SERVER_URL="https://example.com/iqm-server"
-  $ cortex circuit run --settings "path/to/settings.json" --shots 100 --qubit-mapping my_qubit_mapping.json my_circuit.qasm
+  $ cortex circuit run --shots 100 --qubit-mapping my_qubit_mapping.json my_circuit.qasm
 
-The server URL and settings path can be set either with command-line options or as environment variables.
+The server URL can be set either with command-line option or as an environment variable.
 
 By default, authentication is handled the same way as with other Cortex CLI commands. You can
 override this and provide your own server URL, username, and password by setting environment

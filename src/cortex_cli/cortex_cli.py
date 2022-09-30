@@ -643,16 +643,11 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
 @circuit.command()
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 @click.option('--shots', default=1, type=int, help='Number of times to sample the circuit.')
-@click.option('--settings', default=None, type=click.File(), envvar='IQM_SETTINGS_PATH',
-              help='Path to the settings file containing calibration data. Must be JSON formatted. '
-                   'Can also be set using the IQM_SETTINGS_PATH environment variable:\n'
-                   '`export IQM_SETTINGS_PATH=\"/path/to/settings/file.json\"`\n'
-                   'If not set, the latest available calibration will be used.')
-@click.option('--calibration-set-id', type=int, help='ID of the calibration set to use instead of settings.')
+@click.option('--calibration-set-id', type=int, help='ID of the calibration set to use instead of the latest one.')
 @click.option('--qubit-mapping', default=None, type=click.File(), envvar='IQM_QUBIT_MAPPING_PATH',
               help='Path to the qubit mapping JSON file. Must consist of a single JSON object, with logical '
-                   'qubit names ("Alice", "Bob", ...) as keys, and physical qubit names (appearing in '
-                   'the settings file) as values. For example: {"Alice": "QB1", "Bob": "QB2"}. '
+                   'qubit names as keys, and physical qubit names as values, '
+                   'for example {"Alice": "QB1", "Bob": "QB2"}. '
                    'Can also be set using the IQM_QUBIT_MAPPING_PATH environment variable:\n'
                    '`export IQM_QUBIT_MAPPING_PATH=\"/path/to/qubit/mapping.json\"`\n'
                    'If not set, the qubit names are assumed to be physical names.')
@@ -675,7 +670,6 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
 def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-toplevel
         verbose: bool,
         shots: int,
-        settings: Optional[TextIOWrapper],
         calibration_set_id: Optional[int],
         qubit_mapping: Optional[TextIOWrapper],
         iqm_server_url: str,
@@ -720,17 +714,12 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
         if qubit_mapping is not None:
             parsed_qubit_mapping = json.load(qubit_mapping)
 
-        parsed_settings = None
-        if settings is not None:
-            parsed_settings = json.load(settings)
-
         # run the circuit on the backend
         iqm_client = IQMClient(iqm_server_url, tokens_file=tokens_file)
         job_id = iqm_client.submit_circuits(
             [input_circuit],
             qubit_mapping=parsed_qubit_mapping,
             shots=shots,
-            settings=parsed_settings,
             calibration_set_id=calibration_set_id
         )
         results = iqm_client.wait_for_results(job_id)

@@ -26,7 +26,6 @@ from tests.conftest import expect_jobs_requests, resources_path
 valid_circuit_qasm = os.path.join(resources_path(), 'valid_circuit.qasm')
 qubit_mapping_path = os.path.join(resources_path(), 'qubit_mapping.json')
 qasm_qubit_mapping_path = os.path.join(resources_path(), 'qubit_mapping_qasm.json')
-settings_path = os.path.join(resources_path(), 'settings.json')
 
 
 def test_circuit_validate_no_argument_fails():
@@ -121,7 +120,6 @@ def test_circuit_run_valid_qasm_circuit():
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', valid_circuit_qasm,
              '--qubit-mapping', qasm_qubit_mapping_path,
-             '--settings', settings_path,
              '--iqm-server-url', iqm_server_url,
              '--no-auth'])
     assert 'result' in result.output
@@ -140,7 +138,6 @@ def test_circuit_run_valid_json_circuit():
         result = CliRunner().invoke(cortex_cli,
             ['circuit', 'run', os.path.join(resources_path(), 'valid_circuit.json'), '--iqm-json',
              '--qubit-mapping', qubit_mapping_path,
-             '--settings', settings_path,
              '--iqm-server-url', iqm_server_url,
              '--no-auth'])
     assert 'result' in result.output
@@ -168,7 +165,7 @@ def test_circuit_run_valid_json_circuit_custom_calibration_set_id():
     unstub()
 
 
-def test_circuit_run_valid_json_circuit_default_settings_no_qubit_mapping():
+def test_circuit_run_valid_json_circuit_no_qubit_mapping():
     """
     Tests that ``circuit run`` succeeds with valid json circuit and no qubit mapping.
     """
