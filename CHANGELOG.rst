@@ -5,8 +5,7 @@ Changelog
 Version 1.4
 ===========
 
-* Upgrade to cirq-on-iqm 7.7. `#25 <https://github.com/iqm-finland/cortex-cli/pull/25>`_
-* Upgrade to iqm-client 8.1. `#25 <https://github.com/iqm-finland/cortex-cli/pull/25>`_
+* Fix typing issue related to upgrading to cirq-on-iqm 7.7. `#25 <https://github.com/iqm-finland/cortex-cli/pull/25>`_
 
 Version 1.3
 ===========
