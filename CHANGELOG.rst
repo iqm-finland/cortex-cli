@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.4
+===========
+
+* Fix typing issue related to upgrading to cirq-on-iqm 7.7. `#25 <https://github.com/iqm-finland/cortex-cli/pull/25>`_
+
 Version 1.3
 ===========
 
