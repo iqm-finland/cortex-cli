@@ -688,7 +688,7 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
     results. The first index of the array goes over the shots, and the second over the qubits
     included in the measurement.
     """
-    import cirq_iqm
+    from cirq_iqm import circuit_from_qasm
     from cirq_iqm.iqm_sampler import serialize_circuit
     from iqm_client.iqm_client import Circuit, IQMClient
 
@@ -705,8 +705,7 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
             input_circuit = Circuit.parse_raw(raw_input)
         else:
             validate_circuit(filename)
-            input_circuit = cirq_iqm.circuit_from_qasm(raw_input)
-            input_circuit = serialize_circuit(input_circuit)
+            input_circuit = serialize_circuit(circuit_from_qasm(raw_input))
 
         logger.debug('\nInput circuit:\n%s', input_circuit)
 
