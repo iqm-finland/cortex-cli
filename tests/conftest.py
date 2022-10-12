@@ -16,18 +16,18 @@
 Mocks server and system calls for testing
 """
 
+from base64 import b64encode
 import json
 import os
 import time
-from base64 import b64encode
 from typing import Optional
 from unittest import mock as umock
 from uuid import UUID
 
-import pytest
-import requests
 from mockito import expect, mock, when
 from psutil import Process
+import pytest
+import requests
 from requests import HTTPError
 
 from cortex_cli import auth
@@ -112,11 +112,11 @@ def make_token(token_type: str, lifetime: int) -> str:
 
 
 def prepare_tokens(
-        access_token_lifetime: int,
-        refresh_token_lifetime: int,
-        previous_refresh_token: Optional[str] = None,
-        status_code: int = 200,
-        **credentials
+    access_token_lifetime: int,
+    refresh_token_lifetime: int,
+    previous_refresh_token: Optional[str] = None,
+    status_code: int = 200,
+    **credentials,
 ) -> dict[str, str]:
     """Prepare tokens and set them to be returned for a token request.
 
@@ -135,34 +135,27 @@ def prepare_tokens(
             client_id=CLIENT_ID,
             grant_type=GrantType.PASSWORD,
             username=credentials['username'],
-            password=credentials['password']
+            password=credentials['password'],
         )
     else:
         request_data = AuthRequest(
-            client_id=CLIENT_ID,
-            grant_type=GrantType.REFRESH,
-            refresh_token=previous_refresh_token
+            client_id=CLIENT_ID, grant_type=GrantType.REFRESH, refresh_token=previous_refresh_token
         )
 
     tokens = {
         'access_token': make_token('Bearer', access_token_lifetime),
-        'refresh_token': make_token('Refresh', refresh_token_lifetime)
+        'refresh_token': make_token('Refresh', refresh_token_lifetime),
     }
     when(requests).post(
         f'{credentials["auth_server_url"]}/realms/{REALM_NAME}/protocol/openid-connect/token',
         data=request_data.dict(exclude_none=True),
-        timeout=AUTH_REQUESTS_TIMEOUT
+        timeout=AUTH_REQUESTS_TIMEOUT,
     ).thenReturn(MockJsonResponse(status_code, tokens))
 
     return tokens
 
 
-def expect_logout(
-        auth_server_url: str,
-        realm: str,
-        client_id: str,
-        refresh_token: str,
-        status_code: int = 204):
+def expect_logout(auth_server_url: str, realm: str, client_id: str, refresh_token: str, status_code: int = 204):
     """Prepare for logout request.
 
     Args:
@@ -175,10 +168,8 @@ def expect_logout(
     expect(requests, times=1).post(
         f'{auth_server_url}/realms/{realm}/protocol/openid-connect/logout',
         data=request_data.dict(exclude_none=True),
-        timeout=AUTH_REQUESTS_TIMEOUT
-    ).thenReturn(
-        mock({'status_code': status_code, 'text': '{}'})
-    )
+        timeout=AUTH_REQUESTS_TIMEOUT,
+    ).thenReturn(mock({'status_code': status_code, 'text': '{}'}))
 
 
 def expect_jobs_requests(iqm_server_url, calibration_set_id=None):
@@ -196,24 +187,18 @@ def expect_jobs_requests(iqm_server_url, calibration_set_id=None):
 
     success_get_result = {
         'status': 'ready',
-        'measurements': [{
-            'result': [[1, 0, 1, 1], [1, 0, 0, 1], [1, 0, 1, 1], [1, 0, 1, 1]]
-        }],
-        'metadata': {'circuits': [], 'shots': 42, 'calibration_set_id': calibration_set_id}
+        'measurements': [{'result': [[1, 0, 1, 1], [1, 0, 0, 1], [1, 0, 1, 1], [1, 0, 1, 1]]}],
+        'metadata': {'circuits': [], 'shots': 42, 'calibration_set_id': calibration_set_id},
     }
     success_get_response = mock({'status_code': 200, 'text': json.dumps(success_get_result)})
     when(success_get_response).json().thenReturn(success_get_result)
 
-    when(requests).get(
-        f'{iqm_server_url}/jobs/{existing_run}', ...
-    ).thenReturn(
-        running_response
-    ).thenReturn(
+    when(requests).get(f'{iqm_server_url}/jobs/{existing_run}', ...).thenReturn(running_response).thenReturn(
         success_get_response
     )
 
 
-def expect_token_is_valid(token:str, result:bool = True):
+def expect_token_is_valid(token: str, result: bool = True):
     """
     Prepare for token_is_valid call
     """

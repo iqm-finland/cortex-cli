@@ -15,28 +15,28 @@
 Authorization and session management for Cortex CLI.
 """
 
-import json
-import time
 from base64 import b64decode
 from enum import Enum
+import json
+import time
 from typing import Optional
 
-import requests
 from pydantic import BaseModel, Field
+import requests
 
 REFRESH_MARGIN_SECONDS = 15
 AUTH_REQUESTS_TIMEOUT = 20
 
 
 class ClientAuthenticationError(RuntimeError):
-    """Something went wrong with user authentication.
-    """
+    """Something went wrong with user authentication."""
 
 
 class GrantType(str, Enum):
     """
     Type of token request.
     """
+
     PASSWORD = 'password'
     REFRESH = 'refresh_token'
 
@@ -49,11 +49,11 @@ class AuthRequest(BaseModel):
       It uses field ``client_id``, ``grant_type``, ``refresh_token``.
     * Logout request uses only fields ``client_id`` and ``refresh_token``.
     """
+
     client_id: str = Field(..., description='name of the client for all request types')
     'name of the client for all request types'
     grant_type: Optional[GrantType] = Field(
-        None,
-        description="type of token request, in ``{'password', 'refresh_token'}``"
+        None, description="type of token request, in ``{'password', 'refresh_token'}``"
     )
     "type of token request, in ``{'password', 'refresh_token'}``"
     username: Optional[str] = Field(None, description="username for grant type ``'password'``")
@@ -61,8 +61,8 @@ class AuthRequest(BaseModel):
     password: Optional[str] = Field(None, description="password for grant type ``'password'``")
     "password for grant type ``'password'``"
     refresh_token: Optional[str] = Field(
-        None,
-        description="refresh token for grant type ``'refresh_token'`` and logout request")
+        None, description="refresh token for grant type ``'refresh_token'`` and logout request"
+    )
     "refresh token for grant type ``'refresh_token'`` and logout request"
 
 
@@ -76,12 +76,7 @@ def login_request(url: str, realm: str, client_id: str, username: str, password:
         Tokens dictionary
     """
 
-    data = AuthRequest(
-        client_id=client_id,
-        grant_type=GrantType.PASSWORD,
-        username=username,
-        password=password
-    )
+    data = AuthRequest(client_id=client_id, grant_type=GrantType.PASSWORD, username=username, password=password)
 
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
     result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
@@ -108,11 +103,7 @@ def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) ->
         raise ClientAuthenticationError('Refresh token has expired')
 
     # Update tokens using existing refresh_token
-    data = AuthRequest(
-        client_id=client_id,
-        grant_type=GrantType.REFRESH,
-        refresh_token=refresh_token
-    )
+    data = AuthRequest(client_id=client_id, grant_type=GrantType.REFRESH, refresh_token=refresh_token)
 
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
     result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
@@ -134,10 +125,7 @@ def logout_request(url: str, realm: str, client_id: str, refresh_token: str) -> 
     Returns:
         True if logout was successful
     """
-    data = AuthRequest(
-        client_id=client_id,
-        refresh_token=refresh_token
-    )
+    data = AuthRequest(client_id=client_id, refresh_token=refresh_token)
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/logout'
     result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
 

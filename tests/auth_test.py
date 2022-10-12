@@ -18,8 +18,7 @@ Tests for Cortex CLI's auth logic
 from mockito import unstub
 from pytest import raises
 
-from cortex_cli.auth import (ClientAuthenticationError, login_request,
-                             logout_request, refresh_request, token_is_valid)
+from cortex_cli.auth import ClientAuthenticationError, login_request, logout_request, refresh_request, token_is_valid
 from tests.conftest import expect_logout, expect_token_is_valid, prepare_tokens
 
 
@@ -43,7 +42,7 @@ def test_refresh_request(credentials, config_dict, tokens_dict):
     auth_server_url, realm, client_id = config_dict['auth_server_url'], config_dict['realm'], config_dict['client_id']
     refresh_token = tokens_dict['refresh_token']
     expect_token_is_valid(refresh_token)
-    expected_tokens = prepare_tokens(300, 3600, **credentials, previous_refresh_token = refresh_token)
+    expected_tokens = prepare_tokens(300, 3600, **credentials, previous_refresh_token=refresh_token)
     result = refresh_request(auth_server_url, realm, client_id, refresh_token)
 
     assert result == expected_tokens
@@ -97,7 +96,7 @@ def test_raises_client_authentication_error_if_refresh_fails(credentials, config
     auth_server_url, realm, client_id = config_dict['auth_server_url'], config_dict['realm'], config_dict['client_id']
     refresh_token = tokens_dict['refresh_token']
     expect_token_is_valid(refresh_token)
-    prepare_tokens(300, 3600, status_code=401, previous_refresh_token = refresh_token, **credentials)
+    prepare_tokens(300, 3600, status_code=401, previous_refresh_token=refresh_token, **credentials)
 
     with raises(ClientAuthenticationError):
         refresh_request(auth_server_url, realm, client_id, refresh_token)

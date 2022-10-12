@@ -14,30 +14,25 @@
 """
 Command line interface for interacting with IQM's quantum computers.
 """
+from datetime import datetime, timedelta
+from io import TextIOWrapper
 import json
 import logging
 import os
+from pathlib import Path
 import platform
 import sys
-from datetime import datetime, timedelta
-from io import TextIOWrapper
-from pathlib import Path
 from typing import Optional
 
 import click
 from psutil import Process
 from pydantic import AnyUrl, BaseModel, ValidationError
-from requests.exceptions import (  # pylint: disable=redefined-builtin
-    ConnectionError, Timeout)
+from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
 
 from cortex_cli import __version__
-from cortex_cli.auth import (ClientAuthenticationError, login_request,
-                             logout_request, refresh_request,
-                             time_left_seconds)
+from cortex_cli.auth import ClientAuthenticationError, login_request, logout_request, refresh_request, time_left_seconds
 from cortex_cli.circuit import validate_circuit
-from cortex_cli.token_manager import (check_token_manager,
-                                      daemonize_token_manager,
-                                      start_token_manager)
+from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
 from cortex_cli.utils import read_file, read_json
 
 HOME_PATH = str(Path.home())
@@ -46,11 +41,12 @@ DEFAULT_TOKENS_PATH = f'{HOME_PATH}/.cache/iqm-cortex-cli/tokens.json'
 REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
-REFRESH_PERIOD = 3*60  # in seconds
+REFRESH_PERIOD = 3 * 60  # in seconds
 
 
 class ConfigFile(BaseModel):
     """Model of configuration file, used for validating JSON."""
+
     auth_server_url: AnyUrl
     realm: str
     client_id: str
@@ -60,6 +56,7 @@ class ConfigFile(BaseModel):
 
 class TokensFile(BaseModel):
     """Model of tokens file, used for validating JSON."""
+
     pid: Optional[int]
     timestamp: datetime
     access_token: str
@@ -69,6 +66,7 @@ class TokensFile(BaseModel):
 
 class ClickLoggingHandler(logging.Handler):
     """Simple log handler using click's echo function."""
+
     def __init__(self):
         super().__init__(level=logging.NOTSET)
         self.formatter = logging.Formatter('%(message)s')
@@ -120,9 +118,7 @@ def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
         if click.confirm(msg, default=None):
             return path
 
-        new_path = click.prompt(
-            'New file path',
-            type=click.Path(dir_okay=False, writable=True))
+        new_path = click.prompt('New file path', type=click.Path(dir_okay=False, writable=True))
 
         if new_path == path:
             continue
@@ -162,7 +158,8 @@ def _validate_config_file(config_file: str) -> dict:
 Re-generate a valid config file by running 'cortex init'.
 
 Full validation error:
-{ex}""")
+{ex}""",
+        )
 
     return config
 
@@ -200,13 +197,15 @@ def _validate_tokens_file(tokens_file: str) -> dict:
 Re-generate a valid tokens file by running 'cortex auth login'.
 
 Full validation error:
-{ex}""")
+{ex}""",
+        )
 
     return tokens
 
 
 class CortexCliCommand(click.Group):
     """A custom click command group class to wrap global constants."""
+
     default_config_path: str = DEFAULT_CONFIG_PATH
     default_tokens_path: str = DEFAULT_TOKENS_PATH
 
@@ -225,43 +224,34 @@ def cortex_cli() -> None:
     callback=_validate_path,
     default=CortexCliCommand.default_config_path,
     type=click.Path(dir_okay=False, writable=True),
-    help='Location where the configuration file will be saved.')
+    help='Location where the configuration file will be saved.',
+)
 @click.option(
     '--tokens-file',
     prompt='Where to save auth tokens',
     callback=_validate_path,
     default=CortexCliCommand.default_tokens_path,
     type=click.Path(dir_okay=False, writable=True),
-    help='Location where the tokens file will be saved.')
-@click.option(
-    '--auth-server-url',
-    prompt='Base URL of IQM auth server',
-    help='Base URL of IQM authentication server.')
+    help='Location where the tokens file will be saved.',
+)
+@click.option('--auth-server-url', prompt='Base URL of IQM auth server', help='Base URL of IQM authentication server.')
 @click.option(
     '--realm',
     prompt='Realm on IQM auth server',
     default=REALM_NAME,
-    help='Name of the realm on the IQM authentication server.')
-@click.option(
-    '--client-id',
-    prompt='Client ID',
-    default=CLIENT_ID,
-    help='Client ID on the IQM authentication server.')
+    help='Name of the realm on the IQM authentication server.',
+)
+@click.option('--client-id', prompt='Client ID', default=CLIENT_ID, help='Client ID on the IQM authentication server.')
 @click.option(
     '--username',
     prompt='Username (optional)',
     required=False,
     default=USERNAME,
-    help='Username. If not provided, it will be asked for at login.')
+    help='Username. If not provided, it will be asked for at login.',
+)
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def init(  #pylint: disable=too-many-arguments
-         config_file: str,
-         tokens_file: str,
-         auth_server_url: str,
-         realm: str,
-         client_id: str,
-         username: str,
-         verbose: bool
+def init(  # pylint: disable=too-many-arguments
+    config_file: str, tokens_file: str, auth_server_url: str, realm: str, client_id: str, username: str, verbose: bool
 ) -> None:
     """Initialize configuration and authentication."""
     _set_log_level_by_verbosity(verbose)
@@ -273,7 +263,7 @@ def init(  #pylint: disable=too-many-arguments
             'realm': realm,
             'client_id': client_id,
             'username': username,
-            'tokens_file': tokens_file
+            'tokens_file': tokens_file,
         },
         indent=2,
     )
@@ -307,7 +297,8 @@ def auth() -> None:
     '--config-file',
     default=CortexCliCommand.default_config_path,
     type=click.Path(exists=True, dir_okay=False),
-    help='Location of the configuration file to be used.')
+    help='Location of the configuration file to be used.',
+)
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 def status(config_file, verbose) -> None:
     """Check status of authentication."""
@@ -365,19 +356,21 @@ def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> dict:
     # --no-refresh and --no-daemon are mutually exclusive
     if no_refresh and no_daemon:
         raise click.BadOptionUsage(
-            '--no-refresh',
-            "Cannot request a non-daemonic (foreground) token manager when using '--no-refresh'.")
+            '--no-refresh', "Cannot request a non-daemonic (foreground) token manager when using '--no-refresh'."
+        )
 
     # daemonizing is unavailable on Windows
     if platform.system().lower().startswith('win') and not no_refresh and not no_daemon:
         raise click.UsageError(
-            "Daemonizing is not yet possible on Windows. Please, use '--no-daemon' or '--no-refresh' flag.")
+            "Daemonizing is not yet possible on Windows. Please, use '--no-daemon' or '--no-refresh' flag."
+        )
 
     # config file, even the default one, should exist
     if not Path(config_file).is_file():
         raise click.BadParameter(
-            f'Provided config {config_file} does not exist. ' +
-            "Provide a different file or run 'cortex auth init' to create a new config file.")
+            f'Provided config {config_file} does not exist. '
+            + "Provide a different file or run 'cortex auth init' to create a new config file."
+        )
 
     # config file should be valid JSON and satisfy Cortex CLI format
     config = _validate_config_file(config_file)
@@ -390,29 +383,26 @@ def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> dict:
     '--config-file',
     default=CortexCliCommand.default_config_path,
     type=click.Path(exists=True, dir_okay=False),
-    help='Location of the configuration file to be used.')
+    help='Location of the configuration file to be used.',
+)
 @click.option('--username', help='Username for authentication.')
 @click.option('--password', help='Password for authentication.')
 @click.option(
-    '--refresh-period',
-    default=REFRESH_PERIOD,
-    show_default=True,
-    help='How often to refresh tokens (in seconds).')
+    '--refresh-period', default=REFRESH_PERIOD, show_default=True, help='How often to refresh tokens (in seconds).'
+)
 @click.option('--no-daemon', is_flag=True, default=False, help='Start token manager in foreground, not as daemon.')
 @click.option(
-    '--no-refresh',
-    is_flag=True,
-    default=False,
-    help='Login, but do not start token manager to refresh tokens.')
+    '--no-refresh', is_flag=True, default=False, help='Login, but do not start token manager to refresh tokens.'
+)
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def login(  #pylint: disable=too-many-arguments, too-many-locals, too-many-branches
-          config_file: str,
-          username: str,
-          password: str,
-          refresh_period: int,
-          no_daemon: bool,
-          no_refresh: bool,
-          verbose: bool
+def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-branches
+    config_file: str,
+    username: str,
+    password: str,
+    refresh_period: int,
+    no_daemon: bool,
+    no_refresh: bool,
+    verbose: bool,
 ) -> None:
     """Authenticate on the IQM server, and optionally start a token manager to maintain the session."""
     _set_log_level_by_verbosity(verbose)
@@ -443,10 +433,12 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals, too-many-branc
             logger.debug('Saved new tokens file: %s', tokens_file)
             if no_refresh:
                 logger.info(
-                    "Existing token used to refresh session. Token manager not started due to '--no-refresh' flag.")
+                    "Existing token used to refresh session. Token manager not started due to '--no-refresh' flag."
+                )
             elif no_daemon:
                 logger.info(
-                    'Existing token was used to refresh the auth session. Token manager started in foreground...')
+                    'Existing token was used to refresh the auth session. Token manager started in foreground...'
+                )
                 start_token_manager(refresh_period, config)
             else:
                 logger.info('Existing token was used to refresh the auth session. Token manager daemon started.')
@@ -468,13 +460,15 @@ def login(  #pylint: disable=too-many-arguments, too-many-locals, too-many-branc
 
     logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_file, tokens, auth_server_url)
-    click.echo(f"""
+    click.echo(
+        f"""
 To use the tokens file with IQM Client or IQM Client-based software, set the environment variable:
 
 export IQM_TOKENS_FILE={tokens_file}
 
 Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm-client/
-""")
+"""
+    )
 
     if no_refresh:
         logger.info("Token manager not started due to '--no-refresh' flag.")
@@ -488,13 +482,9 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 
 @auth.command()
 @click.option(
-    '--config-file',
-    type=click.Path(exists=True, dir_okay=False),
-    default=CortexCliCommand.default_config_path)
-@click.option(
-    '--keep-tokens',
-    is_flag=True, default=False,
-    help="Don't delete tokens file, but kill token manager.")
+    '--config-file', type=click.Path(exists=True, dir_okay=False), default=CortexCliCommand.default_config_path
+)
+@click.option('--keep-tokens', is_flag=True, default=False, help="Don't delete tokens file, but kill token manager.")
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
 def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
@@ -584,7 +574,7 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
         'timestamp': datetime.now().isoformat(),
         'access_token': tokens['access_token'],
         'refresh_token': tokens['refresh_token'],
-        'auth_server_url': auth_server_url
+        'auth_server_url': auth_server_url,
     }
 
     try:
@@ -644,39 +634,59 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 @click.option('--shots', default=1, type=int, help='Number of times to sample the circuit.')
 @click.option('--calibration-set-id', type=int, help='ID of the calibration set to use instead of the latest one.')
-@click.option('--qubit-mapping', default=None, type=click.File(), envvar='IQM_QUBIT_MAPPING_PATH',
-              help='Path to the qubit mapping JSON file. Must consist of a single JSON object, with logical '
-                   'qubit names as keys, and physical qubit names as values, '
-                   'for example {"Alice": "QB1", "Bob": "QB2"}. '
-                   'Can also be set using the IQM_QUBIT_MAPPING_PATH environment variable:\n'
-                   '`export IQM_QUBIT_MAPPING_PATH=\"/path/to/qubit/mapping.json\"`\n'
-                   'If not set, the qubit names are assumed to be physical names.')
-@click.option('--iqm-server-url', envvar='IQM_SERVER_URL', type=str, required=True,
-              help='URL of the IQM server interface for running circuits. Must start with http or https. '
-                   'Can also be set using the IQM_SERVER_URL environment variable:\n'
-                   '`export IQM_SERVER_URL=\"https://example.com\"`')
-@click.option('-i', '--iqm-json', is_flag=True,
-              help='Set this flag if FILENAME is already in IQM JSON format (instead of being an OpenQASM file).')
-@click.option('--config-file',
-              type=click.Path(exists=True, dir_okay=False),
-              help='Location of the configuration file to be used.'
-              'If neither --no-auth, nor --config-file are set, the default configuration file is used.')
-@click.option('--no-auth', is_flag=True, default=False,
-              help="Do not use Cortex CLI's auth functionality. "
-              'Mutually exclusive with --config-file option. '
-              'When submitting a circuit job, Cortex CLI will use IQM Client without passing any auth tokens. '
-              'Auth data can still be set using environment variables for IQM Client.')
+@click.option(
+    '--qubit-mapping',
+    default=None,
+    type=click.File(),
+    envvar='IQM_QUBIT_MAPPING_PATH',
+    help='Path to the qubit mapping JSON file. Must consist of a single JSON object, with logical '
+    'qubit names as keys, and physical qubit names as values, '
+    'for example {"Alice": "QB1", "Bob": "QB2"}. '
+    'Can also be set using the IQM_QUBIT_MAPPING_PATH environment variable:\n'
+    '`export IQM_QUBIT_MAPPING_PATH=\"/path/to/qubit/mapping.json\"`\n'
+    'If not set, the qubit names are assumed to be physical names.',
+)
+@click.option(
+    '--iqm-server-url',
+    envvar='IQM_SERVER_URL',
+    type=str,
+    required=True,
+    help='URL of the IQM server interface for running circuits. Must start with http or https. '
+    'Can also be set using the IQM_SERVER_URL environment variable:\n'
+    '`export IQM_SERVER_URL=\"https://example.com\"`',
+)
+@click.option(
+    '-i',
+    '--iqm-json',
+    is_flag=True,
+    help='Set this flag if FILENAME is already in IQM JSON format (instead of being an OpenQASM file).',
+)
+@click.option(
+    '--config-file',
+    type=click.Path(exists=True, dir_okay=False),
+    help='Location of the configuration file to be used.'
+    'If neither --no-auth, nor --config-file are set, the default configuration file is used.',
+)
+@click.option(
+    '--no-auth',
+    is_flag=True,
+    default=False,
+    help="Do not use Cortex CLI's auth functionality. "
+    'Mutually exclusive with --config-file option. '
+    'When submitting a circuit job, Cortex CLI will use IQM Client without passing any auth tokens. '
+    'Auth data can still be set using environment variables for IQM Client.',
+)
 @click.argument('filename', type=click.Path())
-def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-toplevel
-        verbose: bool,
-        shots: int,
-        calibration_set_id: Optional[int],
-        qubit_mapping: Optional[TextIOWrapper],
-        iqm_server_url: str,
-        filename: str,
-        iqm_json: bool,
-        config_file: str,
-        no_auth: bool
+def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-toplevel
+    verbose: bool,
+    shots: int,
+    calibration_set_id: Optional[int],
+    qubit_mapping: Optional[TextIOWrapper],
+    iqm_server_url: str,
+    filename: str,
+    iqm_json: bool,
+    config_file: str,
+    no_auth: bool,
 ) -> None:
     """Execute a quantum circuit.
 
@@ -716,10 +726,7 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
         # run the circuit on the backend
         iqm_client = IQMClient(iqm_server_url, tokens_file=tokens_file)
         job_id = iqm_client.submit_circuits(
-            [input_circuit],
-            qubit_mapping=parsed_qubit_mapping,
-            shots=shots,
-            calibration_set_id=calibration_set_id
+            [input_circuit], qubit_mapping=parsed_qubit_mapping, shots=shots, calibration_set_id=calibration_set_id
         )
         results = iqm_client.wait_for_results(job_id)
     except Exception as ex:
@@ -727,9 +734,7 @@ def run(  #pylint: disable=too-many-arguments, too-many-locals, import-outside-t
         raise click.ClickException(str(ex)) from ex
 
     if results.measurements is None:
-        raise click.ClickException(
-            f'No measurements obtained from backend. Job status is ${results.status}'
-        )
+        raise click.ClickException(f'No measurements obtained from backend. Job status is ${results.status}')
 
     logger.debug('\nResults:')
     if results.metadata.calibration_set_id is not None:

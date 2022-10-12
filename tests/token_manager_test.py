@@ -29,7 +29,7 @@ def test_start_token_manager(credentials, config_dict, tokens_dict):
     Tests that token manager refreshes tokens.
     """
     refresh_token = tokens_dict['refresh_token']
-    expected_tokens = prepare_tokens(300, 3600, previous_refresh_token = refresh_token, **credentials)
+    expected_tokens = prepare_tokens(300, 3600, previous_refresh_token=refresh_token, **credentials)
     expect_token_is_valid(refresh_token)
 
     runner = CliRunner()
@@ -37,7 +37,7 @@ def test_start_token_manager(credentials, config_dict, tokens_dict):
         with open('tokens.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(tokens_dict))
 
-        start_token_manager(cycle = 1, config = config_dict, single_run = True)
+        start_token_manager(cycle=1, config=config_dict, single_run=True)
 
         with open('tokens.json', 'r', encoding='utf-8') as file:
             saved_tokens = json.loads(file.read())
