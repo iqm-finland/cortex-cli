@@ -28,8 +28,9 @@ def validate_circuit(filename: str) -> None:
         ClickException: if circuit is invalid or not found
     """
     # pylint: disable=import-outside-toplevel
-    import cirq_iqm
     from cirq.contrib.qasm_import.exception import QasmException
+    import cirq_iqm
+
     try:
         cirq_iqm.circuit_from_qasm(read_file(filename))
     except QasmException as ex:

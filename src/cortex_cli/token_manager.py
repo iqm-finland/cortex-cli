@@ -14,20 +14,18 @@
 """
 Token manager for authentication and authorization to IQM's quantum computers. Part of Cortex CLI.
 """
+from datetime import datetime
 import json
 import os
+from pathlib import Path
 import platform
 import time
-from datetime import datetime
-from pathlib import Path
 from typing import Optional, Tuple
 
 from psutil import pid_exists
-from requests.exceptions import (  # pylint: disable=redefined-builtin
-    ConnectionError, Timeout)
+from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
 
-from cortex_cli.auth import (AUTH_REQUESTS_TIMEOUT, ClientAuthenticationError,
-                             refresh_request)
+from cortex_cli.auth import AUTH_REQUESTS_TIMEOUT, ClientAuthenticationError, refresh_request
 
 if not platform.system().lower().startswith('win'):
     import daemon
@@ -138,12 +136,12 @@ def refresh_tokens(config: dict, current_tokens: dict, cycle: int) -> Tuple[Opti
 
 
 def write_tokens(
-        path_to_tokens_file: str,
-        auth_server_url: str,
-        status: bool,
-        *,
-        access_token: str = '',
-        refresh_token: str = '',
+    path_to_tokens_file: str,
+    auth_server_url: str,
+    status: bool,
+    *,
+    access_token: str = '',
+    refresh_token: str = '',
 ) -> None:
     """
     Write new tokens into the tokens file.
@@ -155,14 +153,16 @@ def write_tokens(
         access_token: new access token
         refresh_token: new refresh token
     """
-    tokens_json = json.dumps({
-        'pid': os.getpid(),
-        'timestamp': datetime.now().isoformat(),
-        'refresh_status': 'SUCCESS' if status else 'FAILED',
-        'access_token': access_token,
-        'refresh_token': refresh_token,
-        'auth_server_url': auth_server_url
-    })
+    tokens_json = json.dumps(
+        {
+            'pid': os.getpid(),
+            'timestamp': datetime.now().isoformat(),
+            'refresh_status': 'SUCCESS' if status else 'FAILED',
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'auth_server_url': auth_server_url,
+        }
+    )
 
     try:
         Path(path_to_tokens_file).parent.mkdir(parents=True, exist_ok=True)
