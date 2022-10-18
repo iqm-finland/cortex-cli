@@ -67,7 +67,7 @@ def package_installed(package_name: str) -> bool:
     return False
 
 
-def missing_packages(required_packages: list[str]) -> list:
+def missing_packages(required_packages: list[str]) -> list[str]:
     """Reports which of the given packages are not installed.
 
     Args:
