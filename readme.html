@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Cortex CLI &#8212; Cortex CLI 1.4 documentation</title>
+    <title>Cortex CLI &#8212; Cortex CLI 1.5 documentation</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -278,6 +278,13 @@ title="Print to PDF"
      Multiple configuration files
     </a>
    </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#using-cortex-cli-for-circuits">
+   Using Cortex CLI for circuits
+  </a>
+  <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#circuit-validation">
      Circuit validation
@@ -349,6 +356,13 @@ title="Print to PDF"
      Multiple configuration files
     </a>
    </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#using-cortex-cli-for-circuits">
+   Using Cortex CLI for circuits
+  </a>
+  <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#circuit-validation">
      Circuit validation
@@ -371,7 +385,7 @@ title="Print to PDF"
                 
               <div>
                 
-  <p id="readme"><img alt="CI badge" src="https://github.com/iqm-finland/cortex-cli/actions/workflows/ci.yml/badge.svg" /> <img alt="Release badge" src="https://img.shields.io/github/release/iqm-finland/cortex-cli.svg" /></p>
+  <p id="readme"><img alt="CI badge" src="https://github.com/iqm-finland/cortex-cli/actions/workflows/ci.yml/badge.svg" /> <img alt="Release badge" src="https://img.shields.io/github/release/iqm-finland/cortex-cli.svg" /> <a class="reference external" href="https://github.com/psf/black"><img alt="Black badge" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a></p>
 <section id="cortex-cli">
 <h1>Cortex CLI<a class="headerlink" href="#cortex-cli" title="Permalink to this headline">#</a></h1>
 <p>Command-line interface (CLI) for interacting with an IQM quantum computer.</p>
@@ -471,6 +485,13 @@ $ cortex auth <span class="nb">logout</span> --config-file /home/joe/config.json
 </pre></div>
 </div>
 </section>
+</section>
+<section id="using-cortex-cli-for-circuits">
+<h2>Using Cortex CLI for circuits<a class="headerlink" href="#using-cortex-cli-for-circuits" title="Permalink to this headline">#</a></h2>
+<p>Circuit-related commands require additional dependencies to be installed. To install them, run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ pip install <span class="s2">&quot;iqm-cortex-cli[circuit]&quot;</span>
+</pre></div>
+</div>
 <section id="circuit-validation">
 <h3>Circuit validation<a class="headerlink" href="#circuit-validation" title="Permalink to this headline">#</a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ cortex circuit validate my_circuit.qasm
@@ -543,7 +564,7 @@ example above, “measurement_0” is a 4-qubit measurement, and the number of s
         <footer class="col footer"><p>
   
       &copy; Copyright 2019-2022, IQM Finland Oy.<br/>
-    Last updated on 2022-10-03.<br/>
+    Last updated on 2022-10-18.<br/>
 </p>
         </footer>
     </div>
