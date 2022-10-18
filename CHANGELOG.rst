@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.5
+===========
+
+* Make circuit execution an optional functionality, which requires to install additional dependencies. `#27 <https://github.com/iqm-finland/cortex-cli/pull/27>`_
+
 Version 1.4
 ===========
 

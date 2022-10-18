@@ -18,6 +18,12 @@ import click
 
 from cortex_cli.utils import read_file
 
+CIRCUIT_MISSING_DEPS_MSG = """This requires additional dependencies which are not currently installed.
+To install them, run:
+
+pip install "iqm-cortex-cli[circuit]"
+"""
+
 
 def validate_circuit(filename: str) -> None:
     """Validates the given OpenQASM 2.0 file.
@@ -27,12 +33,16 @@ def validate_circuit(filename: str) -> None:
     Raises:
         ClickException: if circuit is invalid or not found
     """
-    # pylint: disable=import-outside-toplevel
-    from cirq.contrib.qasm_import.exception import QasmException
-    import cirq_iqm
+    try:
+        # pylint: disable=import-outside-toplevel
+        from cirq.contrib.qasm_import.exception import QasmException
+        from cirq_iqm import circuit_from_qasm
+    except ModuleNotFoundError as ex:
+        message = f'{CIRCUIT_MISSING_DEPS_MSG}\nActual error which occured when attempting to load dependencies: {ex}'
+        raise click.ClickException(message) from ex
 
     try:
-        cirq_iqm.circuit_from_qasm(read_file(filename))
+        circuit_from_qasm(read_file(filename))
     except QasmException as ex:
         message = f'Invalid quantum circuit in {filename}\n{ex.message}'
         raise click.ClickException(message) from ex

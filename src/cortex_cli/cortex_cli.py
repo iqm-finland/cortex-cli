@@ -31,9 +31,9 @@ from requests.exceptions import ConnectionError, Timeout  # pylint: disable=rede
 
 from cortex_cli import __version__
 from cortex_cli.auth import ClientAuthenticationError, login_request, logout_request, refresh_request, time_left_seconds
-from cortex_cli.circuit import validate_circuit
+from cortex_cli.circuit import CIRCUIT_MISSING_DEPS_MSG, validate_circuit
 from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
-from cortex_cli.utils import read_file, read_json
+from cortex_cli.utils import missing_packages, read_file, read_json
 
 HOME_PATH = str(Path.home())
 DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
@@ -545,7 +545,12 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     logger.info('Logout aborted.')
 
 
-@cortex_cli.group()
+circuit_help_msg = 'Execute your quantum circuits with Cortex CLI.'
+if missing_packages(['cirq_iqm', 'iqm_client']):
+    circuit_help_msg += f' {CIRCUIT_MISSING_DEPS_MSG}'
+
+
+@cortex_cli.group(help=circuit_help_msg)
 def circuit() -> None:
     """Execute your quantum circuits with Cortex CLI."""
     return
@@ -698,9 +703,13 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
     results. The first index of the array goes over the shots, and the second over the qubits
     included in the measurement.
     """
-    from cirq_iqm import circuit_from_qasm
-    from cirq_iqm.iqm_sampler import serialize_circuit
-    from iqm_client.iqm_client import Circuit, IQMClient
+    try:
+        from cirq_iqm import circuit_from_qasm
+        from cirq_iqm.iqm_sampler import serialize_circuit
+        from iqm_client.iqm_client import Circuit, IQMClient
+    except ModuleNotFoundError as ex:
+        message = f'{CIRCUIT_MISSING_DEPS_MSG}\nActual error which occured when attempting to load dependencies: {ex}'
+        raise click.ClickException(message) from ex
 
     _set_log_level_by_verbosity(verbose)
 
