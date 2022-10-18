@@ -145,7 +145,7 @@ Circuit-related commands require additional dependencies to be installed. To ins
 
 .. code-block:: bash
 
-  $ pip install iqm-cortex-cli[circuit]
+  $ pip install "iqm-cortex-cli[circuit]"
 
 Circuit validation
 ^^^^^^^^^^^^^^^^^^

@@ -21,7 +21,7 @@ from cortex_cli.utils import read_file
 CIRCUIT_MISSING_DEPS_MSG = """This requires additional dependencies which are not currently installed.
 To install them, run:
 
-pip install iqm-cortex-cli[circuit]
+pip install "iqm-cortex-cli[circuit]"
 """
 
 
