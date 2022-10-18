@@ -137,6 +137,16 @@ for example:
   $ cortex auth login --config-file /home/joe/config.json
   $ cortex auth logout --config-file /home/joe/config.json
 
+
+Using Cortex CLI for circuits
+-----------------------------
+
+Circuit-related commands require additional dependencies to be installed. To install them, run
+
+.. code-block:: bash
+
+  $ pip install iqm-cortex-cli[circuit]
+
 Circuit validation
 ^^^^^^^^^^^^^^^^^^
 
