@@ -26,12 +26,13 @@ from typing import Optional
 
 import click
 from psutil import Process
-from pydantic import AnyUrl, BaseModel, ValidationError
+from pydantic import ValidationError
 from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
 
 from cortex_cli import __version__
 from cortex_cli.auth import ClientAuthenticationError, login_request, logout_request, refresh_request, time_left_seconds
 from cortex_cli.circuit import CIRCUIT_MISSING_DEPS_MSG, validate_circuit
+from cortex_cli.models import ConfigFile, TokensFile
 from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
 from cortex_cli.utils import missing_packages, read_file, read_json
 
@@ -42,26 +43,6 @@ REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
 REFRESH_PERIOD = 3 * 60  # in seconds
-
-
-class ConfigFile(BaseModel):
-    """Model of configuration file, used for validating JSON."""
-
-    auth_server_url: AnyUrl
-    realm: str
-    client_id: str
-    username: Optional[str]
-    tokens_file: Path
-
-
-class TokensFile(BaseModel):
-    """Model of tokens file, used for validating JSON."""
-
-    pid: Optional[int]
-    timestamp: datetime
-    access_token: str
-    refresh_token: str
-    auth_server_url: AnyUrl
 
 
 class ClickLoggingHandler(logging.Handler):
@@ -125,7 +106,7 @@ def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
         return new_path
 
 
-def _validate_config_file(config_file: str) -> dict:
+def _validate_config_file(config_file: str) -> ConfigFile:
     """Checks if provided config file is valid, i.e. it:
        - is valid JSON
        - satisfies Cortex CLI format
@@ -136,7 +117,7 @@ def _validate_config_file(config_file: str) -> dict:
         click.FileError: if config_file is not valid JSON
         click.FileError: if config_file does not satisfy Cortex CLI format
     Returns:
-        dict: config dict loaded from config_file
+        ConfigFile: validated config loaded from config_file
     """
 
     # config_file must be a valid JSON
@@ -147,7 +128,7 @@ def _validate_config_file(config_file: str) -> dict:
 
     # config_file must be in correct format
     try:
-        ConfigFile(**config)
+        validated_config = ConfigFile(**config)
     except ValidationError as ex:
         raise click.FileError(
             config_file,
@@ -161,10 +142,10 @@ Full validation error:
 {ex}""",
         )
 
-    return config
+    return validated_config
 
 
-def _validate_tokens_file(tokens_file: str) -> dict:
+def _validate_tokens_file(tokens_file: str) -> TokensFile:
     """Checks if provided tokens file is valid, i.e. it:
        - is valid JSON
        - satisfies Cortex CLI format
@@ -175,7 +156,7 @@ def _validate_tokens_file(tokens_file: str) -> dict:
         click.FileError: if tokens file is not valid JSON
         click.FileError: if tokens file does not satisfy Cortex CLI format
     Returns:
-        dict: tokens dict loaded from tokens_file
+        TokensFile: validated tokens loaded from tokens_file
     """
 
     # tokens_file must be a valid JSON
@@ -186,7 +167,7 @@ def _validate_tokens_file(tokens_file: str) -> dict:
 
     # tokens_file must be in correct format
     try:
-        TokensFile(**tokens)
+        validated_tokens = TokensFile(**tokens)
     except ValidationError as ex:
         raise click.FileError(
             tokens_file,
@@ -200,7 +181,7 @@ Full validation error:
 {ex}""",
         )
 
-    return tokens
+    return validated_tokens
 
 
 class CortexCliCommand(click.Group):
@@ -274,6 +255,8 @@ def init(  # pylint: disable=too-many-arguments
         if pid:
             logger.info('Active token manager (PID %s) will be killed.', pid)
             Process(pid).terminate()
+        # Remove tokens file to start from scratch after init
+        os.remove(tokens_file)
 
     try:
         path_to_dir.mkdir(parents=True, exist_ok=True)
@@ -306,25 +289,26 @@ def status(config_file, verbose) -> None:
 
     logger.debug('Using configuration file: %s', config_file)
     config = _validate_config_file(config_file)
-    tokens_file = config['tokens_file']
-    if not Path(tokens_file).is_file():
+    tokens_file = str(config.tokens_file)
+    if not config.tokens_file.is_file():
         click.echo('Not logged in. Use "cortex auth login" to login.')
         return
-
-    tokens_data = _validate_tokens_file(tokens_file)
+    try:
+        tokens_data = _validate_tokens_file(tokens_file)
+    except click.FileError:
+        click.echo('Provided tokens.json file is invalid. Use "cortex auth login" to generate new tokens.')
+        return
 
     click.echo(f'Tokens file: {tokens_file}')
-    if 'pid' not in tokens_data:
+    if not tokens_data.pid:
         click.echo("Tokens file doesn't contain PID. Probably, 'cortex auth login' was launched with '--no-refresh'\n")
 
-    refresh_status = tokens_data.get('refresh_status', 'SUCCESS').upper()
-    styled_status = click.style(refresh_status, fg='green' if refresh_status == 'SUCCESS' else 'red')
-    refresh_timestamp = datetime.fromisoformat(tokens_data['timestamp']).strftime('%m/%d/%Y %H:%M:%S')
-    click.echo(f"Last refresh: {refresh_timestamp} from {tokens_data['auth_server_url']} {styled_status}")
-    seconds_at = time_left_seconds(tokens_data['access_token'])
+    refresh_timestamp = tokens_data.timestamp.strftime('%m/%d/%Y %H:%M:%S')
+    click.echo(f'Last refresh: {refresh_timestamp} from {tokens_data.auth_server_url}')
+    seconds_at = time_left_seconds(tokens_data.access_token)
     time_left_at = str(timedelta(seconds=seconds_at))
     click.echo(f'Time left on access token (hh:mm:ss): {time_left_at}')
-    seconds_rt = time_left_seconds(tokens_data['refresh_token'])
+    seconds_rt = time_left_seconds(tokens_data.refresh_token)
     time_left_rt = str(timedelta(seconds=seconds_rt))
     click.echo(f'Time left on refresh token (hh:mm:ss): {time_left_rt}')
 
@@ -335,7 +319,7 @@ def status(config_file, verbose) -> None:
         click.echo(f'Token manager: {click.style("NOT RUNNING", fg="red")}')
 
 
-def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> dict:
+def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> ConfigFile:
     """Checks if provided combination of auth login options is valid:
        - no_daemon and no_refresh are mutually exclusive
        - daemon mode should not be requested on Windows
@@ -350,7 +334,7 @@ def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> dict:
         click.UsageError: if daemon is requested on Windows
         click.BadParameter: if config_file does not exist
     Returns:
-        dict: config dict loaded from config_file
+        ConfigFile: validated config loaded from config_file
     """
 
     # --no-refresh and --no-daemon are mutually exclusive
@@ -376,6 +360,55 @@ def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> dict:
     config = _validate_config_file(config_file)
 
     return config
+
+
+def _refresh_tokens(  # pylint: disable=too-many-arguments
+    refresh_period: int,
+    no_daemon: bool,
+    no_refresh: bool,
+    config: ConfigFile,
+    auth_server_url: str,
+    realm: str,
+    client_id: str,
+    tokens_file: str,
+    refresh_token: str,
+) -> bool:
+    """Refreshes token and returns success status
+
+    Args:
+        refresh_period (int): --refresh_period option value
+        no_daemon (bool): --no-daemon option value
+        no_refresh (bool): --no-refresh option value
+        config (ConfigFile): cortex-cli config
+        auth_server_url (str): authorization server url
+        realm (str): authorization realm
+        client_id (str): authorization client id
+        tokens_file (str): path to tokens file
+        refresh_token (str): token used for token refresh
+    Returns:
+        bool: whether token refresh was successful or not
+    """
+    logger.debug('Attempting to refresh tokens by using existing refresh token from file: %s', tokens_file)
+
+    new_tokens = None
+    try:
+        new_tokens = refresh_request(auth_server_url, realm, client_id, refresh_token)
+    except (Timeout, ConnectionError, ClientAuthenticationError):
+        logger.info('Failed to refresh tokens by using existing token. Switching to username/password.')
+
+    if new_tokens:
+        save_tokens_file(tokens_file, new_tokens, auth_server_url)
+        logger.debug('Saved new tokens file: %s', tokens_file)
+        if no_refresh:
+            logger.info("Existing token used to refresh session. Token manager not started due to '--no-refresh' flag.")
+        elif no_daemon:
+            logger.info('Existing token was used to refresh the auth session. Token manager started in foreground...')
+            start_token_manager(refresh_period, config)
+        else:
+            logger.info('Existing token was used to refresh the auth session. Token manager daemon started.')
+            daemonize_token_manager(refresh_period, config)
+        return True
+    return False
 
 
 @auth.command()
@@ -410,44 +443,38 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
     # Validate whether the combination of options makes sense
     config = _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file)
 
-    auth_server_url, realm, client_id = config['auth_server_url'], config['realm'], config['client_id']
-    tokens_file = config['tokens_file']
+    auth_server_url, realm, client_id = config.auth_server_url, config.realm, config.client_id
+    tokens_file = str(config.tokens_file)
 
-    if Path(tokens_file).is_file():
+    if config.tokens_file.is_file():
         if check_token_manager(tokens_file):
             logger.info("Login aborted, because token manager is already running. See 'cortex auth status'.")
             return
 
         # Tokens file exists; Refresh tokens without username/password
-        refresh_token = _validate_tokens_file(tokens_file)['refresh_token']
-        logger.debug('Attempting to refresh tokens by using existing refresh token from file: %s', tokens_file)
-
-        new_tokens = None
         try:
-            new_tokens = refresh_request(auth_server_url, realm, client_id, refresh_token)
-        except (Timeout, ConnectionError, ClientAuthenticationError):
-            logger.info('Failed to refresh tokens by using existing token. Switching to username/password.')
+            refresh_token = _validate_tokens_file(tokens_file).refresh_token
+        except (click.FileError, ValidationError):
+            click.echo('Provided tokens.json file is invalid, continuing with login wit username and password.')
+            os.remove(tokens_file)
+            refresh_token = None
 
-        if new_tokens:
-            save_tokens_file(tokens_file, new_tokens, auth_server_url)
-            logger.debug('Saved new tokens file: %s', tokens_file)
-            if no_refresh:
-                logger.info(
-                    "Existing token used to refresh session. Token manager not started due to '--no-refresh' flag."
-                )
-            elif no_daemon:
-                logger.info(
-                    'Existing token was used to refresh the auth session. Token manager started in foreground...'
-                )
-                start_token_manager(refresh_period, config)
-            else:
-                logger.info('Existing token was used to refresh the auth session. Token manager daemon started.')
-                daemonize_token_manager(refresh_period, config)
+        if refresh_token and _refresh_tokens(
+            refresh_period,
+            no_daemon,
+            no_refresh,
+            config,
+            auth_server_url,
+            realm,
+            client_id,
+            tokens_file,
+            refresh_token,
+        ):
             return
 
     # Login with username and password
-    username = username or config['username'] or click.prompt('Username')
-    if config['username']:
+    username = username or config.username or click.prompt('Username')
+    if config.username:
         click.echo(f'Username: {username}')
     password = password or click.prompt('Password', hide_input=True)
 
@@ -489,20 +516,25 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
     config = _validate_config_file(config_file)
-    auth_server_url, realm, client_id = config['auth_server_url'], config['realm'], config['client_id']
-    tokens_file = config['tokens_file']
+    auth_server_url, realm, client_id = config.auth_server_url, config.realm, config.client_id
+    tokens_file = config.tokens_file
 
-    if not Path(tokens_file).is_file():
+    if not tokens_file.is_file():
         click.echo('Not logged in.')
         return
 
-    tokens = _validate_tokens_file(tokens_file)
-    pid = tokens['pid'] if 'pid' in tokens else None
-    refresh_token = tokens['refresh_token']
+    try:
+        tokens = _validate_tokens_file(str(tokens_file))
+    except click.FileError:
+        click.echo('Found invalid tokens.json, cannot perform any logout steps.')
+        return
 
-    extra_msg = ' and kill token manager' if check_token_manager(tokens_file) else ''
+    pid = tokens.pid
+    refresh_token = tokens.refresh_token
 
-    if keep_tokens and not check_token_manager(tokens_file):
+    extra_msg = ' and kill token manager' if check_token_manager(str(tokens_file)) else ''
+
+    if keep_tokens and not check_token_manager(str(tokens_file)):
         click.echo('Token manager is not running, and you chose to keep tokens. Nothing to do, exiting.')
         return
 
@@ -628,11 +660,11 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
     config = _validate_config_file(config_file)
 
     # and at least contain an existing tokens_file
-    tokens_file = config['tokens_file']
-    if not Path(tokens_file).is_file():
+    tokens_file = config.tokens_file
+    if not tokens_file.is_file():
         raise click.UsageError("Not logged in. Run 'cortex auth login' to log in.")
 
-    return tokens_file
+    return str(tokens_file)
 
 
 @circuit.command()
