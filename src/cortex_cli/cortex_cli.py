@@ -386,7 +386,7 @@ def _refresh_tokens(  # pylint: disable=too-many-arguments
         click.echo('Provided tokens.json file is invalid, continuing with login with username and password.')
         os.remove(tokens_file)
         return False
-    
+
     logger.debug('Attempting to refresh tokens by using existing refresh token from file: %s', tokens_file)
 
     new_tokens = None
