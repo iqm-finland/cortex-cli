@@ -367,7 +367,6 @@ def _refresh_tokens(  # pylint: disable=too-many-arguments
     no_daemon: bool,
     no_refresh: bool,
     config: ConfigFile,
-    refresh_token: str,
 ) -> bool:
     """Refreshes token and returns success status
 
@@ -376,11 +375,19 @@ def _refresh_tokens(  # pylint: disable=too-many-arguments
         no_daemon (bool): --no-daemon option value
         no_refresh (bool): --no-refresh option value
         config (ConfigFile): cortex-cli config
-        refresh_token (str): token used for token refresh
     Returns:
         bool: whether token refresh was successful or not
     """
-    logger.debug('Attempting to refresh tokens by using existing refresh token from file: %s', config.tokens_file)
+    # Tokens file exists; Refresh tokens without username/password
+    tokens_file = str(config.tokens_file)
+    try:
+        refresh_token = _validate_tokens_file(tokens_file).refresh_token
+    except (click.FileError, ValidationError):
+        click.echo('Provided tokens.json file is invalid, continuing with login with username and password.')
+        os.remove(tokens_file)
+        return False
+    
+    logger.debug('Attempting to refresh tokens by using existing refresh token from file: %s', tokens_file)
 
     new_tokens = None
     try:
@@ -389,8 +396,8 @@ def _refresh_tokens(  # pylint: disable=too-many-arguments
         logger.info('Failed to refresh tokens by using existing token. Switching to username/password.')
 
     if new_tokens:
-        save_tokens_file(str(config.tokens_file), new_tokens, config.auth_server_url)
-        logger.debug('Saved new tokens file: %s', config.tokens_file)
+        save_tokens_file(tokens_file, new_tokens, config.auth_server_url)
+        logger.debug('Saved new tokens file: %s', tokens_file)
         if no_refresh:
             logger.info("Existing token used to refresh session. Token manager not started due to '--no-refresh' flag.")
         elif no_daemon:
@@ -443,21 +450,7 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
             logger.info("Login aborted, because token manager is already running. See 'cortex auth status'.")
             return
 
-        # Tokens file exists; Refresh tokens without username/password
-        try:
-            refresh_token = _validate_tokens_file(tokens_file).refresh_token
-        except (click.FileError, ValidationError):
-            click.echo('Provided tokens.json file is invalid, continuing with login with username and password.')
-            os.remove(tokens_file)
-            refresh_token = None
-
-        if refresh_token and _refresh_tokens(
-            refresh_period,
-            no_daemon,
-            no_refresh,
-            config,
-            refresh_token,
-        ):
+        if _refresh_tokens(refresh_period, no_daemon, no_refresh, config):
             return
 
     # Login with username and password
