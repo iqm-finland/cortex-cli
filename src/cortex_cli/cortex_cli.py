@@ -362,7 +362,7 @@ def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> Confi
     return config
 
 
-def _refresh_tokens(  # pylint: disable=too-many-arguments
+def _refresh_tokens(
     refresh_period: int,
     no_daemon: bool,
     no_refresh: bool,
