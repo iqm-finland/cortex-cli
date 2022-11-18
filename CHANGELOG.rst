@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.6
+===========
+
+* Gracefully handle token files with outdated format. `#28 <https://github.com/iqm-finland/cortex-cli/pull/28>`_
+
 Version 1.5
 ===========
 
