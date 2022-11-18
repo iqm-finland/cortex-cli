@@ -18,6 +18,7 @@ Tests for Cortex CLI's commands
 import datetime
 import json
 import os
+from pathlib import Path
 
 import click
 from click.testing import CliRunner
@@ -108,16 +109,17 @@ def test_init_overwrites_config_file(config_dict):
             assert loaded_config != old_config_dict
 
 
-def test_init_kills_daemon(config_dict, tokens_dict):
+def test_init_kills_daemon_and_removes_token_file(config_dict, tokens_dict):
     """
-    Tests that ``cortex init`` kills active token manager daemon.
+    Tests that ``cortex init`` kills active token manager daemon and removes old token file.
     """
     runner = CliRunner()
     with runner.isolated_filesystem():
         # emulate a running daemon by storing a real PID
         tokens_dict['pid'] = os.getpid()
 
-        with open('tokens.json', 'w', encoding='UTF-8') as file:
+        tokens_file_path = 'tokens.json'
+        with open(tokens_file_path, 'w', encoding='UTF-8') as file:
             file.write(json.dumps(tokens_dict))
 
         expect_process_terminate()
@@ -138,6 +140,7 @@ def test_init_kills_daemon(config_dict, tokens_dict):
             ],
             input='y',
         )
+        assert not Path(tokens_file_path).is_file()
         assert result.exit_code == 0
         assert 'will be killed' in result.output
 
@@ -194,6 +197,22 @@ def test_auth_status_reports_no_tokens_file(config_dict):
         result = runner.invoke(cortex_cli, ['auth', 'status', '--config-file', 'config.json'])
         assert result.exit_code == 0
         assert 'cortex auth login' in result.output
+
+
+def test_auth_status_reports_invalid_tokens_file(config_dict, tokens_dict):
+    """
+    Tests that ``cortex auth status`` reports error when tokens file is invalid.
+    """
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        tokens_dict['timestamp'] = 'not a timestamp'
+        with open('tokens.json', 'w', encoding='utf-8') as file:
+            file.write(json.dumps(tokens_dict))
+        result = runner.invoke(cortex_cli, ['auth', 'status', '--config-file', 'config.json'])
+        assert result.exit_code == 0
+        assert 'Provided tokens.json file is invalid' in result.output
 
 
 def test_auth_status_reports_no_pid_in_tokens_file(config_dict, tokens_dict):
@@ -399,6 +418,49 @@ def test_auth_login_succeeds_without_password(config_dict, tokens_dict, credenti
         with open('tokens.json', 'r', encoding='utf-8') as file:
             tokens = json.loads(file.read())
 
+        assert tokens['access_token'] == expected_tokens['access_token']
+        assert tokens['refresh_token'] == expected_tokens['refresh_token']
+
+    unstub()
+
+
+def test_auth_login_proceeds_with_login_on_invalid_tokens_json(config_dict, tokens_dict, credentials):
+    """
+    Tests that ``cortex auth login`` performs authentication with username and password
+    when tokens file is invalid.
+    """
+    expected_tokens = prepare_tokens(300, 3600, **credentials)
+    runner = CliRunner()
+
+    with runner.isolated_filesystem():
+        config_dict['username'] = credentials['username']
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+
+        del tokens_dict['pid']
+        tokens_dict['timestamp'] = 'not a timestamp'
+        with open('tokens.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(tokens_dict))
+
+        result = runner.invoke(
+            cortex_cli,
+            [
+                'auth',
+                'login',
+                '--config-file',
+                'config.json',
+                '--username',
+                credentials['username'],
+                '--password',
+                credentials['password'],
+                '--no-refresh',  # do not start token manager
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert 'Provided tokens.json file is invalid' in result.output
+        with open('tokens.json', 'r', encoding='utf-8') as file:
+            tokens = json.loads(file.read())
         assert tokens['access_token'] == expected_tokens['access_token']
         assert tokens['refresh_token'] == expected_tokens['refresh_token']
 
@@ -632,6 +694,33 @@ def test_auth_logout_fails_without_tokens_file(config_dict):
         result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json'])
         assert result.exit_code == 0
         assert 'Not logged in' in result.output
+
+
+def test_auth_logout_fails_with_invalid_tokens_file(config_dict, tokens_dict):
+    """
+    Tests that ``cortex auth logout`` reports error when tokens file is invalid.
+    """
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        tokens_dict['timestamp'] = 'not a timestamp'
+        with open('tokens.json', 'w', encoding='utf-8') as file:
+            file.write(json.dumps(tokens_dict))
+
+        result = runner.invoke(
+            cortex_cli,
+            [
+                'auth',
+                'logout',
+                '--config-file',
+                'config.json',
+                '--keep-tokens',
+            ],
+            input='n',
+        )
+        assert result.exit_code == 0
+        assert 'Found invalid tokens.json' in result.output
 
 
 # Logout Scenario 3 failure

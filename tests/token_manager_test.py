@@ -20,6 +20,7 @@ import json
 from click.testing import CliRunner
 from mockito import unstub
 
+from cortex_cli.models import ConfigFile
 from cortex_cli.token_manager import start_token_manager
 from tests.conftest import expect_token_is_valid, prepare_tokens
 
@@ -37,7 +38,7 @@ def test_start_token_manager(credentials, config_dict, tokens_dict):
         with open('tokens.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(tokens_dict))
 
-        start_token_manager(cycle=1, config=config_dict, single_run=True)
+        start_token_manager(cycle=1, config=ConfigFile(**config_dict), single_run=True)
 
         with open('tokens.json', 'r', encoding='utf-8') as file:
             saved_tokens = json.loads(file.read())

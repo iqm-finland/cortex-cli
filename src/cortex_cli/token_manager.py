@@ -26,16 +26,17 @@ from psutil import pid_exists
 from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
 
 from cortex_cli.auth import AUTH_REQUESTS_TIMEOUT, ClientAuthenticationError, refresh_request
+from cortex_cli.models import ConfigFile
 
 if not platform.system().lower().startswith('win'):
     import daemon
 
 
-def daemonize_token_manager(cycle: int, config: dict, logfile: str = '/tmp/token_manager.log') -> None:
+def daemonize_token_manager(cycle: int, config: ConfigFile, logfile: str = '/tmp/token_manager.log') -> None:
     """Start a daemon process.
     Args:
         cycle: refresh cycle in seconds
-        config: Cortex CLI configuration dict
+        config: Cortex CLI configuration
         logfile: path to file for writing errors
     """
     with open(logfile, 'w', encoding='UTF-8') as output:
@@ -43,7 +44,7 @@ def daemonize_token_manager(cycle: int, config: dict, logfile: str = '/tmp/token
             start_token_manager(cycle, config)
 
 
-def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> None:
+def start_token_manager(cycle: int, config: ConfigFile, single_run: bool = False) -> None:
     """Refresh tokens periodically.
 
     For each refresh cycle new tokens are requested from auth server.
@@ -54,18 +55,19 @@ def start_token_manager(cycle: int, config: dict, single_run: bool = False) -> N
 
     Args:
         cycle: refresh cycle in seconds
-        config: Cortex CLI configuration dict
+        config: Cortex CLI configuration
         single_run: if True, refresh tokens only once and exit; otherwise repeat refreshing indefinitely
     """
 
     while True:
-        tokens = read_tokens(config['tokens_file'])
+        tokens_file = str(config.tokens_file)
+        tokens = read_tokens(tokens_file)
 
         new_tokens, status, sleep_time = refresh_tokens(config, tokens, cycle)
         if new_tokens is None:
             break
 
-        write_tokens(config['tokens_file'], config['auth_server_url'], status, **new_tokens)
+        write_tokens(tokens_file, config.auth_server_url, status, **new_tokens)
 
         if single_run:
             break
@@ -90,12 +92,12 @@ def read_tokens(path_to_tokens_file: str) -> dict:
     return tokens
 
 
-def refresh_tokens(config: dict, current_tokens: dict, cycle: int) -> Tuple[Optional[dict], bool, int]:
+def refresh_tokens(config: ConfigFile, current_tokens: dict, cycle: int) -> Tuple[Optional[dict], bool, int]:
     """
     Request new tokens from auth server.
 
     Args:
-        config: dict containing token manager configuration
+        config: Cortex CLI configuration
         current_tokens: dict containing the current tokens from the tokens file
         cycle: refresh cycle length in seconds
 
@@ -109,7 +111,7 @@ def refresh_tokens(config: dict, current_tokens: dict, cycle: int) -> Tuple[Opti
     access_token = current_tokens.get('access_token', '')
     refresh_token = current_tokens.get('refresh_token', '')
     try:
-        tokens = refresh_request(config['auth_server_url'], config['realm'], config['client_id'], refresh_token)
+        tokens = refresh_request(config.auth_server_url, config.realm, config.client_id, refresh_token)
         status = True
         sleep_time = cycle
         log_timestamp = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
