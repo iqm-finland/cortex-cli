@@ -38,4 +38,5 @@ class TokensFile(BaseModel):
     timestamp: datetime
     access_token: str
     refresh_token: str
+    refresh_status: Optional[str]
     auth_server_url: AnyUrl
