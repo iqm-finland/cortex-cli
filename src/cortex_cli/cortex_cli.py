@@ -367,10 +367,6 @@ def _refresh_tokens(  # pylint: disable=too-many-arguments
     no_daemon: bool,
     no_refresh: bool,
     config: ConfigFile,
-    auth_server_url: str,
-    realm: str,
-    client_id: str,
-    tokens_file: str,
     refresh_token: str,
 ) -> bool:
     """Refreshes token and returns success status
@@ -380,25 +376,21 @@ def _refresh_tokens(  # pylint: disable=too-many-arguments
         no_daemon (bool): --no-daemon option value
         no_refresh (bool): --no-refresh option value
         config (ConfigFile): cortex-cli config
-        auth_server_url (str): authorization server url
-        realm (str): authorization realm
-        client_id (str): authorization client id
-        tokens_file (str): path to tokens file
         refresh_token (str): token used for token refresh
     Returns:
         bool: whether token refresh was successful or not
     """
-    logger.debug('Attempting to refresh tokens by using existing refresh token from file: %s', tokens_file)
+    logger.debug('Attempting to refresh tokens by using existing refresh token from file: %s', config.tokens_file)
 
     new_tokens = None
     try:
-        new_tokens = refresh_request(auth_server_url, realm, client_id, refresh_token)
+        new_tokens = refresh_request(config.auth_server_url, config.realm, config.client_id, refresh_token)
     except (Timeout, ConnectionError, ClientAuthenticationError):
         logger.info('Failed to refresh tokens by using existing token. Switching to username/password.')
 
     if new_tokens:
-        save_tokens_file(tokens_file, new_tokens, auth_server_url)
-        logger.debug('Saved new tokens file: %s', tokens_file)
+        save_tokens_file(str(config.tokens_file), new_tokens, config.auth_server_url)
+        logger.debug('Saved new tokens file: %s', config.tokens_file)
         if no_refresh:
             logger.info("Existing token used to refresh session. Token manager not started due to '--no-refresh' flag.")
         elif no_daemon:
@@ -455,7 +447,7 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
         try:
             refresh_token = _validate_tokens_file(tokens_file).refresh_token
         except (click.FileError, ValidationError):
-            click.echo('Provided tokens.json file is invalid, continuing with login wit username and password.')
+            click.echo('Provided tokens.json file is invalid, continuing with login with username and password.')
             os.remove(tokens_file)
             refresh_token = None
 
@@ -464,10 +456,6 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
             no_daemon,
             no_refresh,
             config,
-            auth_server_url,
-            realm,
-            client_id,
-            tokens_file,
             refresh_token,
         ):
             return
