@@ -661,7 +661,9 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
     envvar='IQM_QUBIT_MAPPING_PATH',
     help='Path to the qubit mapping JSON file. Must consist of a single JSON object, with logical '
     'qubit names as keys, and physical qubit names as values, '
-    'for example {"Alice": "QB1", "Bob": "QB2"}. '
+    'for example {"q_0: "QB1", "q_1": "QB2"}. '
+    'This feature is intended mainly for OpenQASM circuit execution. '
+    'When using the IQM JSON format it is preferred to use physical qubits. '
     'Can also be set using the IQM_QUBIT_MAPPING_PATH environment variable:\n'
     '`export IQM_QUBIT_MAPPING_PATH=\"/path/to/qubit/mapping.json\"`\n'
     'If not set, the qubit names are assumed to be physical names.',
