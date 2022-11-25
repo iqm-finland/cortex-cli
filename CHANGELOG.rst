@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 2.0
+===========
+
+* Replace qubit mapping with QASM qubit placement. `#30 <https://github.com/iqm-finland/cortex-cli/pull/30>`_
+
 Version 1.6
 ===========
 
