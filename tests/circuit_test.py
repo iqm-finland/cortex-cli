@@ -14,12 +14,15 @@
 """
 Tests for Cortex CLI's circuit commands
 """
+from io import BytesIO, TextIOWrapper
 import json
 import os
 
 from click.testing import CliRunner
+from iqm_client import Instruction
 from mockito import unstub
 
+from cortex_cli.circuit import parse_qasm_circuit
 from cortex_cli.cortex_cli import cortex_cli
 from tests.conftest import expect_jobs_requests, resources_path
 
@@ -132,6 +135,30 @@ def test_circuit_run_valid_qasm_circuit():
         )
     assert 'result' in result.output
     assert result.exit_code == 0
+    unstub()
+
+
+def test_circuit_run_qasm_no_qubit_placement():
+    """
+    Tests that ``circuit run`` fails with valid QASM circuit but missing qubit placement.
+    """
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = CliRunner().invoke(
+            cortex_cli,
+            [
+                'circuit',
+                'run',
+                valid_circuit_qasm,
+                '--iqm-server-url',
+                iqm_server_url,
+                '--no-auth',
+            ],
+        )
+    assert '--qasm_qubit_placement is required' in result.output
+    assert result.exit_code != 0
     unstub()
 
 
@@ -415,3 +442,18 @@ def test_circuit_run_default_config_used_when_no_auth_provided_not_logged_in():
     assert 'Not logged in.' in result.output
     assert result.exit_code == 2
     unstub()
+
+
+def test_parse_qasm_circuit():
+    """
+    Test that parse_qasm_circuit maps QASM qubits to IQM qubits.
+    """
+    qasm_qubit_placement = TextIOWrapper(BytesIO(str.encode('{"QB1": ["q",0], "QB2": ["q",1]}')))
+
+    circuit = parse_qasm_circuit(valid_circuit_qasm, qasm_qubit_placement)
+
+    assert circuit.all_qubits() == {'QB1', 'QB2'}
+    assert circuit.instructions == (
+        Instruction(name='phased_rx', qubits=('QB1',), args={'angle_t': 0.5, 'phase_t': 0}),
+        Instruction(name='cz', qubits=('QB1', 'QB2'), args={}),
+    )
