@@ -661,7 +661,7 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
     envvar='IQM_QASM_QUBIT_PLACEMENT_PATH',
     help='Path to a qubit placement JSON file used for OpenQASM circuit execution. '
     'As OpenQASM does not allow to use named qubits, a qubit placement JSON is required '
-    'to map from a qubit register and index to a physical qubit. '
+    'to map from a qubit register and index to a physical qubit name. '
     'This can be achieved with a qubit placement JSON with the following format '
     '{"QB1": ["q", 0]} where the key denotes a physical qubit and the value is '
     'a [qubit register, qubit index] tuple. '
