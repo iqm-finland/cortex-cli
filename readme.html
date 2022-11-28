@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Cortex CLI &#8212; Cortex CLI 1.6 documentation</title>
+    <title>Cortex CLI &#8212; Cortex CLI 2.0 documentation</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -504,7 +504,7 @@ valid OpenQASM 2.0. The exit code is 0 if and only if the circuit is valid.</p>
 <h3>Executing circuits on a quantum computer<a class="headerlink" href="#executing-circuits-on-a-quantum-computer" title="Permalink to this headline">#</a></h3>
 <p>You can execute a quantum circuit on an IQM quantum computer with</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">export</span> <span class="nv">IQM_SERVER_URL</span><span class="o">=</span><span class="s2">&quot;https://example.com/iqm-server&quot;</span>
-$ cortex circuit run --shots <span class="m">100</span> --qubit-mapping my_qubit_mapping.json my_circuit.qasm
+$ cortex circuit run --shots <span class="m">100</span> --qasm-qubit-placement my_qubit_placement.json my_circuit.qasm
 </pre></div>
 </div>
 <p>The server URL can be set either with command-line option or as an environment variable.</p>
@@ -564,7 +564,7 @@ example above, “measurement_0” is a 4-qubit measurement, and the number of s
         <footer class="col footer"><p>
   
       &copy; Copyright 2019-2022, IQM Finland Oy.<br/>
-    Last updated on 2022-11-18.<br/>
+    Last updated on 2022-11-28.<br/>
 </p>
         </footer>
     </div>
