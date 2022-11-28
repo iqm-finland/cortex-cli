@@ -14,18 +14,20 @@
 """
 Tests for Cortex CLI's circuit commands
 """
+from io import BytesIO, TextIOWrapper
 import json
 import os
 
 from click.testing import CliRunner
+from iqm_client import Instruction
 from mockito import unstub
 
+from cortex_cli.circuit import parse_qasm_circuit
 from cortex_cli.cortex_cli import cortex_cli
 from tests.conftest import expect_jobs_requests, resources_path
 
 valid_circuit_qasm = os.path.join(resources_path(), 'valid_circuit.qasm')
-qubit_mapping_path = os.path.join(resources_path(), 'qubit_mapping.json')
-qasm_qubit_mapping_path = os.path.join(resources_path(), 'qubit_mapping_qasm.json')
+qasm_qubit_placement_path = os.path.join(resources_path(), 'qasm_qubit_placement.json')
 
 
 def test_circuit_validate_no_argument_fails():
@@ -103,7 +105,7 @@ def test_circuit_run_invalid_circuit(
         with open('my_qubits.json', 'w', encoding='utf-8') as qubit_mapping_file:
             qubit_mapping_file.write('{}')
         result = CliRunner().invoke(
-            cortex_cli, ['circuit', 'run', 'my_circuit.qasm', '--qubit-mapping', 'my_qubits.json', '--no-auth']
+            cortex_cli, ['circuit', 'run', 'my_circuit.qasm', '--qasm-qubit-placement', 'my_qubits.json', '--no-auth']
         )
 
         assert result.exit_code != 0
@@ -124,8 +126,8 @@ def test_circuit_run_valid_qasm_circuit():
                 'circuit',
                 'run',
                 valid_circuit_qasm,
-                '--qubit-mapping',
-                qasm_qubit_mapping_path,
+                '--qasm-qubit-placement',
+                qasm_qubit_placement_path,
                 '--iqm-server-url',
                 iqm_server_url,
                 '--no-auth',
@@ -133,6 +135,58 @@ def test_circuit_run_valid_qasm_circuit():
         )
     assert 'result' in result.output
     assert result.exit_code == 0
+    unstub()
+
+
+def test_circuit_run_qasm_no_qubit_placement():
+    """
+    Tests that ``circuit run`` fails with valid QASM circuit but missing qubit placement.
+    """
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = CliRunner().invoke(
+            cortex_cli,
+            [
+                'circuit',
+                'run',
+                valid_circuit_qasm,
+                '--iqm-server-url',
+                iqm_server_url,
+                '--no-auth',
+            ],
+        )
+    assert '--qasm_qubit_placement is required' in result.output
+    assert result.exit_code != 0
+    unstub()
+
+
+def test_circuit_run_invalid_qasm_qubit_placement():
+    """
+    Tests that ``circuit run`` fails if qubit placement is invalid.
+    """
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('invalid_qubit_placement.json', 'w', encoding='utf8') as f:
+            f.write('{"QB1": "q0"}')
+        result = CliRunner().invoke(
+            cortex_cli,
+            [
+                'circuit',
+                'run',
+                valid_circuit_qasm,
+                '--qasm-qubit-placement',
+                'invalid_qubit_placement.json',
+                '--iqm-server-url',
+                iqm_server_url,
+                '--no-auth',
+            ],
+        )
+    assert 'Invalid qasm_qubit_placement provided' in result.output
+    assert result.exit_code != 0
     unstub()
 
 
@@ -151,8 +205,6 @@ def test_circuit_run_valid_json_circuit():
                 'run',
                 os.path.join(resources_path(), 'valid_circuit.json'),
                 '--iqm-json',
-                '--qubit-mapping',
-                qubit_mapping_path,
                 '--iqm-server-url',
                 iqm_server_url,
                 '--no-auth',
@@ -178,8 +230,6 @@ def test_circuit_run_valid_json_circuit_custom_calibration_set_id():
                 'run',
                 os.path.join(resources_path(), 'valid_circuit.json'),
                 '--iqm-json',
-                '--qubit-mapping',
-                qubit_mapping_path,
                 '--calibration-set-id',
                 '24',
                 '--iqm-server-url',
@@ -193,9 +243,9 @@ def test_circuit_run_valid_json_circuit_custom_calibration_set_id():
     unstub()
 
 
-def test_circuit_run_valid_json_circuit_no_qubit_mapping():
+def test_circuit_run_json_circuit_and_qasm_qubit_placement():
     """
-    Tests that ``circuit run`` succeeds with valid json circuit and no qubit mapping.
+    Tests that ``circuit run`` fails when qasm qubit placement is provided with ``--iqm-json``.
     """
     iqm_server_url = 'https://example.com'
     expect_jobs_requests(iqm_server_url, calibration_set_id=35)
@@ -210,11 +260,13 @@ def test_circuit_run_valid_json_circuit_no_qubit_mapping():
                 '--iqm-json',
                 '--iqm-server-url',
                 iqm_server_url,
+                '--qasm-qubit-placement',
+                qasm_qubit_placement_path,
                 '--no-auth',
             ],
         )
-    assert 'result' in result.output
-    assert result.exit_code == 0
+    assert result.exit_code != 0
+    assert '--qasm_qubit_placement is only valid if --iqm-json is not set' in result.output
     unstub()
 
 
@@ -390,3 +442,18 @@ def test_circuit_run_default_config_used_when_no_auth_provided_not_logged_in():
     assert 'Not logged in.' in result.output
     assert result.exit_code == 2
     unstub()
+
+
+def test_parse_qasm_circuit():
+    """
+    Test that parse_qasm_circuit maps QASM qubits to IQM qubits.
+    """
+    qasm_qubit_placement = TextIOWrapper(BytesIO(str.encode('{"QB1": ["q",0], "QB2": ["q",1]}')))
+
+    circuit = parse_qasm_circuit(valid_circuit_qasm, qasm_qubit_placement)
+
+    assert circuit.all_qubits() == {'QB1', 'QB2'}
+    assert circuit.instructions == (
+        Instruction(name='phased_rx', qubits=('QB1',), args={'angle_t': 0.5, 'phase_t': 0}),
+        Instruction(name='cz', qubits=('QB1', 'QB2'), args={}),
+    )

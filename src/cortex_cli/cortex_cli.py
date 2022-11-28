@@ -31,7 +31,7 @@ from requests.exceptions import ConnectionError, Timeout  # pylint: disable=rede
 
 from cortex_cli import __version__
 from cortex_cli.auth import ClientAuthenticationError, login_request, logout_request, refresh_request, time_left_seconds
-from cortex_cli.circuit import CIRCUIT_MISSING_DEPS_MSG, validate_circuit
+from cortex_cli.circuit import CIRCUIT_MISSING_DEPS_MSG, parse_qasm_circuit, validate_circuit
 from cortex_cli.models import ConfigFile, TokensFile
 from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
 from cortex_cli.utils import missing_packages, read_file, read_json
@@ -655,16 +655,18 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
 @click.option('--shots', default=1, type=int, help='Number of times to sample the circuit.')
 @click.option('--calibration-set-id', type=int, help='ID of the calibration set to use instead of the latest one.')
 @click.option(
-    '--qubit-mapping',
+    '--qasm-qubit-placement',
     default=None,
     type=click.File(),
-    envvar='IQM_QUBIT_MAPPING_PATH',
-    help='Path to the qubit mapping JSON file. Must consist of a single JSON object, with logical '
-    'qubit names as keys, and physical qubit names as values, '
-    'for example {"Alice": "QB1", "Bob": "QB2"}. '
-    'Can also be set using the IQM_QUBIT_MAPPING_PATH environment variable:\n'
-    '`export IQM_QUBIT_MAPPING_PATH=\"/path/to/qubit/mapping.json\"`\n'
-    'If not set, the qubit names are assumed to be physical names.',
+    envvar='IQM_QASM_QUBIT_PLACEMENT_PATH',
+    help='Path to a qubit placement JSON file used for OpenQASM circuit execution. '
+    'As OpenQASM does not allow to use named qubits, a qubit placement JSON is required '
+    'to map from a qubit register and index to a physical qubit name. '
+    'This can be achieved with a qubit placement JSON with the following format '
+    '{"QB1": ["q", 0]} where the key denotes a physical qubit and the value is '
+    'a [qubit register, qubit index] tuple. '
+    'Can also be set using the IQM_QASM_QUBIT_PLACEMENT_PATH environment variable:\n'
+    '`export IQM_QASM_QUBIT_PLACEMENT_PATH=\"/path/to/qubit/placement.json\"`\n',
 )
 @click.option(
     '--iqm-server-url',
@@ -679,7 +681,8 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
     '-i',
     '--iqm-json',
     is_flag=True,
-    help='Set this flag if FILENAME is already in IQM JSON format (instead of being an OpenQASM file).',
+    help='Set this flag if FILENAME is already in IQM JSON format (instead of being an OpenQASM file). '
+    'Note that it is expected that an IQM JSON already uses physical qubit names.',
 )
 @click.option(
     '--config-file',
@@ -701,7 +704,7 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
     verbose: bool,
     shots: int,
     calibration_set_id: Optional[int],
-    qubit_mapping: Optional[TextIOWrapper],
+    qasm_qubit_placement: Optional[TextIOWrapper],
     iqm_server_url: str,
     filename: str,
     iqm_json: bool,
@@ -719,8 +722,6 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
     included in the measurement.
     """
     try:
-        from cirq_iqm import circuit_from_qasm
-        from cirq_iqm.iqm_sampler import serialize_circuit
         from iqm_client.iqm_client import Circuit, IQMClient
     except ModuleNotFoundError as ex:
         message = f'{CIRCUIT_MISSING_DEPS_MSG}\nActual error which occured when attempting to load dependencies: {ex}'
@@ -731,27 +732,26 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
     # check --no-auth and --config-file alignment
     tokens_file = _validate_cortex_cli_auth(no_auth, config_file)
 
-    raw_input = read_file(filename)
-
     try:
         # serialize the circuit and the qubit mapping
         if iqm_json:
-            input_circuit = Circuit.parse_raw(raw_input)
+            if qasm_qubit_placement is not None:
+                raise click.BadOptionUsage(
+                    '--qasm_qubit_placement', 'Using --qasm_qubit_placement is only valid if --iqm-json is not set.'
+                )
+            input_circuit = Circuit.parse_raw(read_file(filename))
         else:
-            validate_circuit(filename)
-            input_circuit = serialize_circuit(circuit_from_qasm(raw_input))
+            if qasm_qubit_placement is None:
+                raise click.BadOptionUsage(
+                    '--qasm_qubit_placement', '--qasm_qubit_placement is required for OpenQASM circuit execution.'
+                )
+            input_circuit = parse_qasm_circuit(filename, qasm_qubit_placement)
 
         logger.debug('\nInput circuit:\n%s', input_circuit)
 
-        parsed_qubit_mapping = None
-        if qubit_mapping is not None:
-            parsed_qubit_mapping = json.load(qubit_mapping)
-
         # run the circuit on the backend
         iqm_client = IQMClient(iqm_server_url, tokens_file=tokens_file)
-        job_id = iqm_client.submit_circuits(
-            [input_circuit], qubit_mapping=parsed_qubit_mapping, shots=shots, calibration_set_id=calibration_set_id
-        )
+        job_id = iqm_client.submit_circuits([input_circuit], shots=shots, calibration_set_id=calibration_set_id)
         results = iqm_client.wait_for_results(job_id)
     except Exception as ex:
         # just show the error message, not a stack trace
