@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 2.1
+===========
+
+* The user can now specify the output format for ``cortex circuit run``: human-readable ``--output frequencies``, ``--output shots`` or machine-readable raw ``RunResult`` ``--output json``. `#31 <https://github.com/iqm-finland/cortex-cli/pull/31>`_
+
 Version 2.0
 ===========
 

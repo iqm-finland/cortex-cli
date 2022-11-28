@@ -172,7 +172,7 @@ def expect_logout(auth_server_url: str, realm: str, client_id: str, refresh_toke
     ).thenReturn(mock({'status_code': status_code, 'text': '{}'}))
 
 
-def expect_jobs_requests(iqm_server_url, calibration_set_id=None):
+def expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=None, calibration_set_id=None):
     """
     Prepare for job submission requests.
     """
@@ -185,11 +185,15 @@ def expect_jobs_requests(iqm_server_url, calibration_set_id=None):
     running_response = mock({'status_code': 200, 'text': json.dumps(running_result)})
     when(running_response).json().thenReturn(running_result)
 
-    success_get_result = {
-        'status': 'ready',
-        'measurements': [{'result': [[1, 0, 1, 1], [1, 0, 0, 1], [1, 0, 1, 1], [1, 0, 1, 1]]}],
-        'metadata': {'circuits': [], 'shots': 42, 'calibration_set_id': calibration_set_id},
-    }
+    if valid_circuit_qasm_result_file is not None:
+        with open(valid_circuit_qasm_result_file, 'r', encoding='utf-8') as file:
+            success_get_result = json.loads(file.read())
+    else:
+        success_get_result = {
+            'status': 'ready',
+            'measurements': [{'result': [[1, 0, 1, 1, 0], [1, 0, 0, 1, 1], [1, 0, 1, 1, 1], [1, 0, 1, 1, 0]]}],
+            'metadata': {'circuits': [], 'shots': 42, 'calibration_set_id': calibration_set_id},
+        }
     success_get_response = mock({'status_code': 200, 'text': json.dumps(success_get_result)})
     when(success_get_response).json().thenReturn(success_get_result)
 

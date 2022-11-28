@@ -183,18 +183,59 @@ For information on all the parameters and their usage, run
   $ cortex circuit run --help
 
 
-The results of the measurements in the circuit are returned in JSON format:
+The results of the measurements in the circuit can be returned in human-readable or machine-readable format:
 
-.. code-block:: json
+``--output frequencies`` provides a human-readable output of the measurement frequencies, this is the default format:
 
-  {"measurement_0":
-    [
-      [1, 0, 1, 1],
-      [1, 0, 0, 1],
-      [1, 0, 1, 1]
-    ]
-  }
+.. code-block:: bash
 
-The dictionary keys are measurement keys from the circuit. The value for each measurement is a 2-D array of binary
-integers. The first index goes over the shots, and the second over the qubits in the measurement. For example, in the
-example above, "measurement_0" is a 4-qubit measurement, and the number of shots is three.
+  $ cortex circuit run --output frequencies --shots 100 --qubit-mapping ./tests/resources/qubit_mapping_qasm.json ./tests/resources/valid_circuit.qasm
+
+  Circuit "Serialized from Cirq" results using calibration set 41 over 1000 shots:
+
+  Frequencies of "a measurement":
+  QB2	QB4
+  0	0	0.257
+  0	1	0.264
+  1	0	0.259
+  1	1	0.22
+  Frequencies of "the measurement":
+  QB1	QB5	QB3
+  0	0	0	0.127
+  0	0	1	0.121
+  0	1	0	0.11
+  0	1	1	0.133
+  1	0	0	0.133
+  1	0	1	0.113
+  1	1	0	0.136
+  1	1	1	0.127
+
+``--output shots`` provides a human-readable output of all the shots:
+
+.. code-block:: bash
+
+  $ cortex circuit run --output shots --shots 5 --qubit-mapping ./tests/resources/qubit_mapping_qasm.json ./tests/resources/valid_circuit.qasm
+
+  Circuit "Serialized from Cirq" results using calibration set 41 over 5 shots:
+  5 shots of "b_0" for qubits:
+  shot	q_0
+  1	0
+  2	0
+  3	0
+  4	1
+  5	1
+  5 shots of "b_1" for qubits:
+  shot	q_1
+  1	1
+  2	0
+  3	1
+  4	0
+  5	1
+
+``--output json`` provides a machine-readable output of raw ``RunResult`` json returned by the Cortex server:
+
+.. code-block:: bash
+
+  $ cortex circuit run --output json --shots 100 --qubit-mapping ./tests/resources/qubit_mapping_qasm.json ./tests/resources/valid_circuit.qasm
+
+  {"status": "ready", "measurements": [{"b_0": [[1], [0], [1], [0], [1], [0], [0], [0], [1], [1], [1], [1], [1], [1], [1], [0], [1], [1], [1], [1], [1], [1], [0], [1], [0], [1], [1], [0], [0], [0], [1], [1], [1], [0], [1], [1], [1], [0], [0], [0], [0], [1], [0], [0], [0], [0], [1], [1], [0], [1], [1], [1], [1], [0], [0], [1], [1], [1], [1], [0], [1], [1], [0], [0], [0], [1], [0], [0], [0], [1], [0], [1], [0], [1], [1], [0], [1], [0], [0], [0], [0], [0], [1], [1], [0], [1], [1], [0], [1], [1], [0], [0], [1], [1], [1], [1], [1], [0], [0], [1]], "b_1": [[1], [0], [0], [0], [1], [1], [0], [1], [0], [0], [1], [0], [1], [1], [1], [1], [0], [1], [0], [1], [1], [0], [1], [1], [1], [1], [1], [1], [0], [0], [0], [1], [1], [1], [1], [1], [1], [1], [1], [1], [0], [1], [0], [0], [1], [1], [0], [1], [1], [0], [1], [0], [1], [1], [0], [0], [0], [0], [0], [1], [0], [0], [0], [0], [0], [1], [1], [0], [1], [1], [0], [0], [1], [1], [0], [0], [0], [1], [0], [1], [1], [0], [1], [0], [1], [1], [0], [1], [0], [1], [0], [1], [0], [1], [0], [0], [0], [0], [0], [0]]}], "metadata": {"shots": 100, "qubit_mapping": [{"logical_name": "q_0", "physical_name": "QB1"}, {"logical_name": "q_1", "physical_name": "QB2"}], "circuits": [{"name": "Serialized from Cirq", "instructions": [{"name": "phased_rx", "qubits": ["q_0"], "args": {"angle_t": 0.5, "phase_t": 0}}, {"name": "cz", "qubits": ["q_0", "q_1"], "args": {}}, {"name": "measurement", "qubits": ["q_0"], "args": {"key": "b_0"}}, {"name": "measurement", "qubits": ["q_1"], "args": {"key": "b_1"}}]}], "calibration_set_id": 41}}

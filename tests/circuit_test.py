@@ -27,6 +27,7 @@ from cortex_cli.cortex_cli import cortex_cli
 from tests.conftest import expect_jobs_requests, resources_path
 
 valid_circuit_qasm = os.path.join(resources_path(), 'valid_circuit.qasm')
+valid_circuit_qasm_result = os.path.join(resources_path(), 'valid_circuit_qasm_result.json')
 qasm_qubit_placement_path = os.path.join(resources_path(), 'qasm_qubit_placement.json')
 
 
@@ -112,9 +113,93 @@ def test_circuit_run_invalid_circuit(
         assert 'Invalid quantum circuit in my_circuit.qasm' in result.output
 
 
-def test_circuit_run_valid_qasm_circuit():
+def test_circuit_run_valid_qasm_circuit_frequencies_output():
     """
-    Tests that ``circuit run`` succeeds with valid QASM circuit.
+    Tests that ``circuit run`` succeeds with valid QASM circuit and outputs human-readable frequencies table by default.
+    """
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=valid_circuit_qasm_result)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = CliRunner().invoke(
+            cortex_cli,
+            [
+                'circuit',
+                'run',
+                valid_circuit_qasm,
+                '--qubit-mapping',
+                qasm_qubit_mapping_path,
+                '--iqm-server-url',
+                iqm_server_url,
+                '--no-auth',
+            ],
+        )
+    assert 'result' in result.output
+    assert result.exit_code == 0
+    unstub()
+
+
+def test_circuit_run_valid_qasm_circuit_shots_output():
+    """
+    Tests that ``circuit run`` succeeds with valid QASM circuit and outputs human-readable shots table.
+    """
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=valid_circuit_qasm_result)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = CliRunner().invoke(
+            cortex_cli,
+            [
+                'circuit',
+                'run',
+                valid_circuit_qasm,
+                '--qubit-mapping',
+                qasm_qubit_mapping_path,
+                '--iqm-server-url',
+                iqm_server_url,
+                '--no-auth',
+                '--output',
+                'shots',
+            ],
+        )
+    assert 'result' in result.output
+    assert result.exit_code == 0
+    unstub()
+
+
+def test_circuit_run_valid_qasm_circuit_json_output():
+    """
+    Tests that ``circuit run`` succeeds with valid QASM circuit and outputs machine-readable ``RunResult`` json.
+    """
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=valid_circuit_qasm_result)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = CliRunner().invoke(
+            cortex_cli,
+            [
+                'circuit',
+                'run',
+                valid_circuit_qasm,
+                '--qubit-mapping',
+                qasm_qubit_mapping_path,
+                '--iqm-server-url',
+                iqm_server_url,
+                '--no-auth',
+                '--output',
+                'json',
+            ],
+        )
+    assert 'b_0' in result.output
+    assert 'b_1' in result.output
+    assert json.loads(result.output) is not None
+    assert result.exit_code == 0
+    unstub()
+
+
+def test_circuit_measurements_do_not_match():
+    """
+    Tests that ``circuit run`` fails if measured qubits do not match the input circuit.
     """
     iqm_server_url = 'https://example.com'
     expect_jobs_requests(iqm_server_url)
@@ -131,10 +216,12 @@ def test_circuit_run_valid_qasm_circuit():
                 '--iqm-server-url',
                 iqm_server_url,
                 '--no-auth',
+                '--output',
+                'json',
             ],
         )
-    assert 'result' in result.output
-    assert result.exit_code == 0
+    assert result.exit_code != 0
+    assert 'do not match measurements in the circuit' in result.output
     unstub()
 
 
