@@ -28,18 +28,6 @@ To install them, run:
 
 pip install "iqm-cortex-cli[circuit]"
 """
-try:
-    # pylint: disable=import-outside-toplevel
-    from cirq import NamedQubit, Qid
-    from cirq.contrib.qasm_import.exception import QasmException
-    from cirq_iqm import circuit_from_qasm
-    from cirq_iqm.iqm_sampler import serialize_circuit
-    from iqm_client import Circuit
-except ModuleNotFoundError as exception:
-    error_message = (
-        f'{CIRCUIT_MISSING_DEPS_MSG}\nActual error which occured when attempting to load dependencies: {exception}'
-    )
-    raise click.ClickException(error_message) from exception
 
 
 def validate_circuit(filename: str) -> None:
@@ -50,7 +38,15 @@ def validate_circuit(filename: str) -> None:
     Raises:
         ClickException: if circuit is invalid or not found
     """
-
+    try:
+        # pylint: disable=import-outside-toplevel
+        from cirq.contrib.qasm_import.exception import QasmException
+        from cirq_iqm import circuit_from_qasm
+    except ModuleNotFoundError as exception:
+        error_message = (
+            f'{CIRCUIT_MISSING_DEPS_MSG}\nActual error which occured when attempting to load dependencies: {exception}'
+        )
+        raise click.ClickException(error_message) from exception
     try:
         circuit_from_qasm(read_file(filename))
     except QasmException as ex:
@@ -58,7 +54,7 @@ def validate_circuit(filename: str) -> None:
         raise click.ClickException(message) from ex
 
 
-def parse_qasm_circuit(filename: str, qasm_qubit_placement: TextIOWrapper) -> Circuit:
+def parse_qasm_circuit(filename: str, qasm_qubit_placement: TextIOWrapper):
     """Parses the given OpenQASM 2.0 file to an IQM Circuit.
 
     Args:
@@ -69,6 +65,16 @@ def parse_qasm_circuit(filename: str, qasm_qubit_placement: TextIOWrapper) -> Ci
     Returns:
         Circuit: parsed circuit in IQM format
     """
+    try:
+        # pylint: disable=import-outside-toplevel
+        from cirq import NamedQubit, Qid
+        from cirq_iqm import circuit_from_qasm
+        from cirq_iqm.iqm_sampler import serialize_circuit
+    except ModuleNotFoundError as exception:
+        error_message = (
+            f'{CIRCUIT_MISSING_DEPS_MSG}\nActual error which occured when attempting to load dependencies: {exception}'
+        )
+        raise click.ClickException(error_message) from exception
     validate_circuit(filename)
 
     parsed_qasm_qubit_placement = json.load(qasm_qubit_placement)
