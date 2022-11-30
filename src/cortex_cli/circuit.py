@@ -86,4 +86,4 @@ def parse_qasm_circuit(filename: str, qasm_qubit_placement: TextIOWrapper):
     qubit_map: dict[Qid, Qid] = {
         NamedQubit(f'{v[0]}_{v[1]}'): NamedQubit(k) for k, v in validated_qubit_placement.qubit_placement.items()
     }
-    return serialize_circuit(circuit.transform_qubits(qubit_map))
+    return (serialize_circuit(circuit.transform_qubits(qubit_map)), validated_qubit_placement)

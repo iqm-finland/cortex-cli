@@ -189,7 +189,7 @@ The results of the measurements in the circuit can be returned in human-readable
 
 .. code-block:: bash
 
-  $ cortex circuit run --output frequencies --shots 100 --qubit-mapping ./tests/resources/qubit_mapping_qasm.json ./tests/resources/valid_circuit.qasm
+  $ cortex circuit run --output frequencies --shots 100 --iqm-json ./tests/resources/valid_circuit_2.json
 
   Circuit "Serialized from Cirq" results using calibration set 41 over 1000 shots:
 
@@ -210,25 +210,38 @@ The results of the measurements in the circuit can be returned in human-readable
   1	1	0	0.136
   1	1	1	0.127
 
+  $ cortex circuit run --output frequencies --shots 100 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
+
+  Circuit "Serialized from Cirq" results using calibration set 41 over 100 shots:
+
+  Frequencies of "b[0]":
+  q[0]
+  0	0.41
+  1	0.59
+  Frequencies of "b[1]":
+  q[1]
+  0	0.39
+  1	0.61
+
 ``--output shots`` provides a human-readable output of all the shots:
 
 .. code-block:: bash
 
-  $ cortex circuit run --output shots --shots 5 --qubit-mapping ./tests/resources/qubit_mapping_qasm.json ./tests/resources/valid_circuit.qasm
+  $ cortex circuit run --output shots --shots 5 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
 
   Circuit "Serialized from Cirq" results using calibration set 41 over 5 shots:
-  5 shots of "b_0" for qubits:
-  shot	q_0
-  1	0
-  2	0
-  3	0
-  4	1
-  5	1
-  5 shots of "b_1" for qubits:
-  shot	q_1
+  5 shots of "b[0]" for qubits:
+  shot	q[0]
   1	1
-  2	0
+  2	1
   3	1
+  4	0
+  5	0
+  5 shots of "b[1]" for qubits:
+  shot	q[1]
+  1	1
+  2	1
+  3	0
   4	0
   5	1
 
@@ -236,6 +249,6 @@ The results of the measurements in the circuit can be returned in human-readable
 
 .. code-block:: bash
 
-  $ cortex circuit run --output json --shots 100 --qubit-mapping ./tests/resources/qubit_mapping_qasm.json ./tests/resources/valid_circuit.qasm
+  $ cortex circuit run --output json --shots 100 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
 
   {"status": "ready", "measurements": [{"b_0": [[1], [0], [1], [0], [1], [0], [0], [0], [1], [1], [1], [1], [1], [1], [1], [0], [1], [1], [1], [1], [1], [1], [0], [1], [0], [1], [1], [0], [0], [0], [1], [1], [1], [0], [1], [1], [1], [0], [0], [0], [0], [1], [0], [0], [0], [0], [1], [1], [0], [1], [1], [1], [1], [0], [0], [1], [1], [1], [1], [0], [1], [1], [0], [0], [0], [1], [0], [0], [0], [1], [0], [1], [0], [1], [1], [0], [1], [0], [0], [0], [0], [0], [1], [1], [0], [1], [1], [0], [1], [1], [0], [0], [1], [1], [1], [1], [1], [0], [0], [1]], "b_1": [[1], [0], [0], [0], [1], [1], [0], [1], [0], [0], [1], [0], [1], [1], [1], [1], [0], [1], [0], [1], [1], [0], [1], [1], [1], [1], [1], [1], [0], [0], [0], [1], [1], [1], [1], [1], [1], [1], [1], [1], [0], [1], [0], [0], [1], [1], [0], [1], [1], [0], [1], [0], [1], [1], [0], [0], [0], [0], [0], [1], [0], [0], [0], [0], [0], [1], [1], [0], [1], [1], [0], [0], [1], [1], [0], [0], [0], [1], [0], [1], [1], [0], [1], [0], [1], [1], [0], [1], [0], [1], [0], [1], [0], [1], [0], [0], [0], [0], [0], [0]]}], "metadata": {"shots": 100, "qubit_mapping": [{"logical_name": "q_0", "physical_name": "QB1"}, {"logical_name": "q_1", "physical_name": "QB2"}], "circuits": [{"name": "Serialized from Cirq", "instructions": [{"name": "phased_rx", "qubits": ["q_0"], "args": {"angle_t": 0.5, "phase_t": 0}}, {"name": "cz", "qubits": ["q_0", "q_1"], "args": {}}, {"name": "measurement", "qubits": ["q_0"], "args": {"key": "b_0"}}, {"name": "measurement", "qubits": ["q_1"], "args": {"key": "b_1"}}]}], "calibration_set_id": 41}}

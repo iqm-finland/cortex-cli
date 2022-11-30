@@ -24,6 +24,7 @@ from mockito import unstub
 
 from cortex_cli.circuit import parse_qasm_circuit
 from cortex_cli.cortex_cli import cortex_cli
+from cortex_cli.models import QasmQubitPlacement
 from tests.conftest import expect_jobs_requests, resources_path
 
 valid_circuit_qasm = os.path.join(resources_path(), 'valid_circuit.qasm')
@@ -127,14 +128,17 @@ def test_circuit_run_valid_qasm_circuit_frequencies_output():
                 'circuit',
                 'run',
                 valid_circuit_qasm,
-                '--qubit-mapping',
-                qasm_qubit_mapping_path,
+                '--qasm-qubit-placement',
+                qasm_qubit_placement_path,
                 '--iqm-server-url',
                 iqm_server_url,
                 '--no-auth',
             ],
         )
-    assert 'result' in result.output
+    assert 'b[0]' in result.output
+    assert 'b[1]' in result.output
+    assert 'q[0]' in result.output
+    assert 'q[1]' in result.output
     assert result.exit_code == 0
     unstub()
 
@@ -153,8 +157,8 @@ def test_circuit_run_valid_qasm_circuit_shots_output():
                 'circuit',
                 'run',
                 valid_circuit_qasm,
-                '--qubit-mapping',
-                qasm_qubit_mapping_path,
+                '--qasm-qubit-placement',
+                qasm_qubit_placement_path,
                 '--iqm-server-url',
                 iqm_server_url,
                 '--no-auth',
@@ -181,8 +185,8 @@ def test_circuit_run_valid_qasm_circuit_json_output():
                 'circuit',
                 'run',
                 valid_circuit_qasm,
-                '--qubit-mapping',
-                qasm_qubit_mapping_path,
+                '--qasm-qubit-placement',
+                qasm_qubit_placement_path,
                 '--iqm-server-url',
                 iqm_server_url,
                 '--no-auth',
@@ -537,10 +541,13 @@ def test_parse_qasm_circuit():
     """
     qasm_qubit_placement = TextIOWrapper(BytesIO(str.encode('{"QB1": ["q",0], "QB2": ["q",1]}')))
 
-    circuit = parse_qasm_circuit(valid_circuit_qasm, qasm_qubit_placement)
+    circuit, qubit_placement = parse_qasm_circuit(valid_circuit_qasm, qasm_qubit_placement)
 
     assert circuit.all_qubits() == {'QB1', 'QB2'}
     assert circuit.instructions == (
         Instruction(name='phased_rx', qubits=('QB1',), args={'angle_t': 0.5, 'phase_t': 0}),
         Instruction(name='cz', qubits=('QB1', 'QB2'), args={}),
+        Instruction(name='measurement', qubits=('QB1',), args={'key': 'b_0'}),
+        Instruction(name='measurement', qubits=('QB2',), args={'key': 'b_1'}),
     )
+    assert qubit_placement == QasmQubitPlacement(qubit_placement={'QB1': ('q', 0), 'QB2': ('q', 1)})

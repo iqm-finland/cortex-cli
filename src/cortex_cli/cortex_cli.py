@@ -660,7 +660,14 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
 
 
 def _validate_measurements(input_circuit, results) -> Dict[str, List[str]]:
-    """Checks if the results of a circuit execution match the expected measurements in the input circuit."""
+    """Checks if the results of a circuit execution match the expected measurements in the input circuit.
+
+    Args:
+        input_circuit (iqm_client.Circuit): input circuit
+        results (iqm_client.RunResult): circuit execution results
+    Returns:
+        Dict[str, List[str]]: dictionary of measurement keys to qubits they measure
+    """
     if results.measurements is None:
         raise click.ClickException(f'No measurements obtained from backend. Job status is ${results.status}')
 
@@ -680,15 +687,38 @@ def _validate_measurements(input_circuit, results) -> Dict[str, List[str]]:
     return expected_measurements
 
 
-def _human_readable_frequencies_output(input_circuit_name, measured_qubits, shots, results) -> str:
-    """Construct a human-readable output for the frequencies of the measured qubits."""
+def _human_readable_frequencies_output(iqm_json, input_circuit_name, measured_qubits, shots, results) -> str:
+    """Construct a human-readable output for the frequencies of the measured qubits.
+
+    Args:
+        iqm_json (bool): whether input was in IQM JSON format, so we can decide if we need to
+                         print measurement results as they or convert to QASM identifiers
+        input_circuit_name (str): input circuit name
+        measured_qubits (Dict[str, List[str]]): dictionary of measurement keys to qubits they measure
+        shots (int): amount of shots
+        results (iqm_client.RunResult): circuit execution results
+    Returns:
+        Dict[str, List[str]]: dictionary of measurement keys to qubits they measure
+    """
     output_string = f'Circuit "{input_circuit_name}" results using '
     output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
 
     for measurement in results.measurements:
         for measurement_name in measurement:
-            output_string += f'\nFrequencies of "{measurement_name}":\n'
-            output_string += '\t'.join(measured_qubits[measurement_name]) + '\n'
+            if not iqm_json:
+                # convert cirq qasm measurement keys from `b_0` to `b[0]`
+                output_measurement_name = measurement_name.replace('_', '[') + ']'
+            else:
+                output_measurement_name = measurement_name
+
+            output_string += f'\nFrequencies of "{output_measurement_name}":\n'
+            if not iqm_json:
+                # convert cirq qasm qubit names from `q_0` to `q[0]`
+                output_string += (
+                    '\t'.join([qb.replace('_', '[') + ']' for qb in measured_qubits[measurement_name]]) + '\n'
+                )
+            else:
+                output_string += '\t'.join(measured_qubits[measurement_name]) + '\n'
 
             states_frequencies: Dict[tuple, float] = {}
             states = [tuple(state) for state in measurement[measurement_name]]
@@ -700,23 +730,43 @@ def _human_readable_frequencies_output(input_circuit_name, measured_qubits, shot
             sorted_states.sort()
 
             output_string += '\n'.join(
-                [
-                    '\t'.join([str(s) for s in state]) + '\t' + str(states_frequencies[state])
-                    for state in sorted_states
-                ]
+                ['\t'.join([str(s) for s in state]) + '\t' + str(states_frequencies[state]) for state in sorted_states]
             )
     return output_string
 
 
-def _human_readable_shots_output(input_circuit_name, measured_qubits, shots, results) -> str:
-    """Construct a human-readable output for the shots of the measured qubits."""
+def _human_readable_shots_output(iqm_json, input_circuit_name, measured_qubits, shots, results) -> str:
+    """Construct a human-readable output for the shots of the measured qubits.
+
+    Args:
+        iqm_json (bool): whether input was in IQM JSON format, so we can decide if we need to
+                         print measurement results as they or convert to QASM identifiers
+        input_circuit_name (str): input circuit name
+        measured_qubits (Dict[str, List[str]]): dictionary of measurement keys to qubits they measure
+        shots (int): amount of shots
+        results (iqm_client.RunResult): circuit execution results
+    Returns:
+        Dict[str, List[str]]: dictionary of measurement keys to qubits they measure
+    """
     output_string = f'Circuit "{input_circuit_name}" results using '
     output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
 
     for measurement in results.measurements:
         for measurement_name in measurement:
-            output_string += f'{shots} shots of "{measurement_name}" for qubits:\n'
-            output_string += '\t'.join(['shot'] + measured_qubits[measurement_name]) + '\n'
+            if not iqm_json:
+                # convert cirq qasm measurement keys from `b_0` to `b[0]`
+                output_measurement_name = measurement_name.replace('_', '[') + ']'
+            else:
+                output_measurement_name = measurement_name
+            output_string += f'{shots} shots of "{output_measurement_name}" for qubits:\n'
+            if not iqm_json:
+                # convert cirq qasm qubit names from `q_0` to `q[0]`
+                output_string += (
+                    '\t'.join(['shot'] + [qb.replace('_', '[') + ']' for qb in measured_qubits[measurement_name]])
+                    + '\n'
+                )
+            else:
+                output_string += '\t'.join(['shot'] + measured_qubits[measurement_name]) + '\n'
             output_string += (
                 '\n'.join(
                     [
@@ -835,7 +885,7 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
                 raise click.BadOptionUsage(
                     '--qasm_qubit_placement', '--qasm_qubit_placement is required for OpenQASM circuit execution.'
                 )
-            input_circuit = parse_qasm_circuit(filename, qasm_qubit_placement)
+            input_circuit, qubit_placement = parse_qasm_circuit(filename, qasm_qubit_placement)
 
         logger.debug('\nInput circuit:\n%s', input_circuit)
 
@@ -850,6 +900,16 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
     # validate measurements, will throw an exception if something is wrong
     measured_qubits = _validate_measurements(input_circuit, results)
 
+    # convert native qubit names to QASM qubit names
+    if not iqm_json:
+        measured_qubits = {
+            m_key: [
+                f'{qubit_placement.qubit_placement[qubit][0]}_{qubit_placement.qubit_placement[qubit][1]}'
+                for qubit in m_qubits
+            ]
+            for m_key, m_qubits in measured_qubits.items()
+        }
+
     # prepare output
     logger.debug('\nResults:')
     if output == OutputFormat.JSON:
@@ -857,9 +917,11 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
         output_string = results.json(exclude_none=True)
 
     if output == OutputFormat.FREQUENCIES:
-        output_string = _human_readable_frequencies_output(input_circuit.name, measured_qubits, shots, results)
+        output_string = _human_readable_frequencies_output(
+            iqm_json, input_circuit.name, measured_qubits, shots, results
+        )
     if output == OutputFormat.SHOTS:
-        output_string = _human_readable_shots_output(input_circuit.name, measured_qubits, shots, results)
+        output_string = _human_readable_shots_output(iqm_json, input_circuit.name, measured_qubits, shots, results)
 
     logger.info(output_string)
 
