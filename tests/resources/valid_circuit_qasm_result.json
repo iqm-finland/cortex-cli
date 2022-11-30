@@ -622,7 +622,7 @@
     ],
     "circuits": [
       {
-        "name": "Serialized from Cirq",
+        "name": "My Circuit",
         "instructions": [
           {
             "name": "phased_rx",

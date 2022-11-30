@@ -1,5 +1,5 @@
 {
-  "name": "Serialized from Cirq",
+  "name": "My Circuit",
   "instructions": [
     {
       "name": "cz",
