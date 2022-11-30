@@ -687,6 +687,27 @@ def _validate_measurements(input_circuit, results) -> Dict[str, List[str]]:
     return expected_measurements
 
 
+def _make_per_qubit_measurements(iqm_json, measured_qubits, results) -> Dict[str, List[int]]:
+    """Converts the results of a circuit execution into a dictionary of qubits to their measurements.
+
+    Args:
+        measured_qubits (Dict[str, List[str]]): measurements keys to qubit names mapping
+        results (iqm_client.RunResult): circuit execution results
+    Returns:
+        Dict[str, List[int]]: dictionary of qubits to their measurements
+    """
+    per_qubit_measurements: Dict[str, List[int]] = {}  # {"QB1": [0, 1, ...], "QB2": [1, 0, ...], ...}
+    for measurements in results.measurements:
+        for m_key, m_values in measurements.items():
+            for shot in m_values:
+                for qubit, value in zip(measured_qubits[m_key], shot):
+                    if not iqm_json:
+                        qubit = qubit.replace('_', '[') + ']'
+                    per_qubit_measurements.setdefault(qubit, []).append(value)
+
+    return per_qubit_measurements
+
+
 def _human_readable_frequencies_output(shots, per_qubit_measurements) -> str:
     """Construct a human-readable output for the frequencies of the measured qubits.
 
@@ -699,9 +720,7 @@ def _human_readable_frequencies_output(shots, per_qubit_measurements) -> str:
     sorted_qubits_names = [str(k) for k in per_qubit_measurements.keys()]
     sorted_qubits_names.sort()
     output_string = '\t'.join(sorted_qubits_names) + '\n'
-    states = [
-        tuple([per_qubit_measurements[qubit_name][i] for qubit_name in sorted_qubits_names]) for i in range(shots)
-    ]
+    states = [tuple(per_qubit_measurements[qubit_name][i] for qubit_name in sorted_qubits_names) for i in range(shots)]
     states_frequencies: Dict[tuple, float] = {}
     for state in states:
         states_frequencies[state] = states_frequencies.get(state, 0) + 1
@@ -866,14 +885,7 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
             for m_key, m_qubits in measured_qubits.items()
         }
     # make a dictionary with qubits as keys and measurements arrays as values
-    per_qubit_measurements = {}  # {"QB1": [0, 1, ...], "QB2": [1, 0, ...], ...}
-    for measurements in results.measurements:
-        for m_key, m_values in measurements.items():
-            for shot in m_values:
-                for qubit, value in zip(measured_qubits[m_key], shot):
-                    if not iqm_json:
-                        qubit = qubit.replace('_', '[') + ']'
-                    per_qubit_measurements.setdefault(qubit, []).append(value)
+    per_qubit_measurements = _make_per_qubit_measurements(iqm_json, measured_qubits, results)
 
     # prepare output
     logger.debug('\nResults:')
