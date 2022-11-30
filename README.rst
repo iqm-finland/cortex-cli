@@ -190,7 +190,7 @@ The results of all the measurements in the circuit can be returned in human-read
 .. code-block:: bash
 
   $ cortex circuit run --output frequencies --shots 5000 --iqm-json ./tests/resources/valid_circuit_2.json
-  Circuit "Serialized from Cirq" results using calibration set 41 over 5000 shots:
+  Circuit "My Circuit" results using calibration set 41 over 5000 shots:
   QB1	QB2	QB3	QB4	QB5
   0	0	0	0	0	0.0288
   0	0	0	0	1	0.0276
@@ -227,7 +227,7 @@ The results of all the measurements in the circuit can be returned in human-read
 
   $ cortex circuit run --output frequencies --shots 100 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
 
-  Circuit "Serialized from Cirq" results using calibration set 41 over 5000 shots:
+  Circuit "My Circuit" results using calibration set 41 over 5000 shots:
   q[0]	q[1]
   0	0	0.2386
   0	1	0.26
@@ -240,7 +240,7 @@ The results of all the measurements in the circuit can be returned in human-read
 
   $ cortex circuit run --output shots --shots 5 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
 
-  Circuit "Serialized from Cirq" results using calibration set 41 over 5 shots:
+  Circuit "My Circuit" results using calibration set 41 over 5 shots:
   shot	q[0]	q[1]
   1	0	1
   2	1	0
