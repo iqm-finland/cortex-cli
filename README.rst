@@ -183,45 +183,56 @@ For information on all the parameters and their usage, run
   $ cortex circuit run --help
 
 
-The results of the measurements in the circuit can be returned in human-readable or machine-readable format:
+The results of all the measurements in the circuit can be returned in human-readable or machine-readable format:
 
 ``--output frequencies`` provides a human-readable output of the measurement frequencies, this is the default format:
 
 .. code-block:: bash
 
-  $ cortex circuit run --output frequencies --shots 100 --iqm-json ./tests/resources/valid_circuit_2.json
-
-  Circuit "Serialized from Cirq" results using calibration set 41 over 1000 shots:
-
-  Frequencies of "a measurement":
-  QB2	QB4
-  0	0	0.257
-  0	1	0.264
-  1	0	0.259
-  1	1	0.22
-  Frequencies of "the measurement":
-  QB1	QB5	QB3
-  0	0	0	0.127
-  0	0	1	0.121
-  0	1	0	0.11
-  0	1	1	0.133
-  1	0	0	0.133
-  1	0	1	0.113
-  1	1	0	0.136
-  1	1	1	0.127
+  $ cortex circuit run --output frequencies --shots 5000 --iqm-json ./tests/resources/valid_circuit_2.json
+  Circuit "Serialized from Cirq" results using calibration set 41 over 5000 shots:
+  QB1	QB2	QB3	QB4	QB5
+  0	0	0	0	0	0.0288
+  0	0	0	0	1	0.0276
+  0	0	0	1	0	0.027
+  0	0	0	1	1	0.03
+  0	0	1	0	0	0.033
+  0	0	1	0	1	0.0348
+  0	0	1	1	0	0.0332
+  0	0	1	1	1	0.0328
+  0	1	0	0	0	0.0344
+  0	1	0	0	1	0.031
+  0	1	0	1	0	0.0294
+  0	1	0	1	1	0.0286
+  0	1	1	0	0	0.0352
+  0	1	1	0	1	0.0264
+  0	1	1	1	0	0.0312
+  0	1	1	1	1	0.033
+  1	0	0	0	0	0.0366
+  1	0	0	0	1	0.0342
+  1	0	0	1	0	0.0252
+  1	0	0	1	1	0.0352
+  1	0	1	0	0	0.031
+  1	0	1	0	1	0.0304
+  1	0	1	1	0	0.0302
+  1	0	1	1	1	0.0322
+  1	1	0	0	0	0.0354
+  1	1	0	0	1	0.0308
+  1	1	0	1	0	0.0314
+  1	1	0	1	1	0.0262
+  1	1	1	0	0	0.0324
+  1	1	1	0	1	0.0332
+  1	1	1	1	0	0.0264
+  1	1	1	1	1	0.0328
 
   $ cortex circuit run --output frequencies --shots 100 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
 
-  Circuit "Serialized from Cirq" results using calibration set 41 over 100 shots:
-
-  Frequencies of "b[0]":
-  q[0]
-  0	0.41
-  1	0.59
-  Frequencies of "b[1]":
-  q[1]
-  0	0.39
-  1	0.61
+  Circuit "Serialized from Cirq" results using calibration set 41 over 5000 shots:
+  q[0]	q[1]
+  0	0	0.2386
+  0	1	0.26
+  1	0	0.2538
+  1	1	0.2476
 
 ``--output shots`` provides a human-readable output of all the shots:
 
@@ -230,20 +241,12 @@ The results of the measurements in the circuit can be returned in human-readable
   $ cortex circuit run --output shots --shots 5 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
 
   Circuit "Serialized from Cirq" results using calibration set 41 over 5 shots:
-  5 shots of "b[0]" for qubits:
-  shot	q[0]
-  1	1
-  2	1
-  3	1
-  4	0
-  5	0
-  5 shots of "b[1]" for qubits:
-  shot	q[1]
-  1	1
-  2	1
-  3	0
-  4	0
-  5	1
+  shot	q[0]	q[1]
+  1	0	1
+  2	1	0
+  3	1	1
+  4	0	0
+  5	1	1
 
 ``--output json`` provides a machine-readable output of raw ``RunResult`` json returned by the Cortex server:
 
@@ -251,4 +254,4 @@ The results of the measurements in the circuit can be returned in human-readable
 
   $ cortex circuit run --output json --shots 100 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
 
-  {"status": "ready", "measurements": [{"b_0": [[1], [0], [1], [0], [1], [0], [0], [0], [1], [1], [1], [1], [1], [1], [1], [0], [1], [1], [1], [1], [1], [1], [0], [1], [0], [1], [1], [0], [0], [0], [1], [1], [1], [0], [1], [1], [1], [0], [0], [0], [0], [1], [0], [0], [0], [0], [1], [1], [0], [1], [1], [1], [1], [0], [0], [1], [1], [1], [1], [0], [1], [1], [0], [0], [0], [1], [0], [0], [0], [1], [0], [1], [0], [1], [1], [0], [1], [0], [0], [0], [0], [0], [1], [1], [0], [1], [1], [0], [1], [1], [0], [0], [1], [1], [1], [1], [1], [0], [0], [1]], "b_1": [[1], [0], [0], [0], [1], [1], [0], [1], [0], [0], [1], [0], [1], [1], [1], [1], [0], [1], [0], [1], [1], [0], [1], [1], [1], [1], [1], [1], [0], [0], [0], [1], [1], [1], [1], [1], [1], [1], [1], [1], [0], [1], [0], [0], [1], [1], [0], [1], [1], [0], [1], [0], [1], [1], [0], [0], [0], [0], [0], [1], [0], [0], [0], [0], [0], [1], [1], [0], [1], [1], [0], [0], [1], [1], [0], [0], [0], [1], [0], [1], [1], [0], [1], [0], [1], [1], [0], [1], [0], [1], [0], [1], [0], [1], [0], [0], [0], [0], [0], [0]]}], "metadata": {"shots": 100, "qubit_mapping": [{"logical_name": "q_0", "physical_name": "QB1"}, {"logical_name": "q_1", "physical_name": "QB2"}], "circuits": [{"name": "Serialized from Cirq", "instructions": [{"name": "phased_rx", "qubits": ["q_0"], "args": {"angle_t": 0.5, "phase_t": 0}}, {"name": "cz", "qubits": ["q_0", "q_1"], "args": {}}, {"name": "measurement", "qubits": ["q_0"], "args": {"key": "b_0"}}, {"name": "measurement", "qubits": ["q_1"], "args": {"key": "b_1"}}]}], "calibration_set_id": 41}}
+  {"status": "ready", "measurements": [{"b_0": [[0], [1], [1], [1], [0], [0], [1], [1], [0], [0], [1], [1], [1], [0], [0], [0], [1], [1], [1], [0], [0], [0], [0], [0], [1], [0], [1], [0], [0], [1], [0], [0], [0], [0], [1], [1], [0], [1], [1], [1], [1], [0], [1], [0], [0], [0], [1], [1], [1], [1], [1], [1], [1], [0], [1], [0], [0], [0], [0], [0], [0], [1], [0], [0], [0], [1], [0], [1], [0], [0], [1], [0], [1], [0], [1], [1], [0], [1], [1], [1], [1], [1], [1], [1], [0], [1], [1], [0], [0], [0], [1], [0], [0], [0], [1], [0], [1], [1], [1], [0]], "b_1": [[1], [1], [1], [0], [1], [0], [1], [0], [0], [1], [1], [1], [1], [0], [1], [0], [0], [1], [0], [1], [1], [0], [1], [0], [1], [0], [1], [0], [0], [0], [1], [0], [1], [0], [0], [1], [1], [1], [0], [0], [0], [0], [1], [0], [0], [0], [0], [0], [0], [1], [1], [0], [0], [1], [0], [0], [1], [0], [1], [0], [0], [1], [0], [1], [0], [1], [0], [1], [0], [1], [0], [0], [0], [0], [0], [0], [1], [0], [0], [1], [1], [0], [0], [0], [0], [0], [0], [1], [1], [0], [1], [1], [0], [1], [1], [0], [0], [0], [0], [0]]}], "metadata": {"shots": 100, "circuits": [{"name": "Serialized from Cirq", "instructions": [{"name": "phased_rx", "qubits": ["QB1"], "args": {"angle_t": 0.5, "phase_t": 0}}, {"name": "cz", "qubits": ["QB1", "QB2"], "args": {}}, {"name": "measurement", "qubits": ["QB1"], "args": {"key": "b_0"}}, {"name": "measurement", "qubits": ["QB2"], "args": {"key": "b_1"}}]}], "calibration_set_id": 41}}
