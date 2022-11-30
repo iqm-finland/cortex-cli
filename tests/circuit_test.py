@@ -135,8 +135,6 @@ def test_circuit_run_valid_qasm_circuit_frequencies_output():
                 '--no-auth',
             ],
         )
-    assert 'b[0]' in result.output
-    assert 'b[1]' in result.output
     assert 'q[0]' in result.output
     assert 'q[1]' in result.output
     assert result.exit_code == 0

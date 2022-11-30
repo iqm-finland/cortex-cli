@@ -728,7 +728,8 @@ def _human_readable_shots_output(shots, per_qubit_measurements) -> str:
     output_string = '\t'.join(['shot'] + sorted_qubits_names) + '\n'
     output_string += '\n'.join(
         [
-            '\t'.join([str(i+1)] + [str(per_qubit_measurements[qubit_name][i]) for qubit_name in sorted_qubits_names]) for i in range(shots)
+            '\t'.join([str(i + 1)] + [str(per_qubit_measurements[qubit_name][i]) for qubit_name in sorted_qubits_names])
+            for i in range(shots)
         ]
     )
     return output_string
