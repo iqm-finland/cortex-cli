@@ -15,6 +15,7 @@
 Command line interface for interacting with IQM's quantum computers.
 """
 from datetime import datetime, timedelta
+from enum import Enum
 from io import TextIOWrapper
 import json
 import logging
@@ -43,6 +44,14 @@ REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
 REFRESH_PERIOD = 3 * 60  # in seconds
+
+
+class OutputFormat(str, Enum):
+    """Enum for output format options."""
+
+    SHOTS = 'shots'
+    FREQUENCIES = 'frequencies'
+    JSON = 'json'
 
 
 class ClickLoggingHandler(logging.Handler):
@@ -650,6 +659,102 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
     return str(tokens_file)
 
 
+def _validate_measurements(input_circuit, results) -> dict[str, list[str]]:
+    """Checks if the results of a circuit execution match the expected measurements in the input circuit.
+
+    Args:
+        input_circuit (iqm_client.Circuit): input circuit
+        results (iqm_client.RunResult): circuit execution results
+    Returns:
+        dict[str, list[str]]: dictionary of measurement keys to qubits they measure
+    """
+    if results.measurements is None:
+        raise click.ClickException(f'No measurements obtained from backend. Job status is ${results.status}')
+
+    # We do not allow batch execution hence measurements should be length 1
+    if len(results.measurements) != 1:
+        raise click.ClickException('Measurements obtained from backend are invalid.')
+
+    expected_measurements = {}
+    for instruction in input_circuit.instructions:
+        if instruction.name == 'measurement':
+            expected_measurements[instruction.args['key']] = list(instruction.qubits)
+
+    for measurement_key in results.measurements[0]:
+        if measurement_key not in expected_measurements:
+            raise click.ClickException(
+                'Measurements obtained from the backend \
+                    do not match measurements in the circuit.'
+            )
+
+    return expected_measurements
+
+
+def _make_per_qubit_measurements(iqm_json, measured_qubits, results) -> dict[str, list[int]]:
+    """Converts the results of a circuit execution into a dictionary of qubits to their measurements.
+
+    Args:
+        measured_qubits (dict[str, list[str]]): measurements keys to qubit names mapping
+        results (iqm_client.RunResult): circuit execution results
+    Returns:
+        dict[str, list[int]]: dictionary of qubits to their measurements
+    """
+    per_qubit_measurements: dict[str, list[int]] = {}  # {"QB1": [0, 1, ...], "QB2": [1, 0, ...], ...}
+    # No batch execution i.e. only one measurement
+    for m_key, m_values in results.measurements[0].items():
+        for shot in m_values:
+            for qubit, value in zip(measured_qubits[m_key], shot):
+                if not iqm_json:
+                    qubit = qubit.replace('_', '[') + ']'
+                per_qubit_measurements.setdefault(qubit, []).append(value)
+
+    return per_qubit_measurements
+
+
+def _human_readable_frequencies_output(shots, per_qubit_measurements) -> str:
+    """Construct a human-readable output for the frequencies of the measured qubits.
+
+    Args:
+        shots (int): amount of shots
+        per_qubit_measurements (dict[str, list[str]]): dictionary of measurement keys to qubits they measure
+    Returns:
+        str: human-readable output for the frequencies of the measured states
+    """
+    sorted_qubits_names = sorted([str(k) for k in per_qubit_measurements.keys()])
+    output_string = '\t'.join(sorted_qubits_names) + '\n'
+    states = [tuple(per_qubit_measurements[qubit_name][i] for qubit_name in sorted_qubits_names) for i in range(shots)]
+    states_counts: dict[tuple, float] = {}
+    for state in states:
+        states_counts[state] = states_counts.get(state, 0) + 1
+    states_frequencies = {state: counts / len(states) for state, counts in states_counts.items()}
+    sorted_states = list(states_frequencies.keys())
+    sorted_states.sort(key=lambda tup: ' '.join([str(s) for s in tup]))
+    output_string += '\n'.join(
+        ['\t'.join([str(s) for s in state]) + '\t' + str(states_frequencies[state]) for state in sorted_states]
+    )
+    return output_string
+
+
+def _human_readable_shots_output(shots, per_qubit_measurements) -> str:
+    """Construct a human-readable output for the shots of the measured qubits.
+
+    Args:
+        shots (int): amount of shots
+        per_qubit_measurements (dict[str, list[str]]): dictionary of measurement keys to qubits they measure
+    Returns:
+        str: human-readable output for the shots of the measured qubits
+    """
+    sorted_qubits_names = sorted([str(k) for k in per_qubit_measurements.keys()])
+    output_string = '\t'.join(['shot'] + sorted_qubits_names) + '\n'
+    output_string += '\n'.join(
+        [
+            '\t'.join([str(i + 1)] + [str(per_qubit_measurements[qubit_name][i]) for qubit_name in sorted_qubits_names])
+            for i in range(shots)
+        ]
+    )
+    return output_string
+
+
 @circuit.command()
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 @click.option('--shots', default=1, type=int, help='Number of times to sample the circuit.')
@@ -699,6 +804,16 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
     'When submitting a circuit job, Cortex CLI will use IQM Client without passing any auth tokens. '
     'Auth data can still be set using environment variables for IQM Client.',
 )
+@click.option(
+    '--output',
+    default=OutputFormat.FREQUENCIES,
+    type=OutputFormat,
+    help='Output format: shots, frequencies or raw json. Default: frequencies. '
+    'This is useful for piping the response to other commands. '
+    'frequencies: display measuremenets frequencies in a human-readable format.\n'
+    'shots: display measuremenets in a human-readable format.\n'
+    'json: print the job\'s JSON response to stdout.',
+)
 @click.argument('filename', type=click.Path())
 def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-toplevel
     verbose: bool,
@@ -710,6 +825,7 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
     iqm_json: bool,
     config_file: str,
     no_auth: bool,
+    output: OutputFormat,
 ) -> None:
     """Execute a quantum circuit.
 
@@ -745,7 +861,7 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
                 raise click.BadOptionUsage(
                     '--qasm_qubit_placement', '--qasm_qubit_placement is required for OpenQASM circuit execution.'
                 )
-            input_circuit = parse_qasm_circuit(filename, qasm_qubit_placement)
+            input_circuit, qubit_placement = parse_qasm_circuit(filename, qasm_qubit_placement)
 
         logger.debug('\nInput circuit:\n%s', input_circuit)
 
@@ -757,13 +873,37 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
         # just show the error message, not a stack trace
         raise click.ClickException(str(ex)) from ex
 
-    if results.measurements is None:
-        raise click.ClickException(f'No measurements obtained from backend. Job status is ${results.status}')
+    # validate measurements, will throw an exception if something is wrong
+    measured_qubits = _validate_measurements(input_circuit, results)
 
+    # convert native qubit names to QASM qubit names
+    if not iqm_json:
+        measured_qubits = {
+            m_key: [
+                f'{qubit_placement.qubit_placement[qubit][0]}_{qubit_placement.qubit_placement[qubit][1]}'
+                for qubit in m_qubits
+            ]
+            for m_key, m_qubits in measured_qubits.items()
+        }
+    # make a dictionary with qubits as keys and measurements arrays as values
+    per_qubit_measurements = _make_per_qubit_measurements(iqm_json, measured_qubits, results)
+
+    # prepare output
     logger.debug('\nResults:')
-    if results.metadata.calibration_set_id is not None:
-        logger.info('Using calibration set %d', results.metadata.calibration_set_id)
-    logger.info(json.dumps(results.measurements[0]))  # pylint: disable=unsubscriptable-object
+    if output == OutputFormat.JSON:
+        # `exclude_none` is needed to avoid serializing `None` values, e.g. if there is no `warnings` field
+        output_string = results.json(exclude_none=True)
+
+    if output == OutputFormat.FREQUENCIES:
+        output_string = f'Circuit "{input_circuit.name}" results using '
+        output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
+        output_string += _human_readable_frequencies_output(shots, per_qubit_measurements)
+    if output == OutputFormat.SHOTS:
+        output_string = f'Circuit "{input_circuit.name}" results using '
+        output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
+        output_string += _human_readable_shots_output(shots, per_qubit_measurements)
+
+    logger.info(output_string)
 
 
 if __name__ == '__main__':

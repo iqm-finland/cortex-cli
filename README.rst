@@ -183,18 +183,75 @@ For information on all the parameters and their usage, run
   $ cortex circuit run --help
 
 
-The results of the measurements in the circuit are returned in JSON format:
+The results of all the measurements in the circuit can be returned in human-readable or machine-readable format:
 
-.. code-block:: json
+``--output frequencies`` provides a human-readable output of the measurement frequencies, this is the default format:
 
-  {"measurement_0":
-    [
-      [1, 0, 1, 1],
-      [1, 0, 0, 1],
-      [1, 0, 1, 1]
-    ]
-  }
+.. code-block:: bash
 
-The dictionary keys are measurement keys from the circuit. The value for each measurement is a 2-D array of binary
-integers. The first index goes over the shots, and the second over the qubits in the measurement. For example, in the
-example above, "measurement_0" is a 4-qubit measurement, and the number of shots is three.
+  $ cortex circuit run --output frequencies --shots 5000 --iqm-json ./tests/resources/valid_circuit_2.json
+  Circuit "My Circuit" results using calibration set 41 over 5000 shots:
+  QB1	QB2	QB3	QB4	QB5
+  0	0	0	0	0	0.0288
+  0	0	0	0	1	0.0276
+  0	0	0	1	0	0.027
+  0	0	0	1	1	0.03
+  0	0	1	0	0	0.033
+  0	0	1	0	1	0.0348
+  0	0	1	1	0	0.0332
+  0	0	1	1	1	0.0328
+  0	1	0	0	0	0.0344
+  0	1	0	0	1	0.031
+  0	1	0	1	0	0.0294
+  0	1	0	1	1	0.0286
+  0	1	1	0	0	0.0352
+  0	1	1	0	1	0.0264
+  0	1	1	1	0	0.0312
+  0	1	1	1	1	0.033
+  1	0	0	0	0	0.0366
+  1	0	0	0	1	0.0342
+  1	0	0	1	0	0.0252
+  1	0	0	1	1	0.0352
+  1	0	1	0	0	0.031
+  1	0	1	0	1	0.0304
+  1	0	1	1	0	0.0302
+  1	0	1	1	1	0.0322
+  1	1	0	0	0	0.0354
+  1	1	0	0	1	0.0308
+  1	1	0	1	0	0.0314
+  1	1	0	1	1	0.0262
+  1	1	1	0	0	0.0324
+  1	1	1	0	1	0.0332
+  1	1	1	1	0	0.0264
+  1	1	1	1	1	0.0328
+
+  $ cortex circuit run --output frequencies --shots 100 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
+
+  Circuit "valid_circuit.qasm" results using calibration set 41 over 5000 shots:
+  q[0]	q[1]
+  0	0	0.2386
+  0	1	0.26
+  1	0	0.2538
+  1	1	0.2476
+
+``--output shots`` provides a human-readable output of all the shots:
+
+.. code-block:: bash
+
+  $ cortex circuit run --output shots --shots 5 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
+
+  Circuit "valid_circuit.qasm" results using calibration set 41 over 5 shots:
+  shot	q[0]	q[1]
+  1	0	1
+  2	1	0
+  3	1	1
+  4	0	0
+  5	1	1
+
+``--output json`` provides a machine-readable output of raw ``RunResult`` json returned by the Cortex server:
+
+.. code-block:: bash
+
+  $ cortex circuit run --output json --shots 100 --qasm-qubit-placement ./tests/resources/qasm_qubit_placement.json ./tests/resources/valid_circuit.qasm
+
+  {"status": "ready", "measurements": [{"b_0": [[0], [1], [1], [1], [0], [0], [1], [1], [0], [0], [1], [1], [1], [0], [0], [0], [1], [1], [1], [0], [0], [0], [0], [0], [1], [0], [1], [0], [0], [1], [0], [0], [0], [0], [1], [1], [0], [1], [1], [1], [1], [0], [1], [0], [0], [0], [1], [1], [1], [1], [1], [1], [1], [0], [1], [0], [0], [0], [0], [0], [0], [1], [0], [0], [0], [1], [0], [1], [0], [0], [1], [0], [1], [0], [1], [1], [0], [1], [1], [1], [1], [1], [1], [1], [0], [1], [1], [0], [0], [0], [1], [0], [0], [0], [1], [0], [1], [1], [1], [0]], "b_1": [[1], [1], [1], [0], [1], [0], [1], [0], [0], [1], [1], [1], [1], [0], [1], [0], [0], [1], [0], [1], [1], [0], [1], [0], [1], [0], [1], [0], [0], [0], [1], [0], [1], [0], [0], [1], [1], [1], [0], [0], [0], [0], [1], [0], [0], [0], [0], [0], [0], [1], [1], [0], [0], [1], [0], [0], [1], [0], [1], [0], [0], [1], [0], [1], [0], [1], [0], [1], [0], [1], [0], [0], [0], [0], [0], [0], [1], [0], [0], [1], [1], [0], [0], [0], [0], [0], [0], [1], [1], [0], [1], [1], [0], [1], [1], [0], [0], [0], [0], [0]]}], "metadata": {"shots": 100, "circuits": [{"name": "valid_circuit.qasm", "instructions": [{"name": "phased_rx", "qubits": ["QB1"], "args": {"angle_t": 0.5, "phase_t": 0}}, {"name": "cz", "qubits": ["QB1", "QB2"], "args": {}}, {"name": "measurement", "qubits": ["QB1"], "args": {"key": "b_0"}}, {"name": "measurement", "qubits": ["QB2"], "args": {"key": "b_1"}}]}], "calibration_set_id": 41}}

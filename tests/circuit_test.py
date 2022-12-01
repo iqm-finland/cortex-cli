@@ -23,10 +23,12 @@ from iqm_client import Instruction
 from mockito import unstub
 
 from cortex_cli.circuit import parse_qasm_circuit
-from cortex_cli.cortex_cli import cortex_cli
+from cortex_cli.cortex_cli import _human_readable_frequencies_output, cortex_cli
+from cortex_cli.models import QasmQubitPlacement
 from tests.conftest import expect_jobs_requests, resources_path
 
 valid_circuit_qasm = os.path.join(resources_path(), 'valid_circuit.qasm')
+valid_circuit_qasm_result = os.path.join(resources_path(), 'valid_circuit_qasm_result.json')
 qasm_qubit_placement_path = os.path.join(resources_path(), 'qasm_qubit_placement.json')
 
 
@@ -112,9 +114,94 @@ def test_circuit_run_invalid_circuit(
         assert 'Invalid quantum circuit in my_circuit.qasm' in result.output
 
 
-def test_circuit_run_valid_qasm_circuit():
+def test_circuit_run_valid_qasm_circuit_frequencies_output():
     """
-    Tests that ``circuit run`` succeeds with valid QASM circuit.
+    Tests that ``circuit run`` succeeds with valid QASM circuit and outputs human-readable frequencies table by default.
+    """
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=valid_circuit_qasm_result)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = CliRunner().invoke(
+            cortex_cli,
+            [
+                'circuit',
+                'run',
+                valid_circuit_qasm,
+                '--qasm-qubit-placement',
+                qasm_qubit_placement_path,
+                '--iqm-server-url',
+                iqm_server_url,
+                '--no-auth',
+            ],
+        )
+    assert 'q[0]' in result.output
+    assert 'q[1]' in result.output
+    assert result.exit_code == 0
+    unstub()
+
+
+def test_circuit_run_valid_qasm_circuit_shots_output():
+    """
+    Tests that ``circuit run`` succeeds with valid QASM circuit and outputs human-readable shots table.
+    """
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=valid_circuit_qasm_result)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = CliRunner().invoke(
+            cortex_cli,
+            [
+                'circuit',
+                'run',
+                valid_circuit_qasm,
+                '--qasm-qubit-placement',
+                qasm_qubit_placement_path,
+                '--iqm-server-url',
+                iqm_server_url,
+                '--no-auth',
+                '--output',
+                'shots',
+            ],
+        )
+    assert 'result' in result.output
+    assert result.exit_code == 0
+    unstub()
+
+
+def test_circuit_run_valid_qasm_circuit_json_output():
+    """
+    Tests that ``circuit run`` succeeds with valid QASM circuit and outputs machine-readable ``RunResult`` json.
+    """
+    iqm_server_url = 'https://example.com'
+    expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=valid_circuit_qasm_result)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        result = CliRunner().invoke(
+            cortex_cli,
+            [
+                'circuit',
+                'run',
+                valid_circuit_qasm,
+                '--qasm-qubit-placement',
+                qasm_qubit_placement_path,
+                '--iqm-server-url',
+                iqm_server_url,
+                '--no-auth',
+                '--output',
+                'json',
+            ],
+        )
+    assert 'b_0' in result.output
+    assert 'b_1' in result.output
+    assert json.loads(result.output) is not None
+    assert result.exit_code == 0
+    unstub()
+
+
+def test_circuit_measurements_do_not_match():
+    """
+    Tests that ``circuit run`` fails if measured qubits do not match the input circuit.
     """
     iqm_server_url = 'https://example.com'
     expect_jobs_requests(iqm_server_url)
@@ -131,10 +218,12 @@ def test_circuit_run_valid_qasm_circuit():
                 '--iqm-server-url',
                 iqm_server_url,
                 '--no-auth',
+                '--output',
+                'json',
             ],
         )
-    assert 'result' in result.output
-    assert result.exit_code == 0
+    assert result.exit_code != 0
+    assert 'do not match measurements in the circuit' in result.output
     unstub()
 
 
@@ -450,10 +539,27 @@ def test_parse_qasm_circuit():
     """
     qasm_qubit_placement = TextIOWrapper(BytesIO(str.encode('{"QB1": ["q",0], "QB2": ["q",1]}')))
 
-    circuit = parse_qasm_circuit(valid_circuit_qasm, qasm_qubit_placement)
+    circuit, qubit_placement = parse_qasm_circuit(valid_circuit_qasm, qasm_qubit_placement)
 
     assert circuit.all_qubits() == {'QB1', 'QB2'}
     assert circuit.instructions == (
         Instruction(name='phased_rx', qubits=('QB1',), args={'angle_t': 0.5, 'phase_t': 0}),
         Instruction(name='cz', qubits=('QB1', 'QB2'), args={}),
+        Instruction(name='measurement', qubits=('QB1',), args={'key': 'b_0'}),
+        Instruction(name='measurement', qubits=('QB2',), args={'key': 'b_1'}),
     )
+    assert circuit.name == 'valid_circuit.qasm'
+    assert qubit_placement == QasmQubitPlacement(qubit_placement={'QB1': ('q', 0), 'QB2': ('q', 1)})
+
+
+def test_human_readable_frequencies_output_works():
+    """
+    Test that frequencies are calculated correctly.
+    """
+    per_qubit_measurements = {'QB1': [0, 0, 1, 1], 'QB2': [0, 1, 0, 1]}
+
+    output = _human_readable_frequencies_output(4, per_qubit_measurements)
+    assert '0	0	0.25' in output
+    assert '0	1	0.25' in output
+    assert '1	0	0.25' in output
+    assert '1	1	0.25' in output

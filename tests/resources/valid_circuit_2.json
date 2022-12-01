@@ -5,7 +5,7 @@
       "name": "cz",
       "qubits": [
         "QB1",
-        "QB3"
+        "QB2"
       ],
       "args": {}
     },
@@ -23,13 +23,21 @@
       "name": "measurement",
       "qubits": [
         "QB2",
-        "QB4",
+        "QB4"
+      ],
+      "args": {
+        "key": "a measurement"
+      }
+    },
+    {
+      "name": "measurement",
+      "qubits": [
         "QB1",
         "QB5",
         "QB3"
       ],
       "args": {
-        "key": "result"
+        "key": "the measurement"
       }
     }
   ]
