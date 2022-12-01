@@ -23,7 +23,7 @@ from iqm_client import Instruction
 from mockito import unstub
 
 from cortex_cli.circuit import parse_qasm_circuit
-from cortex_cli.cortex_cli import cortex_cli
+from cortex_cli.cortex_cli import _human_readable_frequencies_output, cortex_cli
 from cortex_cli.models import QasmQubitPlacement
 from tests.conftest import expect_jobs_requests, resources_path
 
@@ -549,3 +549,16 @@ def test_parse_qasm_circuit():
         Instruction(name='measurement', qubits=('QB2',), args={'key': 'b_1'}),
     )
     assert qubit_placement == QasmQubitPlacement(qubit_placement={'QB1': ('q', 0), 'QB2': ('q', 1)})
+
+
+def test_human_readable_frequencies_output_works():
+    """
+    Test that frequencies are calculated correctly.
+    """
+    per_qubit_measurements = {'QB1': [0, 0, 1, 1], 'QB2': [0, 1, 0, 1]}
+
+    output = _human_readable_frequencies_output(4, per_qubit_measurements)
+    assert '0	0	0.25' in output
+    assert '0	1	0.25' in output
+    assert '1	0	0.25' in output
+    assert '1	1	0.25' in output

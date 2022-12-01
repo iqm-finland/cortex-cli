@@ -671,18 +671,21 @@ def _validate_measurements(input_circuit, results) -> dict[str, list[str]]:
     if results.measurements is None:
         raise click.ClickException(f'No measurements obtained from backend. Job status is ${results.status}')
 
+    # We do not allow batch execution hence measurements should be length 1
+    if len(results.measurements) != 1:
+        raise click.ClickException('Measurements obtained from backend are invalid.')
+
     expected_measurements = {}
     for instruction in input_circuit.instructions:
         if instruction.name == 'measurement':
             expected_measurements[instruction.args['key']] = list(instruction.qubits)
 
-    for measurement in results.measurements:
-        for measurement_key in measurement:
-            if measurement_key not in expected_measurements:
-                raise click.ClickException(
-                    'Measurements obtained from the backend \
-                     do not match measurements in the circuit.'
-                )
+    for measurement_key in results.measurements[0]:
+        if measurement_key not in expected_measurements:
+            raise click.ClickException(
+                'Measurements obtained from the backend \
+                    do not match measurements in the circuit.'
+            )
 
     return expected_measurements
 
@@ -691,19 +694,19 @@ def _make_per_qubit_measurements(iqm_json, measured_qubits, results) -> dict[str
     """Converts the results of a circuit execution into a dictionary of qubits to their measurements.
 
     Args:
-        measured_qubits (Dict[str, List[str]]): measurements keys to qubit names mapping
+        measured_qubits (dict[str, list[str]]): measurements keys to qubit names mapping
         results (iqm_client.RunResult): circuit execution results
     Returns:
         dict[str, list[int]]: dictionary of qubits to their measurements
     """
     per_qubit_measurements: dict[str, list[int]] = {}  # {"QB1": [0, 1, ...], "QB2": [1, 0, ...], ...}
-    for measurements in results.measurements:
-        for m_key, m_values in measurements.items():
-            for shot in m_values:
-                for qubit, value in zip(measured_qubits[m_key], shot):
-                    if not iqm_json:
-                        qubit = qubit.replace('_', '[') + ']'
-                    per_qubit_measurements.setdefault(qubit, []).append(value)
+    # No batch execution i.e. only one measurement
+    for m_key, m_values in results.measurements[0].items():
+        for shot in m_values:
+            for qubit, value in zip(measured_qubits[m_key], shot):
+                if not iqm_json:
+                    qubit = qubit.replace('_', '[') + ']'
+                per_qubit_measurements.setdefault(qubit, []).append(value)
 
     return per_qubit_measurements
 
@@ -720,10 +723,10 @@ def _human_readable_frequencies_output(shots, per_qubit_measurements) -> str:
     sorted_qubits_names = sorted([str(k) for k in per_qubit_measurements.keys()])
     output_string = '\t'.join(sorted_qubits_names) + '\n'
     states = [tuple(per_qubit_measurements[qubit_name][i] for qubit_name in sorted_qubits_names) for i in range(shots)]
-    states_frequencies: dict[tuple, float] = {}
+    states_counts: dict[tuple, float] = {}
     for state in states:
-        states_frequencies[state] = states_frequencies.get(state, 0) + 1
-    states_frequencies = {state: frequency / len(states) for state, frequency in states_frequencies.items()}
+        states_counts[state] = states_counts.get(state, 0) + 1
+    states_frequencies = {state: counts / len(states) for state, counts in states_counts.items()}
     sorted_states = list(states_frequencies.keys())
     sorted_states.sort(key=lambda tup: ' '.join([str(s) for s in tup]))
     output_string += '\n'.join(
