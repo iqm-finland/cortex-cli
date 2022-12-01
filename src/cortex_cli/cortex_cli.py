@@ -23,7 +23,7 @@ import os
 from pathlib import Path
 import platform
 import sys
-from typing import Dict, List, Optional
+from typing import Optional
 
 import click
 from psutil import Process
@@ -659,14 +659,14 @@ def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
     return str(tokens_file)
 
 
-def _validate_measurements(input_circuit, results) -> Dict[str, List[str]]:
+def _validate_measurements(input_circuit, results) -> dict[str, list[str]]:
     """Checks if the results of a circuit execution match the expected measurements in the input circuit.
 
     Args:
         input_circuit (iqm_client.Circuit): input circuit
         results (iqm_client.RunResult): circuit execution results
     Returns:
-        Dict[str, List[str]]: dictionary of measurement keys to qubits they measure
+        dict[str, list[str]]: dictionary of measurement keys to qubits they measure
     """
     if results.measurements is None:
         raise click.ClickException(f'No measurements obtained from backend. Job status is ${results.status}')
@@ -687,16 +687,16 @@ def _validate_measurements(input_circuit, results) -> Dict[str, List[str]]:
     return expected_measurements
 
 
-def _make_per_qubit_measurements(iqm_json, measured_qubits, results) -> Dict[str, List[int]]:
+def _make_per_qubit_measurements(iqm_json, measured_qubits, results) -> dict[str, list[int]]:
     """Converts the results of a circuit execution into a dictionary of qubits to their measurements.
 
     Args:
         measured_qubits (Dict[str, List[str]]): measurements keys to qubit names mapping
         results (iqm_client.RunResult): circuit execution results
     Returns:
-        Dict[str, List[int]]: dictionary of qubits to their measurements
+        dict[str, list[int]]: dictionary of qubits to their measurements
     """
-    per_qubit_measurements: Dict[str, List[int]] = {}  # {"QB1": [0, 1, ...], "QB2": [1, 0, ...], ...}
+    per_qubit_measurements: dict[str, list[int]] = {}  # {"QB1": [0, 1, ...], "QB2": [1, 0, ...], ...}
     for measurements in results.measurements:
         for m_key, m_values in measurements.items():
             for shot in m_values:
@@ -713,15 +713,14 @@ def _human_readable_frequencies_output(shots, per_qubit_measurements) -> str:
 
     Args:
         shots (int): amount of shots
-        per_qubit_measurements (Dict[str, List[str]]): dictionary of measurement keys to qubits they measure
+        per_qubit_measurements (dict[str, list[str]]): dictionary of measurement keys to qubits they measure
     Returns:
-        Dict[str, List[str]]: dictionary of measurement keys to qubits they measure
+        str: human-readable output for the frequencies of the measured states
     """
-    sorted_qubits_names = [str(k) for k in per_qubit_measurements.keys()]
-    sorted_qubits_names.sort()
+    sorted_qubits_names = sorted([str(k) for k in per_qubit_measurements.keys()])
     output_string = '\t'.join(sorted_qubits_names) + '\n'
     states = [tuple(per_qubit_measurements[qubit_name][i] for qubit_name in sorted_qubits_names) for i in range(shots)]
-    states_frequencies: Dict[tuple, float] = {}
+    states_frequencies: dict[tuple, float] = {}
     for state in states:
         states_frequencies[state] = states_frequencies.get(state, 0) + 1
     states_frequencies = {state: frequency / len(states) for state, frequency in states_frequencies.items()}
@@ -738,12 +737,11 @@ def _human_readable_shots_output(shots, per_qubit_measurements) -> str:
 
     Args:
         shots (int): amount of shots
-        per_qubit_measurements (Dict[str, List[str]]): dictionary of measurement keys to qubits they measure
+        per_qubit_measurements (dict[str, list[str]]): dictionary of measurement keys to qubits they measure
     Returns:
-        Dict[str, List[str]]: dictionary of measurement keys to qubits they measure
+        str: human-readable output for the shots of the measured qubits
     """
-    sorted_qubits_names = [str(k) for k in per_qubit_measurements.keys()]
-    sorted_qubits_names.sort()
+    sorted_qubits_names = sorted([str(k) for k in per_qubit_measurements.keys()])
     output_string = '\t'.join(['shot'] + sorted_qubits_names) + '\n'
     output_string += '\n'.join(
         [
