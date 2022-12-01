@@ -548,6 +548,7 @@ def test_parse_qasm_circuit():
         Instruction(name='measurement', qubits=('QB1',), args={'key': 'b_0'}),
         Instruction(name='measurement', qubits=('QB2',), args={'key': 'b_1'}),
     )
+    assert circuit.name == 'valid_circuit.qasm'
     assert qubit_placement == QasmQubitPlacement(qubit_placement={'QB1': ('q', 0), 'QB2': ('q', 1)})
 
 

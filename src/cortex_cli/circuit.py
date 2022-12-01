@@ -16,6 +16,7 @@ Submit circuit jobs to IQM quantum computers via Cortex CLI.
 """
 from io import TextIOWrapper
 import json
+import os
 
 import click
 from pydantic import ValidationError
@@ -63,7 +64,8 @@ def parse_qasm_circuit(filename: str, qasm_qubit_placement: TextIOWrapper):
     Raises:
         ClickException: if circuit or qasm_qubit_placement is invalid
     Returns:
-        Circuit: parsed circuit in IQM format
+        iqm_client.Circuit: parsed circuit in IQM format,
+        QasmQubitPlacement: validated QasmQubitPlacement
     """
     try:
         # pylint: disable=import-outside-toplevel
@@ -86,4 +88,6 @@ def parse_qasm_circuit(filename: str, qasm_qubit_placement: TextIOWrapper):
     qubit_map: dict[Qid, Qid] = {
         NamedQubit(f'{v[0]}_{v[1]}'): NamedQubit(k) for k, v in validated_qubit_placement.qubit_placement.items()
     }
-    return (serialize_circuit(circuit.transform_qubits(qubit_map)), validated_qubit_placement)
+    serialized_circuit = serialize_circuit(circuit.transform_qubits(qubit_map))
+    serialized_circuit.name = os.path.basename(filename)
+    return (serialized_circuit, validated_qubit_placement)
