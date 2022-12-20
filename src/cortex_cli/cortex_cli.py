@@ -548,7 +548,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
             except (Timeout, ConnectionError, ClientAuthenticationError) as error:
                 logger.warning(
-                    f'Failed to revoke tokens due to error when connecting to authentication server: {error}'
+                    'Failed to revoke tokens due to error when connecting to authentication server: %s', error
                 )
 
             Process(pid).terminate()
@@ -564,7 +564,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
             except (Timeout, ConnectionError, ClientAuthenticationError) as error:
                 logger.warning(
-                    f'Failed to revoke tokens due to error when connecting to authentication server: {error}'
+                    'Failed to revoke tokens due to error when connecting to authentication server: %s', error
                 )
 
             os.remove(tokens_file)
