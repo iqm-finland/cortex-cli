@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 2.2
+===========
+
+* Tokens file gets deleted and logout succeeds even if the authentication server is not available `#32 <https://github.com/iqm-finland/cortex-cli/pull/32>`_
+
 Version 2.1
 ===========
 
