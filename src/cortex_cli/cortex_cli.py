@@ -553,7 +553,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
 
             Process(pid).terminate()
             os.remove(tokens_file)
-            logger.info('Logged out successfully.')
+            logger.info('Tokens file deleted. Logged out.')
             return
 
     # 4. Delete tokens, perform logout
@@ -568,7 +568,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
                 )
 
             os.remove(tokens_file)
-            logger.info('Logged out successfully.')
+            logger.info('Tokens file deleted. Logged out.')
             return
 
     logger.info('Logout aborted.')
