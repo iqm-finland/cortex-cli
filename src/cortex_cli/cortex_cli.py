@@ -547,10 +547,13 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
             except (Timeout, ConnectionError, ClientAuthenticationError) as error:
-                raise click.ClickException(f'Error when logging out: {error}') from error
+                logger.warning(
+                    'Failed to revoke tokens due to error when connecting to authentication server: %s', error
+                )
+
             Process(pid).terminate()
             os.remove(tokens_file)
-            logger.info('Logged out successfully.')
+            logger.info('Tokens file deleted. Logged out.')
             return
 
     # 4. Delete tokens, perform logout
@@ -560,10 +563,12 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
             except (Timeout, ConnectionError, ClientAuthenticationError) as error:
-                raise click.ClickException(f'Error when logging out: {error}') from error
+                logger.warning(
+                    'Failed to revoke tokens due to error when connecting to authentication server: %s', error
+                )
 
             os.remove(tokens_file)
-            logger.info('Logged out successfully.')
+            logger.info('Tokens file deleted. Logged out.')
             return
 
     logger.info('Logout aborted.')
