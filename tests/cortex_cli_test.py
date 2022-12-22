@@ -628,7 +628,7 @@ def test_auth_logout_handles_no_keep_tokens_and_pid(config_dict, credentials):
         expect_process_terminate()
         result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
         assert result.exit_code == 0
-        assert 'Logged out successfully' in result.output
+        assert 'Tokens file deleted. Logged out.' in result.output
 
         # tokens file deleted
         with raises(FileNotFoundError):
@@ -677,7 +677,7 @@ def test_auth_logout_succeeds_with_auth_server_not_available(credentials, config
         expect_process_terminate()
         result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
         assert result.exit_code == 0
-        assert 'Logged out successfully' in result.output
+        assert 'Tokens file deleted. Logged out.' in result.output
 
         # tokens file deleted
         with raises(FileNotFoundError):
@@ -710,7 +710,7 @@ def test_auth_logout_handles_no_keep_tokens_and_no_pid(config_dict, tokens_dict,
         result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
         assert result.exit_code == 0
         assert 'No PID found in tokens file' in result.output
-        assert 'Logged out successfully' in result.output
+        assert 'Tokens file deleted. Logged out.' in result.output
 
         # tokens file deleted
         with raises(FileNotFoundError):
@@ -756,7 +756,7 @@ def test_auth_logout_succeeds_with_auth_server_not_available_no_pid(credentials,
 
         result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
         assert result.exit_code == 0
-        assert 'Logged out successfully' in result.output
+        assert 'Tokens file deleted. Logged out.' in result.output
 
         # tokens file deleted
         with raises(FileNotFoundError):
