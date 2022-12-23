@@ -780,7 +780,56 @@ def test_auth_logout_handles_no_keep_tokens_and_pid(config_dict, credentials):
         expect_process_terminate()
         result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
         assert result.exit_code == 0
-        assert 'Logged out successfully' in result.output
+        assert 'Tokens file deleted. Logged out.' in result.output
+
+        # tokens file deleted
+        with raises(FileNotFoundError):
+            with open('tokens.json', 'r', encoding='UTF-8') as file:
+                file.read()
+
+    unstub()
+
+
+def test_auth_logout_succeeds_with_auth_server_not_available(credentials, config_dict, tokens_dict):
+    """
+    Tests that ``cortex auth logout`` deletes tokens file when authentication server fails to process request.
+    """
+    tokens = prepare_tokens(300, 3600, **credentials)
+    url = credentials['auth_server_url']
+    realm = config_dict['realm']
+    client_id = config_dict['client_id']
+    refresh_token = tokens['refresh_token']
+    expect_logout(url, realm, client_id, refresh_token, status_code=401)
+
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        tokens_dict['access_token'] = tokens['access_token']
+        tokens_dict['refresh_token'] = tokens['refresh_token']
+        tokens_dict['pid'] = os.getpid()
+        with open('tokens.json', 'w', encoding='utf-8') as file:
+            file.write(json.dumps(tokens_dict))
+
+        runner.invoke(
+            cortex_cli,
+            [
+                'auth',
+                'login',
+                '--config-file',
+                'config.json',
+                '--username',
+                credentials['username'],
+                '--password',
+                credentials['password'],
+                '--no-refresh',  # do not start token manager
+            ],
+        )
+
+        expect_process_terminate()
+        result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
+        assert result.exit_code == 0
+        assert 'Tokens file deleted. Logged out.' in result.output
 
         # tokens file deleted
         with raises(FileNotFoundError):
@@ -813,12 +862,58 @@ def test_auth_logout_handles_no_keep_tokens_and_no_pid(config_dict, tokens_dict,
         result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
         assert result.exit_code == 0
         assert 'No PID found in tokens file' in result.output
-        assert 'Logged out successfully' in result.output
+        assert 'Tokens file deleted. Logged out.' in result.output
 
         # tokens file deleted
         with raises(FileNotFoundError):
             with open('tokens.json', 'r', encoding='utf-8') as file:
                 json.loads(file.read())
+
+    unstub()
+
+
+def test_auth_logout_succeeds_with_auth_server_not_available_no_pid(credentials, config_dict, tokens_dict):
+    """
+    Tests that ``cortex auth logout`` deletes tokens file when authentication server fails to process request.
+    """
+    tokens = prepare_tokens(300, 3600, **credentials)
+    url = credentials['auth_server_url']
+    realm = config_dict['realm']
+    client_id = config_dict['client_id']
+    refresh_token = tokens['refresh_token']
+    expect_logout(url, realm, client_id, refresh_token, status_code=401)
+
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+        del tokens_dict['pid']
+        with open('tokens.json', 'w', encoding='utf-8') as file:
+            file.write(json.dumps(tokens_dict))
+
+        runner.invoke(
+            cortex_cli,
+            [
+                'auth',
+                'login',
+                '--config-file',
+                'config.json',
+                '--username',
+                credentials['username'],
+                '--password',
+                credentials['password'],
+                '--no-refresh',  # do not start token manager
+            ],
+        )
+
+        result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
+        assert result.exit_code == 0
+        assert 'Tokens file deleted. Logged out.' in result.output
+
+        # tokens file deleted
+        with raises(FileNotFoundError):
+            with open('tokens.json', 'r', encoding='UTF-8') as file:
+                file.read()
 
     unstub()
 
@@ -873,103 +968,6 @@ def test_auth_logout_fails_with_invalid_tokens_file(config_dict, tokens_dict):
         )
         assert result.exit_code == 0
         assert 'Found invalid tokens.json' in result.output
-
-
-# Logout Scenario 3 failure
-def test_auth_logout_fails_by_server_response(credentials, config_dict, tokens_dict):
-    """
-    Tests that ``cortex auth logout`` reports error when server fails to process request.
-    """
-    tokens = prepare_tokens(300, 3600, **credentials)
-    url = credentials['auth_server_url']
-    realm = config_dict['realm']
-    client_id = config_dict['client_id']
-    refresh_token = tokens['refresh_token']
-    expect_logout(url, realm, client_id, refresh_token, status_code=401)
-
-    runner = CliRunner()
-    with runner.isolated_filesystem():
-        with open('config.json', 'w', encoding='UTF-8') as file:
-            file.write(json.dumps(config_dict))
-        tokens_dict['access_token'] = tokens['access_token']
-        tokens_dict['refresh_token'] = tokens['refresh_token']
-        with open('tokens.json', 'w', encoding='utf-8') as file:
-            file.write(json.dumps(tokens_dict))
-
-        runner.invoke(
-            cortex_cli,
-            [
-                'auth',
-                'login',
-                '--config-file',
-                'config.json',
-                '--username',
-                credentials['username'],
-                '--password',
-                credentials['password'],
-                '--no-refresh',  # do not start token manager
-            ],
-        )
-
-        result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
-        assert result.exit_code != 0
-        assert 'Error when logging out' in result.output
-
-        # tokens file left unchanged
-        with open('tokens.json', 'r', encoding='utf-8') as file:
-            same_tokens = json.loads(file.read())
-        assert same_tokens['access_token'] == tokens['access_token']
-        assert same_tokens['refresh_token'] == tokens['refresh_token']
-
-    unstub()
-
-
-# Logout Scenario 4 failure
-def test_auth_logout_fails_by_server_response_no_pid(credentials, config_dict, tokens_dict):
-    """
-    Tests that ``cortex auth logout`` reports error when server fails to process request.
-    """
-    tokens = prepare_tokens(300, 3600, **credentials)
-    url = credentials['auth_server_url']
-    realm = config_dict['realm']
-    client_id = config_dict['client_id']
-    refresh_token = tokens['refresh_token']
-    expect_logout(url, realm, client_id, refresh_token, status_code=401)
-
-    runner = CliRunner()
-    with runner.isolated_filesystem():
-        with open('config.json', 'w', encoding='UTF-8') as file:
-            file.write(json.dumps(config_dict))
-        del tokens_dict['pid']
-        with open('tokens.json', 'w', encoding='utf-8') as file:
-            file.write(json.dumps(tokens_dict))
-
-        runner.invoke(
-            cortex_cli,
-            [
-                'auth',
-                'login',
-                '--config-file',
-                'config.json',
-                '--username',
-                credentials['username'],
-                '--password',
-                credentials['password'],
-                '--no-refresh',  # do not start token manager
-            ],
-        )
-
-        result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
-        assert result.exit_code != 0
-        assert 'Error when logging out' in result.output
-
-        # tokens file left unchanged
-        with open('tokens.json', 'r', encoding='utf-8') as file:
-            same_tokens = json.loads(file.read())
-        assert same_tokens['access_token'] == tokens['access_token']
-        assert same_tokens['refresh_token'] == tokens['refresh_token']
-
-    unstub()
 
 
 # Tests for utility functions
