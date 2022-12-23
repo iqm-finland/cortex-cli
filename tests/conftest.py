@@ -62,6 +62,17 @@ def config_dict():
 
 
 @pytest.fixture
+def old_config():
+    """Old config for testing overwriting the config"""
+    config_file = os.path.join(resources_path(), 'config.json')
+    with open(config_file, 'r', encoding='utf-8') as file:
+        config = json.loads(file.read())
+    config['auth_server_url'] = 'https://to.be.overwritten.com'
+    config['username'] = 'to_be_overwritten'
+    return config
+
+
+@pytest.fixture
 def tokens_dict():
     """Reads and parses tokens file into a dictionary"""
     tokens_file = os.path.join(resources_path(), 'tokens.json')
@@ -153,6 +164,22 @@ def prepare_tokens(
     ).thenReturn(MockJsonResponse(status_code, tokens))
 
     return tokens
+
+
+def prepare_auth_server_urls(
+    config_dict: dict[str, str], invalid_url: str = 'http://invalid.com', invalid_realm: str = 'invalid'
+):
+    """Patch requests.get to return correct status for auth server URL checks"""
+    valid_url = config_dict['auth_server_url']
+    valid_realm = config_dict['realm']
+    found = MockJsonResponse(200, {'public_key': 'some-key'})
+    not_found = MockJsonResponse(404, {'detail': 'not found'})
+    when(requests).get(f'{valid_url}/realms/master', timeout=AUTH_REQUESTS_TIMEOUT).thenReturn(found)
+    when(requests).get(f'{valid_url}/realms/{valid_realm}', timeout=AUTH_REQUESTS_TIMEOUT).thenReturn(found)
+    when(requests).get(f'{valid_url}/realms/{invalid_realm}', timeout=AUTH_REQUESTS_TIMEOUT).thenReturn(not_found)
+    when(requests).get(f'{invalid_url}/realms/master', timeout=AUTH_REQUESTS_TIMEOUT).thenReturn(not_found)
+    when(requests).get(f'{invalid_url}/realms/{valid_realm}', timeout=AUTH_REQUESTS_TIMEOUT).thenReturn(not_found)
+    when(requests).get(f'{invalid_url}/realms/{invalid_realm}', timeout=AUTH_REQUESTS_TIMEOUT).thenReturn(not_found)
 
 
 def expect_logout(auth_server_url: str, realm: str, client_id: str, refresh_token: str, status_code: int = 204):

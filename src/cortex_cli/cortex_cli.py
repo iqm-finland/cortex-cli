@@ -28,10 +28,18 @@ from typing import Optional
 import click
 from psutil import Process
 from pydantic import ValidationError
+import requests
 from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
 
 from cortex_cli import __version__
-from cortex_cli.auth import ClientAuthenticationError, login_request, logout_request, refresh_request, time_left_seconds
+from cortex_cli.auth import (
+    AUTH_REQUESTS_TIMEOUT,
+    ClientAuthenticationError,
+    login_request,
+    logout_request,
+    refresh_request,
+    time_left_seconds,
+)
 from cortex_cli.circuit import CIRCUIT_MISSING_DEPS_MSG, parse_qasm_circuit, validate_circuit
 from cortex_cli.models import ConfigFile, TokensFile
 from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
@@ -193,6 +201,73 @@ Full validation error:
     return validated_tokens
 
 
+def _validate_auth_server_url(ctx: click.Context, param: click.Option, base_url: str) -> str:
+    """Checks if provided auth server URL is valid, i.e. it:
+       - is a valid HTTP/HTTPS URL
+       - is accessible
+       - points to an authentication server
+
+    Args:
+        ctx: click context
+        param: click prompt param object
+        base_url (str): auth server base URL to validate
+    Returns:
+        str: validated auth server base URL
+    """
+    if ctx.obj and param.name in ctx.obj:
+        return base_url
+
+    is_valid = False
+    while not is_valid:
+        try:
+            master = requests.get(f'{base_url}/realms/master', timeout=AUTH_REQUESTS_TIMEOUT)
+            assert master.status_code == 200
+            assert 'public_key' in master.json()
+            is_valid = True
+        except (ConnectionError, AssertionError, ValueError):
+            click.echo(f'No auth server could be accessed with URL {base_url}')
+            is_valid = click.confirm('Do you still want to use it?', default=False)
+        if not is_valid:
+            base_url = click.prompt(str(param.prompt))
+
+    ctx.obj[param.name] = base_url
+    return base_url
+
+
+def _validate_auth_realm(ctx: click.Context, param: click.Option, realm: str) -> str:
+    """Checks if provided realm exists on auth server.
+
+    Args:
+        ctx: click context
+        param: click prompt param object
+        realm (str): name of the realm
+    Returns:
+        str: validated realm name
+    """
+    if ctx.obj and param.name in ctx.obj:
+        return realm
+
+    base_url = ctx.obj.get('auth_server_url', None)
+    if base_url is None:
+        raise click.UsageError('Can not set realm name before setting auth server URL.')
+
+    is_valid = False
+    while not is_valid:
+        try:
+            realm_data = requests.get(f'{base_url}/realms/{realm}', timeout=AUTH_REQUESTS_TIMEOUT)
+            assert realm_data.status_code == 200
+            assert 'public_key' in realm_data.json()
+            is_valid = True
+        except (ConnectionError, AssertionError, ValueError):
+            click.echo(f'No auth realm could be accessed with URL {base_url}/realms/{realm}')
+            is_valid = click.confirm('Do you still want to use it?', default=False)
+        if not is_valid:
+            realm = click.prompt(str(param.prompt))
+
+    ctx.obj[param.name] = realm
+    return realm
+
+
 class CortexCliCommand(click.Group):
     """A custom click command group class to wrap global constants."""
 
@@ -224,11 +299,17 @@ def cortex_cli() -> None:
     type=click.Path(dir_okay=False, writable=True),
     help='Location where the tokens file will be saved.',
 )
-@click.option('--auth-server-url', prompt='Base URL of IQM auth server', help='Base URL of IQM authentication server.')
+@click.option(
+    '--auth-server-url',
+    prompt='Base URL of IQM auth server',
+    callback=_validate_auth_server_url,
+    help='Base URL of IQM authentication server.',
+)
 @click.option(
     '--realm',
     prompt='Realm on IQM auth server',
     default=REALM_NAME,
+    callback=_validate_auth_realm,
     help='Name of the realm on the IQM authentication server.',
 )
 @click.option('--client-id', prompt='Client ID', default=CLIENT_ID, help='Client ID on the IQM authentication server.')
@@ -472,10 +553,12 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
 
     try:
         tokens = login_request(auth_server_url, realm, client_id, username, password)
-    except (Timeout, ConnectionError) as error:
-        raise click.ClickException(f'Error when logging in: {error}') from error
+    except ConnectionError as exc:
+        raise click.ClickException(f'Authentication server at {auth_server_url} is not accessible') from exc
+    except Timeout as exc:
+        raise click.ClickException(f'Authentication server at {auth_server_url} is not responding') from exc
     except ClientAuthenticationError as error:
-        raise click.ClickException('Invalid username and/or password') from error
+        raise click.ClickException(f'Failed to authenticate, {error}') from error
 
     logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_file, tokens, auth_server_url)
