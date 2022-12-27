@@ -62,17 +62,6 @@ def config_dict():
 
 
 @pytest.fixture
-def old_config():
-    """Old config for testing overwriting the config"""
-    config_file = os.path.join(resources_path(), 'config.json')
-    with open(config_file, 'r', encoding='utf-8') as file:
-        config = json.loads(file.read())
-    config['auth_server_url'] = 'https://to.be.overwritten.com'
-    config['username'] = 'to_be_overwritten'
-    return config
-
-
-@pytest.fixture
 def tokens_dict():
     """Reads and parses tokens file into a dictionary"""
     tokens_file = os.path.join(resources_path(), 'tokens.json')
