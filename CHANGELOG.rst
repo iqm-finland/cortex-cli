@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 2.3
+===========
+
+* Cortex init command will validate the entered ``auth_server_url`` and ``realm``. `#33 <https://github.com/iqm-finland/cortex-cli/pull/33>`_
+
 Version 2.2
 ===========
 

@@ -80,8 +80,10 @@ def login_request(url: str, realm: str, client_id: str, username: str, password:
 
     request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
     result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
+    if result.status_code == 404:
+        raise ClientAuthenticationError(f'token endpoint is not available at {url}')
     if result.status_code != 200:
-        raise ClientAuthenticationError(f'Failed to authenticate, {result.text}')
+        raise ClientAuthenticationError('invalid username and/or password')
     tokens = result.json()
     tokens = {key: tokens.get(key, '') for key in ['access_token', 'refresh_token']}
     return tokens
