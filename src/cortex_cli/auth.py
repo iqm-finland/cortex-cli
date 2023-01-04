@@ -50,19 +50,15 @@ class AuthRequest(BaseModel):
     * Logout request uses only fields ``client_id`` and ``refresh_token``.
     """
 
-    client_id: str = Field(..., description='name of the client for all request types')
+    client_id: str = Field(...)
     'name of the client for all request types'
-    grant_type: Optional[GrantType] = Field(
-        None, description="type of token request, in ``{'password', 'refresh_token'}``"
-    )
+    grant_type: Optional[GrantType] = Field(None)
     "type of token request, in ``{'password', 'refresh_token'}``"
-    username: Optional[str] = Field(None, description="username for grant type ``'password'``")
+    username: Optional[str] = Field(None)
     "username for grant type ``'password'``"
-    password: Optional[str] = Field(None, description="password for grant type ``'password'``")
+    password: Optional[str] = Field(None)
     "password for grant type ``'password'``"
-    refresh_token: Optional[str] = Field(
-        None, description="refresh token for grant type ``'refresh_token'`` and logout request"
-    )
+    refresh_token: Optional[str] = Field(None)
     "refresh token for grant type ``'refresh_token'`` and logout request"
 
 

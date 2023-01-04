@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 2.4
+===========
+
+* Remove ``description`` from pydantic model fields. `#34 <https://github.com/iqm-finland/cortex-cli/pull/34>`_
+
 Version 2.3
 ===========
 
