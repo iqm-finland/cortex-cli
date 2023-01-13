@@ -24,6 +24,7 @@ from pathlib import Path
 import platform
 import sys
 from typing import Optional
+from uuid import UUID
 
 import click
 from psutil import Process
@@ -846,7 +847,9 @@ def _human_readable_shots_output(shots, per_qubit_measurements) -> str:
 @circuit.command()
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 @click.option('--shots', default=1, type=int, help='Number of times to sample the circuit.')
-@click.option('--calibration-set-id', type=int, help='ID of the calibration set to use instead of the latest one.')
+@click.option(
+    '--calibration-set-id', type=click.UUID, help='ID of the calibration set to use instead of the latest one.'
+)
 @click.option(
     '--qasm-qubit-placement',
     default=None,
@@ -906,7 +909,7 @@ def _human_readable_shots_output(shots, per_qubit_measurements) -> str:
 def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-toplevel
     verbose: bool,
     shots: int,
-    calibration_set_id: Optional[int],
+    calibration_set_id: Optional[UUID],
     qasm_qubit_placement: Optional[TextIOWrapper],
     iqm_server_url: str,
     filename: str,
@@ -984,11 +987,11 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
 
     if output == OutputFormat.FREQUENCIES:
         output_string = f'Circuit "{input_circuit.name}" results using '
-        output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
+        output_string += f'calibration set {results.metadata.request.calibration_set_id} over {shots} shots:\n'
         output_string += _human_readable_frequencies_output(shots, per_qubit_measurements)
     if output == OutputFormat.SHOTS:
         output_string = f'Circuit "{input_circuit.name}" results using '
-        output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
+        output_string += f'calibration set {results.metadata.request.calibration_set_id} over {shots} shots:\n'
         output_string += _human_readable_shots_output(shots, per_qubit_measurements)
 
     logger.info(output_string)
