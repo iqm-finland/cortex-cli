@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 3.1
+===========
+
+* Use ``calibration_set_id`` from metadata directly and not from the request. `#36 <https://github.com/iqm-finland/cortex-cli/pull/36>`_
+
 Version 3.0
 ===========
 
