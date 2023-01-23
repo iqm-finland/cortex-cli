@@ -197,7 +197,7 @@ def expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=None, ca
     when(success_submit_response).json().thenReturn(success_submit_result)
     when(requests).post(f'{iqm_server_url}/jobs', ...).thenReturn(success_submit_response)
 
-    running_result = {'status': 'pending', 'metadata': {'circuits': [], 'shots': 42}}
+    running_result = {'status': 'pending', 'metadata': {'request': {'shots': 42, 'circuits': []}}}
     running_response = mock({'status_code': 200, 'text': json.dumps(running_result)})
     when(running_response).json().thenReturn(running_result)
 
@@ -208,7 +208,13 @@ def expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=None, ca
         success_get_result = {
             'status': 'ready',
             'measurements': [{'result': [[1, 0, 1, 1, 0], [1, 0, 0, 1, 1], [1, 0, 1, 1, 1], [1, 0, 1, 1, 0]]}],
-            'metadata': {'circuits': [], 'shots': 42, 'calibration_set_id': calibration_set_id},
+            'metadata': {
+                'request': {
+                    'circuits': [],
+                    'shots': 42,
+                    'calibration_set_id': str(calibration_set_id) if calibration_set_id is not None else None,
+                }
+            },
         }
     success_get_response = mock({'status_code': 200, 'text': json.dumps(success_get_result)})
     when(success_get_response).json().thenReturn(success_get_result)

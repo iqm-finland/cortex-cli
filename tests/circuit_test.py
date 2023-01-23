@@ -17,6 +17,7 @@ Tests for Cortex CLI's circuit commands
 from io import BytesIO, TextIOWrapper
 import json
 import os
+from uuid import uuid4
 
 from click.testing import CliRunner
 from iqm_client import Instruction
@@ -309,7 +310,8 @@ def test_circuit_run_valid_json_circuit_custom_calibration_set_id():
     Tests that ``circuit run`` succeeds with valid JSON circuit and custom calibration set ID.
     """
     iqm_server_url = 'https://example.com'
-    expect_jobs_requests(iqm_server_url, calibration_set_id=24)
+    uuid = uuid4()
+    expect_jobs_requests(iqm_server_url, calibration_set_id=uuid)
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = CliRunner().invoke(
@@ -320,14 +322,14 @@ def test_circuit_run_valid_json_circuit_custom_calibration_set_id():
                 os.path.join(resources_path(), 'valid_circuit.json'),
                 '--iqm-json',
                 '--calibration-set-id',
-                '24',
+                str(uuid),
                 '--iqm-server-url',
                 iqm_server_url,
                 '--no-auth',
             ],
         )
     assert 'result' in result.output
-    assert 'calibration set 24' in result.output
+    assert f'calibration set {uuid}' in result.output
     assert result.exit_code == 0
     unstub()
 
@@ -337,7 +339,8 @@ def test_circuit_run_json_circuit_and_qasm_qubit_placement():
     Tests that ``circuit run`` fails when qasm qubit placement is provided with ``--iqm-json``.
     """
     iqm_server_url = 'https://example.com'
-    expect_jobs_requests(iqm_server_url, calibration_set_id=35)
+    uuid = uuid4()
+    expect_jobs_requests(iqm_server_url, calibration_set_id=uuid)
     runner = CliRunner()
     with runner.isolated_filesystem():
         result = CliRunner().invoke(

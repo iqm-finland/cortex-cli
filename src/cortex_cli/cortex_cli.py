@@ -24,6 +24,7 @@ from pathlib import Path
 import platform
 import sys
 from typing import Optional
+from uuid import UUID
 
 import click
 from psutil import Process
@@ -44,6 +45,8 @@ from cortex_cli.circuit import CIRCUIT_MISSING_DEPS_MSG, parse_qasm_circuit, val
 from cortex_cli.models import ConfigFile, TokensFile
 from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
 from cortex_cli.utils import missing_packages, read_file, read_json
+
+# pylint: disable=too-many-lines
 
 HOME_PATH = str(Path.home())
 DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
@@ -846,7 +849,9 @@ def _human_readable_shots_output(shots, per_qubit_measurements) -> str:
 @circuit.command()
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 @click.option('--shots', default=1, type=int, help='Number of times to sample the circuit.')
-@click.option('--calibration-set-id', type=int, help='ID of the calibration set to use instead of the latest one.')
+@click.option(
+    '--calibration-set-id', type=click.UUID, help='ID of the calibration set to use instead of the latest one.'
+)
 @click.option(
     '--qasm-qubit-placement',
     default=None,
@@ -906,7 +911,7 @@ def _human_readable_shots_output(shots, per_qubit_measurements) -> str:
 def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-toplevel
     verbose: bool,
     shots: int,
-    calibration_set_id: Optional[int],
+    calibration_set_id: Optional[UUID],
     qasm_qubit_placement: Optional[TextIOWrapper],
     iqm_server_url: str,
     filename: str,
@@ -984,11 +989,11 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
 
     if output == OutputFormat.FREQUENCIES:
         output_string = f'Circuit "{input_circuit.name}" results using '
-        output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
+        output_string += f'calibration set {results.metadata.request.calibration_set_id} over {shots} shots:\n'
         output_string += _human_readable_frequencies_output(shots, per_qubit_measurements)
     if output == OutputFormat.SHOTS:
         output_string = f'Circuit "{input_circuit.name}" results using '
-        output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
+        output_string += f'calibration set {results.metadata.request.calibration_set_id} over {shots} shots:\n'
         output_string += _human_readable_shots_output(shots, per_qubit_measurements)
 
     logger.info(output_string)

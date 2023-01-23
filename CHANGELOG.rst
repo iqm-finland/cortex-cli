@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 3.0
+===========
+
+* Use new opaque UUID for ``calibration_set_id``. `#35 <https://github.com/iqm-finland/cortex-cli/pull/35>`_
+
 Version 2.4
 ===========
 
