@@ -46,6 +46,8 @@ from cortex_cli.models import ConfigFile, TokensFile
 from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
 from cortex_cli.utils import missing_packages, read_file, read_json
 
+# pylint: disable=too-many-lines
+
 HOME_PATH = str(Path.home())
 DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
 DEFAULT_TOKENS_PATH = f'{HOME_PATH}/.cache/iqm-cortex-cli/tokens.json'
