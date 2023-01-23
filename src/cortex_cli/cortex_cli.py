@@ -989,11 +989,11 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
 
     if output == OutputFormat.FREQUENCIES:
         output_string = f'Circuit "{input_circuit.name}" results using '
-        output_string += f'calibration set {results.metadata.request.calibration_set_id} over {shots} shots:\n'
+        output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
         output_string += _human_readable_frequencies_output(shots, per_qubit_measurements)
     if output == OutputFormat.SHOTS:
         output_string = f'Circuit "{input_circuit.name}" results using '
-        output_string += f'calibration set {results.metadata.request.calibration_set_id} over {shots} shots:\n'
+        output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
         output_string += _human_readable_shots_output(shots, per_qubit_measurements)
 
     logger.info(output_string)

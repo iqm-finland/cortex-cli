@@ -213,7 +213,8 @@ def expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=None, ca
                     'circuits': [],
                     'shots': 42,
                     'calibration_set_id': str(calibration_set_id) if calibration_set_id is not None else None,
-                }
+                },
+                'calibration_set_id': str(calibration_set_id) if calibration_set_id is not None else None,
             },
         }
     success_get_response = mock({'status_code': 200, 'text': json.dumps(success_get_result)})
