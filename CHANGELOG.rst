@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 3.2
+===========
+
+* Build docs for older versions. `#37 <https://github.com/iqm-finland/cortex-cli/pull/37>`_
+
 Version 3.1
 ===========
 
