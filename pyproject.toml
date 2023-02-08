@@ -148,27 +148,16 @@ group_by_package = true
 
 
 [tool.mypy]
-#ignore_missing_imports = true
 namespace_packages = true
 
 [[tool.mypy.overrides]]
-module = ["cirq_iqm"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["click"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["daemon"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["mockito"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["psutil"]
+module = [
+    "cirq_iqm",
+    "click",
+    "daemon",
+    "mockito",
+    "psutil"
+]
 ignore_missing_imports = true
 
 
