@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "iqm-cortex_cli"
+name = "iqm-cortex-cli"
 dynamic = ["version"]
 description = "CLI for executing quantum circuits"
 authors = [{name = "IQM Finland Oy", email = "developers@meetiqm.com"}]
