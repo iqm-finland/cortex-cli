@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 3.2
+===========
+
+* Provide version information to IQMClient. `#39 <https://github.com/iqm-finland/cortex-cli/pull/39>`_
+
+
 Version 3.1
 ===========
 

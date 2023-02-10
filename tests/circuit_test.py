@@ -14,6 +14,7 @@
 """
 Tests for Cortex CLI's circuit commands
 """
+from importlib.metadata import version
 from io import BytesIO, TextIOWrapper
 import json
 import os
@@ -21,12 +22,13 @@ from uuid import uuid4
 
 from click.testing import CliRunner
 from iqm_client import Instruction
-from mockito import unstub
+from mockito import ANY, unstub, verify
+import requests
 
 from cortex_cli.circuit import parse_qasm_circuit
 from cortex_cli.cortex_cli import _human_readable_frequencies_output, cortex_cli
 from cortex_cli.models import QasmQubitPlacement
-from tests.conftest import expect_jobs_requests, resources_path
+from tests.conftest import existing_run, expect_jobs_requests, resources_path
 
 valid_circuit_qasm = os.path.join(resources_path(), 'valid_circuit.qasm')
 valid_circuit_qasm_result = os.path.join(resources_path(), 'valid_circuit_qasm_result.json')
@@ -93,6 +95,42 @@ def test_circuit_validate_valid_circuit():
     result = CliRunner().invoke(cortex_cli, ['circuit', 'validate', valid_circuit_qasm])
     assert result.exit_code == 0
     assert f'File {valid_circuit_qasm} contains a valid quantum circuit' in result.output
+
+
+def test_circuit_run_adds_client_signature():
+    """
+    Tests that ``circuit run`` provides client_signature to IQMCLient.
+    """
+    iqm_server_url = 'https://example.com'
+    expected_user_agent = f'iqm-client {version("iqm-client")}, iqm-cortex-cli {version("iqm-cortex-cli")}'
+    expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=valid_circuit_qasm_result)
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        CliRunner().invoke(
+            cortex_cli,
+            [
+                'circuit',
+                'run',
+                valid_circuit_qasm,
+                '--qasm-qubit-placement',
+                qasm_qubit_placement_path,
+                '--iqm-server-url',
+                iqm_server_url,
+                '--no-auth',
+            ],
+        )
+    verify(requests).post(
+        iqm_server_url + '/jobs',
+        json=ANY(dict),
+        headers={'Expect': '100-Continue', 'User-Agent': expected_user_agent},
+        timeout=ANY(int),
+    )
+    verify(requests, times=2).get(
+        iqm_server_url + f'/jobs/{existing_run}',
+        headers={'User-Agent': expected_user_agent},
+        timeout=ANY(int),
+    )
+    unstub()
 
 
 def test_circuit_run_invalid_circuit(
