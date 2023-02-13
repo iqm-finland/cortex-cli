@@ -32,7 +32,7 @@ from pydantic import ValidationError
 import requests
 from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
 
-from cortex_cli import __version__
+from cortex_cli import DIST_NAME, __version__
 from cortex_cli.auth import (
     AUTH_REQUESTS_TIMEOUT,
     ClientAuthenticationError,
@@ -959,7 +959,7 @@ def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-
         logger.debug('\nInput circuit:\n%s', input_circuit)
 
         # run the circuit on the backend
-        iqm_client = IQMClient(iqm_server_url, tokens_file=tokens_file)
+        iqm_client = IQMClient(iqm_server_url, client_signature=f'{DIST_NAME} {__version__}', tokens_file=tokens_file)
         job_id = iqm_client.submit_circuits([input_circuit], shots=shots, calibration_set_id=calibration_set_id)
         results = iqm_client.wait_for_results(job_id)
     except Exception as ex:
