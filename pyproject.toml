@@ -57,7 +57,8 @@ testing = [
 ]
 docs = [
     "sphinx == 4.5.0",
-    "sphinx-book-theme == 0.3.3"
+    "sphinx-book-theme == 0.3.3",
+    "sphinx-multiversion-contrib == 0.2.12"
 ]
 cicd = [
     "twine ~= 4.0"
