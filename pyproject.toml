@@ -70,7 +70,6 @@ cortex = "cortex_cli.cortex_cli:cortex_cli"
 
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"
-write_to = "version.txt"
 
 
 [tool.pytest.ini_options]
