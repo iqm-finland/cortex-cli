@@ -2,12 +2,22 @@
 Changelog
 =========
 
-Version 3.2
+Version 3.4
 ===========
 
 * "Pin down" supported Python versions to 3.9 and 3.10. `#38 <https://github.com/iqm-finland/cortex-cli/pull/38>`_
 * Configure Tox to skip missing versions of Python interpreters when running tests. `#38 <https://github.com/iqm-finland/cortex-cli/pull/38>`_
 * Move project metadata and configuration to ``pyproject.toml``. `#38 <https://github.com/iqm-finland/cortex-cli/pull/38>`_
+
+Version 3.3
+===========
+
+* Provide version information to IQMClient. `#39 <https://github.com/iqm-finland/cortex-cli/pull/39>`_
+
+Version 3.2
+===========
+
+* Build docs for older versions. `#37 <https://github.com/iqm-finland/cortex-cli/pull/37>`_
 
 Version 3.1
 ===========
