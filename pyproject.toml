@@ -94,7 +94,6 @@ filterwarnings = [
 line-length = 120
 skip-string-normalization = true
 target-version = ["py311"]
-extend-exclude = "_pb2.py$"
 
 
 [tool.coverage.run]
