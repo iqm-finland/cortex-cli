@@ -1,4 +1,4 @@
-# Copyright 2021-2022 IQM client developers
+# Copyright 2021-2023 IQM client developers
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,11 +35,13 @@ from requests.exceptions import ConnectionError, Timeout  # pylint: disable=rede
 from cortex_cli import DIST_NAME, __version__
 from cortex_cli.auth import (
     AUTH_REQUESTS_TIMEOUT,
+    ClientAccountSetupError,
     ClientAuthenticationError,
     login_request,
     logout_request,
     refresh_request,
     time_left_seconds,
+    update_password,
 )
 from cortex_cli.circuit import CIRCUIT_MISSING_DEPS_MSG, parse_qasm_circuit, validate_circuit
 from cortex_cli.models import ConfigFile, TokensFile
@@ -522,7 +524,7 @@ def _refresh_tokens(
     '--no-refresh', is_flag=True, default=False, help='Login, but do not start token manager to refresh tokens.'
 )
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-branches
+def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-branches, too-many-statements
     config_file: str,
     username: str,
     password: str,
@@ -553,15 +555,35 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
     if config.username:
         click.echo(f'Username: {username}')
     password = password or click.prompt('Password', hide_input=True)
+    tokens = None
 
-    try:
-        tokens = login_request(auth_server_url, realm, client_id, username, password)
-    except ConnectionError as exc:
-        raise click.ClickException(f'Authentication server at {auth_server_url} is not accessible') from exc
-    except Timeout as exc:
-        raise click.ClickException(f'Authentication server at {auth_server_url} is not responding') from exc
-    except ClientAuthenticationError as error:
-        raise click.ClickException(f'Failed to authenticate, {error}') from error
+    while tokens is None:
+        try:
+            tokens = login_request(auth_server_url, realm, client_id, username, password)
+        except ConnectionError as exc:
+            raise click.ClickException(f'Authentication server at {auth_server_url} is not accessible') from exc
+        except Timeout as exc:
+            raise click.ClickException(f'Authentication server at {auth_server_url} is not responding') from exc
+        except ClientAuthenticationError as error:
+            raise click.ClickException(f'Failed to authenticate, {error}') from error
+        except ClientAccountSetupError:
+            click.echo('Your account is not fully set up yet. You have to update your password.')
+            while True:
+                new_password = click.prompt('New password', hide_input=True)
+                cfm_password = click.prompt('Confirm new password', hide_input=True)
+                if new_password == cfm_password and new_password != password:
+                    break
+                if new_password == password:
+                    click.echo('New password must be different from old password')
+                else:
+                    click.echo('Confirmation must match the new password')
+            try:
+                update_password(auth_server_url, realm, username, password, new_password)
+                logger.info('Updated temporary password of %s', username)
+            except Exception as error:
+                raise click.ClickException(f'Failed to update password, {error}')
+            password = new_password
+            tokens = None
 
     logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_file, tokens, auth_server_url)

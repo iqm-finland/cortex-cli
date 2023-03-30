@@ -1,4 +1,4 @@
-# Copyright 2021-2022 IQM client developers
+# Copyright 2021-2023 IQM client developers
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # limitations under the License.
 """IQM's command-line interface (CLI) for executing quantum circuits.
 """
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import PackageNotFoundError, version  # type: ignore
 
 try:
     DIST_NAME = 'iqm-cortex-cli'
