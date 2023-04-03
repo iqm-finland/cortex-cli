@@ -116,7 +116,7 @@ def update_password(url: str, realm: str, username: str, password: str, new_pass
 
     # Check that password update was successful
     if not browser.geturl().startswith(f'{url}/realms/{realm}/account'):
-        raise RuntimeError(f'submitting new password failed')
+        raise RuntimeError('submitting new password failed')
 
     browser.close()
 

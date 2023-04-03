@@ -262,6 +262,7 @@ def test_auth_login_update_temporary_password(config_dict, credentials):
     when(mocked_browser).select_form(nr=0).thenReturn(None)
     when(mocked_browser).__setitem__(ANY, ANY).thenReturn(None)  # pylint: disable=unnecessary-dunder-call
     when(mocked_browser).submit().thenReturn(None)
+    when(mocked_browser).geturl().thenReturn(f'{config_dict["auth_server_url"]}/realms/{config_dict["realm"]}/account')
     when(mocked_browser).close().thenReturn(None)
 
     # First request for tokens return status code 400
