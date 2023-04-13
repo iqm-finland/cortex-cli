@@ -21,6 +21,7 @@ requires-python = ">=3.9, <3.11"
 dependencies = [
     "click >= 7.1.2",
     "jsonschema >= 4.6.0",
+    "mechanize >= 0.4.8",
     "psutil >= 5.9.2",
     "pydantic >= 1.10.2, < 2.0",
     "python-daemon >= 2.3.0",

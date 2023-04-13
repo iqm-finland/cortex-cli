@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 3.5
+===========
+
+* Allow user to update a temporary password in ``auth login`` command. `#41 <https://github.com/iqm-finland/cortex-cli/pull/41>`_
+
 Version 3.4
 ===========
 

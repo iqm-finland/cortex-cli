@@ -1,4 +1,4 @@
-# Copyright 2021-2022 IQM client developers
+# Copyright 2021-2023 IQM client developers
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import json
 import time
 from typing import Optional
 
+import mechanize  # type: ignore
 from pydantic import BaseModel, Field
 import requests
 
@@ -30,6 +31,10 @@ AUTH_REQUESTS_TIMEOUT = 20
 
 class ClientAuthenticationError(RuntimeError):
     """Something went wrong with user authentication."""
+
+
+class ClientAccountSetupError(RuntimeError):
+    """User's account has not been fully set up yet."""
 
 
 class GrantType(str, Enum):
@@ -78,11 +83,42 @@ def login_request(url: str, realm: str, client_id: str, username: str, password:
     result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
     if result.status_code == 404:
         raise ClientAuthenticationError(f'token endpoint is not available at {url}')
+    if result.status_code == 400 and result.json().get('error_description', '') == 'Account is not fully set up':
+        raise ClientAccountSetupError('Account is not fully set up')
     if result.status_code != 200:
         raise ClientAuthenticationError('invalid username and/or password')
     tokens = result.json()
     tokens = {key: tokens.get(key, '') for key in ['access_token', 'refresh_token']}
     return tokens
+
+
+def update_password(url: str, realm: str, username: str, password: str, new_password: str):
+    """Update temporary password using authentication server's account view.
+
+    This works only when account has a temporary password,
+    not to be used for changing permanent passwords.
+    """
+    browser = mechanize.Browser()
+    browser.set_handle_robots(False)
+    browser.open(f'{url}/realms/{realm}/account')
+
+    # Enter old credentials into login form
+    browser.select_form(nr=0)
+    browser['username'] = username
+    browser['password'] = password
+    browser.submit()
+
+    # Enter new credentials into password update form
+    browser.select_form(nr=0)
+    browser['password-new'] = new_password
+    browser['password-confirm'] = new_password
+    browser.submit()
+
+    # Check that password update was successful
+    if not browser.geturl().startswith(f'{url}/realms/{realm}/account'):
+        raise RuntimeError('submitting new password failed')
+
+    browser.close()
 
 
 def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) -> Optional[dict[str, str]]:

@@ -1,4 +1,4 @@
-# Copyright 2021-2022 IQM client developers
+# Copyright 2021-2023 IQM client developers
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -116,6 +116,7 @@ def prepare_tokens(
     refresh_token_lifetime: int,
     previous_refresh_token: Optional[str] = None,
     status_code: int = 200,
+    response_data: Optional[dict] = None,
     **credentials,
 ) -> dict[str, str]:
     """Prepare tokens and set them to be returned for a token request.
@@ -125,6 +126,7 @@ def prepare_tokens(
         refresh_token_lifetime: seconds from current time to refresh token expire time
         previous_refresh_token: refresh token to be used in refresh request
         status_code: status code to return for token request
+        response_data: data to return for token request if other than the tokens
         credentials: dict containing auth_server_url, username and password
 
     Returns:
@@ -146,11 +148,14 @@ def prepare_tokens(
         'access_token': make_token('Bearer', access_token_lifetime),
         'refresh_token': make_token('Refresh', refresh_token_lifetime),
     }
+    if response_data is None:
+        response_data = tokens
+
     when(requests).post(
         f'{credentials["auth_server_url"]}/realms/{REALM_NAME}/protocol/openid-connect/token',
         data=request_data.dict(exclude_none=True),
         timeout=AUTH_REQUESTS_TIMEOUT,
-    ).thenReturn(MockJsonResponse(status_code, tokens))
+    ).thenReturn(MockJsonResponse(status_code, response_data))
 
     return tokens
 
