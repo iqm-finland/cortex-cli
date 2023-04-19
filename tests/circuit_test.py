@@ -125,7 +125,7 @@ def test_circuit_run_adds_client_signature():
         headers={'Expect': '100-Continue', 'User-Agent': expected_user_agent},
         timeout=ANY(int),
     )
-    verify(requests, times=2).get(
+    verify(requests, times=3).get(
         iqm_server_url + f'/jobs/{existing_run}',
         headers={'User-Agent': expected_user_agent},
         timeout=ANY(int),

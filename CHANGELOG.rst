@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 3.6
+============
+
+* Upgrade to IQMClient version 12.0 `#42 <https://github.com/iqm-finland/cortex-cli/pull/42>`_
+
 Version 3.5
 ===========
 
