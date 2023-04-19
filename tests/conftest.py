@@ -202,9 +202,13 @@ def expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=None, ca
     when(success_submit_response).json().thenReturn(success_submit_result)
     when(requests).post(f'{iqm_server_url}/jobs', ...).thenReturn(success_submit_response)
 
-    running_result = {'status': 'pending', 'metadata': {'request': {'shots': 42, 'circuits': []}}}
-    running_response = mock({'status_code': 200, 'text': json.dumps(running_result)})
-    when(running_response).json().thenReturn(running_result)
+    running_result = {'status': 'pending compilation', 'metadata': {'request': {'shots': 42, 'circuits': []}}}
+    pending_compilation_response = mock({'status_code': 200, 'text': json.dumps(running_result)})
+    when(pending_compilation_response).json().thenReturn(running_result)
+
+    running_result['status'] = 'pending execution'
+    pending_execution_response = mock({'status_code': 200, 'text': json.dumps(running_result)})
+    when(pending_execution_response).json().thenReturn(running_result)
 
     if valid_circuit_qasm_result_file is not None:
         with open(valid_circuit_qasm_result_file, 'r', encoding='utf-8') as file:
@@ -225,9 +229,9 @@ def expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=None, ca
     success_get_response = mock({'status_code': 200, 'text': json.dumps(success_get_result)})
     when(success_get_response).json().thenReturn(success_get_result)
 
-    when(requests).get(f'{iqm_server_url}/jobs/{existing_run}', ...).thenReturn(running_response).thenReturn(
-        success_get_response
-    )
+    when(requests).get(f'{iqm_server_url}/jobs/{existing_run}', ...).thenReturn(
+        pending_compilation_response
+    ).thenReturn(pending_execution_response).thenReturn(success_get_response)
 
 
 def expect_token_is_valid(token: str, result: bool = True):
