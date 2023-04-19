@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 4.0
+===========
+
+* Remove circuit execution command `#43 <https://github.com/iqm-finland/cortex-cli/pull/43>`_
+
+
 Version 3.6
 ============
 

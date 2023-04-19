@@ -15,16 +15,12 @@
 Command line interface for interacting with IQM's quantum computers.
 """
 from datetime import datetime, timedelta
-from enum import Enum
-from io import TextIOWrapper
 import json
 import logging
 import os
 from pathlib import Path
 import platform
 import sys
-from typing import Optional
-from uuid import UUID
 
 import click
 from psutil import Process
@@ -32,7 +28,7 @@ from pydantic import ValidationError
 import requests
 from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
 
-from cortex_cli import DIST_NAME, __version__
+from cortex_cli import __version__
 from cortex_cli.auth import (
     AUTH_REQUESTS_TIMEOUT,
     ClientAccountSetupError,
@@ -43,12 +39,8 @@ from cortex_cli.auth import (
     time_left_seconds,
     update_password,
 )
-from cortex_cli.circuit import CIRCUIT_MISSING_DEPS_MSG, parse_qasm_circuit, validate_circuit
 from cortex_cli.models import ConfigFile, TokensFile
 from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
-from cortex_cli.utils import missing_packages, read_file, read_json
-
-# pylint: disable=too-many-lines
 
 HOME_PATH = str(Path.home())
 DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
@@ -57,14 +49,6 @@ REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
 REFRESH_PERIOD = 3 * 60  # in seconds
-
-
-class OutputFormat(str, Enum):
-    """Enum for output format options."""
-
-    SHOTS = 'shots'
-    FREQUENCIES = 'frequencies'
-    JSON = 'json'
 
 
 class ClickLoggingHandler(logging.Handler):
@@ -95,6 +79,26 @@ def _set_log_level_by_verbosity(verbose: bool) -> int:
         return logging.DEBUG
     logger.setLevel(logging.INFO)
     return logging.INFO
+
+
+def _read_json(path: str) -> dict:
+    """Read a JSON file.
+
+    Args:
+        path: path to the file to read
+    Raises:
+        click.FileError: if file is not a valid JSON file
+    Returns:
+        dict: data parsed from the file
+    """
+    try:
+        with open(path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+    except FileNotFoundError as error:
+        raise click.FileError(path, 'file not found') from error
+    except json.decoder.JSONDecodeError as error:
+        raise click.FileError(path, f'file is not a valid JSON file: {error}') from error
+    return data
 
 
 def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
@@ -142,13 +146,8 @@ def _validate_config_file(config_file: str) -> ConfigFile:
         ConfigFile: validated config loaded from config_file
     """
 
-    # config_file must be a valid JSON
-    try:
-        config = read_json(config_file)
-    except Exception as ex:
-        raise click.FileError(config_file, f'Provided config is not a valid JSON file: {ex}')
-
     # config_file must be in correct format
+    config = _read_json(config_file)
     try:
         validated_config = ConfigFile(**config)
     except ValidationError as ex:
@@ -181,13 +180,8 @@ def _validate_tokens_file(tokens_file: str) -> TokensFile:
         TokensFile: validated tokens loaded from tokens_file
     """
 
-    # tokens_file must be a valid JSON
-    try:
-        tokens = read_json(tokens_file)
-    except Exception as ex:
-        raise click.FileError(tokens_file, f'Provided tokens file is not a valid JSON file: {ex}')
-
     # tokens_file must be in correct format
+    tokens = _read_json(tokens_file)
     try:
         validated_tokens = TokensFile(**tokens)
     except ValidationError as ex:
@@ -682,25 +676,6 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     logger.info('Logout aborted.')
 
 
-circuit_help_msg = 'Execute your quantum circuits with Cortex CLI.'
-if missing_packages(['cirq_iqm', 'iqm_client']):
-    circuit_help_msg += f' {CIRCUIT_MISSING_DEPS_MSG}'
-
-
-@cortex_cli.group(help=circuit_help_msg)
-def circuit() -> None:
-    """Execute your quantum circuits with Cortex CLI."""
-    return
-
-
-@circuit.command()
-@click.argument('filename')
-def validate(filename: str) -> None:
-    """Check if a quantum circuit is valid."""
-    validate_circuit(filename)
-    logger.info('File %s contains a valid quantum circuit', filename)
-
-
 def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) -> None:
     """Saves tokens as JSON file at given path.
 
@@ -725,300 +700,6 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
             file.write(json.dumps(tokens_data))
     except OSError as error:
         raise click.ClickException(f'Error writing tokens file, {error}') from error
-
-
-def _validate_cortex_cli_auth(no_auth, config_file) -> Optional[str]:
-    """Checks if provided auth options are correct:
-       - no_auth and config_file are mutually exclusive
-       - if no_auth is not set, config_file must have the CortexCliCommand.default_config_path value
-       - config file must exist and contain a path to an existing tokens_file
-
-    Args:
-        no_auth (bool): --no-auth option value
-        config_file (str): --config-file option value
-    Raises:
-        click.UsageError: if user is not logged in or provided and invalid config
-        click.BadOptionUsage: if both mutually exclusive --no-auth and --config-file are set
-    Returns:
-        str: path to the tokens file if using cortex-cli auth and provided (or default)
-             config-file exists and valid, None if --no-auth is set
-    """
-
-    # --no-auth and --config-file are mutually exclusive
-    if no_auth and config_file:
-        raise click.BadOptionUsage('--no-auth', 'Cannot use both --no-auth and --config-file options.')
-
-    # no config_file to use, no tokens_file
-    if no_auth:
-        return None
-
-    # --config-file was not provided, but has a default value
-    if not config_file:
-        logger.debug('No auth options provided, using default config file: %s', CortexCliCommand.default_config_path)
-        config_file = CortexCliCommand.default_config_path
-
-    # config file, even the default one, should exist
-    if not Path(config_file).is_file():
-        raise click.UsageError("Not logged in. Run 'cortex auth login' to log in.")
-
-    # config file should exist, be valid and satisfy Cortex CLI format
-    config = _validate_config_file(config_file)
-
-    # and at least contain an existing tokens_file
-    tokens_file = config.tokens_file
-    if not tokens_file.is_file():
-        raise click.UsageError("Not logged in. Run 'cortex auth login' to log in.")
-
-    return str(tokens_file)
-
-
-def _validate_measurements(input_circuit, results) -> dict[str, list[str]]:
-    """Checks if the results of a circuit execution match the expected measurements in the input circuit.
-
-    Args:
-        input_circuit (iqm_client.Circuit): input circuit
-        results (iqm_client.RunResult): circuit execution results
-    Returns:
-        dict[str, list[str]]: dictionary of measurement keys to qubits they measure
-    """
-    if results.measurements is None:
-        raise click.ClickException(f'No measurements obtained from backend. Job status is ${results.status}')
-
-    # We do not allow batch execution hence measurements should be length 1
-    if len(results.measurements) != 1:
-        raise click.ClickException('Measurements obtained from backend are invalid.')
-
-    expected_measurements = {}
-    for instruction in input_circuit.instructions:
-        if instruction.name == 'measurement':
-            expected_measurements[instruction.args['key']] = list(instruction.qubits)
-
-    for measurement_key in results.measurements[0]:
-        if measurement_key not in expected_measurements:
-            raise click.ClickException(
-                'Measurements obtained from the backend \
-                    do not match measurements in the circuit.'
-            )
-
-    return expected_measurements
-
-
-def _make_per_qubit_measurements(iqm_json, measured_qubits, results) -> dict[str, list[int]]:
-    """Converts the results of a circuit execution into a dictionary of qubits to their measurements.
-
-    Args:
-        measured_qubits (dict[str, list[str]]): measurements keys to qubit names mapping
-        results (iqm_client.RunResult): circuit execution results
-    Returns:
-        dict[str, list[int]]: dictionary of qubits to their measurements
-    """
-    per_qubit_measurements: dict[str, list[int]] = {}  # {"QB1": [0, 1, ...], "QB2": [1, 0, ...], ...}
-    # No batch execution i.e. only one measurement
-    for m_key, m_values in results.measurements[0].items():
-        for shot in m_values:
-            for qubit, value in zip(measured_qubits[m_key], shot):
-                if not iqm_json:
-                    qubit = qubit.replace('_', '[') + ']'
-                per_qubit_measurements.setdefault(qubit, []).append(value)
-
-    return per_qubit_measurements
-
-
-def _human_readable_frequencies_output(shots, per_qubit_measurements) -> str:
-    """Construct a human-readable output for the frequencies of the measured qubits.
-
-    Args:
-        shots (int): amount of shots
-        per_qubit_measurements (dict[str, list[str]]): dictionary of measurement keys to qubits they measure
-    Returns:
-        str: human-readable output for the frequencies of the measured states
-    """
-    sorted_qubits_names = sorted([str(k) for k in per_qubit_measurements.keys()])
-    output_string = '\t'.join(sorted_qubits_names) + '\n'
-    states = [tuple(per_qubit_measurements[qubit_name][i] for qubit_name in sorted_qubits_names) for i in range(shots)]
-    states_counts: dict[tuple, float] = {}
-    for state in states:
-        states_counts[state] = states_counts.get(state, 0) + 1
-    states_frequencies = {state: counts / len(states) for state, counts in states_counts.items()}
-    sorted_states = list(states_frequencies.keys())
-    sorted_states.sort(key=lambda tup: ' '.join([str(s) for s in tup]))
-    output_string += '\n'.join(
-        ['\t'.join([str(s) for s in state]) + '\t' + str(states_frequencies[state]) for state in sorted_states]
-    )
-    return output_string
-
-
-def _human_readable_shots_output(shots, per_qubit_measurements) -> str:
-    """Construct a human-readable output for the shots of the measured qubits.
-
-    Args:
-        shots (int): amount of shots
-        per_qubit_measurements (dict[str, list[str]]): dictionary of measurement keys to qubits they measure
-    Returns:
-        str: human-readable output for the shots of the measured qubits
-    """
-    sorted_qubits_names = sorted([str(k) for k in per_qubit_measurements.keys()])
-    output_string = '\t'.join(['shot'] + sorted_qubits_names) + '\n'
-    output_string += '\n'.join(
-        [
-            '\t'.join([str(i + 1)] + [str(per_qubit_measurements[qubit_name][i]) for qubit_name in sorted_qubits_names])
-            for i in range(shots)
-        ]
-    )
-    return output_string
-
-
-@circuit.command()
-@click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-@click.option('--shots', default=1, type=int, help='Number of times to sample the circuit.')
-@click.option(
-    '--calibration-set-id', type=click.UUID, help='ID of the calibration set to use instead of the latest one.'
-)
-@click.option(
-    '--qasm-qubit-placement',
-    default=None,
-    type=click.File(),
-    envvar='IQM_QASM_QUBIT_PLACEMENT_PATH',
-    help='Path to a qubit placement JSON file used for OpenQASM circuit execution. '
-    'As OpenQASM does not allow to use named qubits, a qubit placement JSON is required '
-    'to map from a qubit register and index to a physical qubit name. '
-    'This can be achieved with a qubit placement JSON with the following format '
-    '{"QB1": ["q", 0]} where the key denotes a physical qubit and the value is '
-    'a [qubit register, qubit index] tuple. '
-    'Can also be set using the IQM_QASM_QUBIT_PLACEMENT_PATH environment variable:\n'
-    '`export IQM_QASM_QUBIT_PLACEMENT_PATH=\"/path/to/qubit/placement.json\"`\n',
-)
-@click.option(
-    '--iqm-server-url',
-    envvar='IQM_SERVER_URL',
-    type=str,
-    required=True,
-    help='URL of the IQM server interface for running circuits. Must start with http or https. '
-    'Can also be set using the IQM_SERVER_URL environment variable:\n'
-    '`export IQM_SERVER_URL=\"https://example.com\"`',
-)
-@click.option(
-    '-i',
-    '--iqm-json',
-    is_flag=True,
-    help='Set this flag if FILENAME is already in IQM JSON format (instead of being an OpenQASM file). '
-    'Note that it is expected that an IQM JSON already uses physical qubit names.',
-)
-@click.option(
-    '--config-file',
-    type=click.Path(exists=True, dir_okay=False),
-    help='Location of the configuration file to be used.'
-    'If neither --no-auth, nor --config-file are set, the default configuration file is used.',
-)
-@click.option(
-    '--no-auth',
-    is_flag=True,
-    default=False,
-    help="Do not use Cortex CLI's auth functionality. "
-    'Mutually exclusive with --config-file option. '
-    'When submitting a circuit job, Cortex CLI will use IQM Client without passing any auth tokens. '
-    'Auth data can still be set using environment variables for IQM Client.',
-)
-@click.option(
-    '--output',
-    default=OutputFormat.FREQUENCIES,
-    type=OutputFormat,
-    help='Output format: shots, frequencies or raw json. Default: frequencies. '
-    'This is useful for piping the response to other commands. '
-    'frequencies: display measuremenets frequencies in a human-readable format.\n'
-    'shots: display measuremenets in a human-readable format.\n'
-    'json: print the job\'s JSON response to stdout.',
-)
-@click.argument('filename', type=click.Path())
-def run(  # pylint: disable=too-many-arguments, too-many-locals, import-outside-toplevel
-    verbose: bool,
-    shots: int,
-    calibration_set_id: Optional[UUID],
-    qasm_qubit_placement: Optional[TextIOWrapper],
-    iqm_server_url: str,
-    filename: str,
-    iqm_json: bool,
-    config_file: str,
-    no_auth: bool,
-    output: OutputFormat,
-) -> None:
-    """Execute a quantum circuit.
-
-    The circuit is provided in the OpenQASM 2.0 file FILENAME. The circuit must only contain operations that are
-    natively supported by the quantum computer the execution happens on.
-
-    Returns a JSON object whose keys correspond to the measurement operations in the circuit.
-    The value for each key is a 2-D array of integers containing the corresponding measurement
-    results. The first index of the array goes over the shots, and the second over the qubits
-    included in the measurement.
-    """
-    try:
-        from iqm_client.iqm_client import Circuit, IQMClient
-    except ModuleNotFoundError as ex:
-        message = f'{CIRCUIT_MISSING_DEPS_MSG}\nActual error which occured when attempting to load dependencies: {ex}'
-        raise click.ClickException(message) from ex
-
-    _set_log_level_by_verbosity(verbose)
-
-    # check --no-auth and --config-file alignment
-    tokens_file = _validate_cortex_cli_auth(no_auth, config_file)
-
-    try:
-        # serialize the circuit and the qubit mapping
-        if iqm_json:
-            if qasm_qubit_placement is not None:
-                raise click.BadOptionUsage(
-                    '--qasm_qubit_placement', 'Using --qasm_qubit_placement is only valid if --iqm-json is not set.'
-                )
-            input_circuit = Circuit.parse_raw(read_file(filename))
-        else:
-            if qasm_qubit_placement is None:
-                raise click.BadOptionUsage(
-                    '--qasm_qubit_placement', '--qasm_qubit_placement is required for OpenQASM circuit execution.'
-                )
-            input_circuit, qubit_placement = parse_qasm_circuit(filename, qasm_qubit_placement)
-
-        logger.debug('\nInput circuit:\n%s', input_circuit)
-
-        # run the circuit on the backend
-        iqm_client = IQMClient(iqm_server_url, client_signature=f'{DIST_NAME} {__version__}', tokens_file=tokens_file)
-        job_id = iqm_client.submit_circuits([input_circuit], shots=shots, calibration_set_id=calibration_set_id)
-        results = iqm_client.wait_for_results(job_id)
-    except Exception as ex:
-        # just show the error message, not a stack trace
-        raise click.ClickException(str(ex)) from ex
-
-    # validate measurements, will throw an exception if something is wrong
-    measured_qubits = _validate_measurements(input_circuit, results)
-
-    # convert native qubit names to QASM qubit names
-    if not iqm_json:
-        measured_qubits = {
-            m_key: [
-                f'{qubit_placement.qubit_placement[qubit][0]}_{qubit_placement.qubit_placement[qubit][1]}'
-                for qubit in m_qubits
-            ]
-            for m_key, m_qubits in measured_qubits.items()
-        }
-    # make a dictionary with qubits as keys and measurements arrays as values
-    per_qubit_measurements = _make_per_qubit_measurements(iqm_json, measured_qubits, results)
-
-    # prepare output
-    logger.debug('\nResults:')
-    if output == OutputFormat.JSON:
-        # `exclude_none` is needed to avoid serializing `None` values, e.g. if there is no `warnings` field
-        output_string = results.json(exclude_none=True)
-
-    if output == OutputFormat.FREQUENCIES:
-        output_string = f'Circuit "{input_circuit.name}" results using '
-        output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
-        output_string += _human_readable_frequencies_output(shots, per_qubit_measurements)
-    if output == OutputFormat.SHOTS:
-        output_string = f'Circuit "{input_circuit.name}" results using '
-        output_string += f'calibration set {results.metadata.calibration_set_id} over {shots} shots:\n'
-        output_string += _human_readable_shots_output(shots, per_qubit_measurements)
-
-    logger.info(output_string)
 
 
 if __name__ == '__main__':
