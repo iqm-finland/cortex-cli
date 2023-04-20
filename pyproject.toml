@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "iqm-cortex-cli"
 dynamic = ["version"]
-description = "CLI for executing quantum circuits"
+description = "CLI for managing user authentication when using IQM quantum computers"
 authors = [{name = "IQM Finland Oy", email = "developers@meetiqm.com"}]
 readme = "README.rst"
 license = {file = "LICENSE.rst"}
@@ -37,10 +37,6 @@ changelog = "https://github.com/iqm-finland/cortex-cli/blob/main/CHANGELOG.rst"
 [project.optional-dependencies]
 # Add here additional requirements for extra features, to install with:
 # `pip install iqm-cortex-cli[testing,docs,dev]`
-circuit = [
-    "cirq-iqm >= 11.0, < 12.0",
-    "iqm-client >= 12.0, < 13.0"
-]
 dev = [
     "tox == 3.25.1"
 ]

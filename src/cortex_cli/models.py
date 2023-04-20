@@ -40,9 +40,3 @@ class TokensFile(BaseModel):
     refresh_token: str
     refresh_status: Optional[str]
     auth_server_url: AnyUrl
-
-
-class QasmQubitPlacement(BaseModel):
-    """Model of qbit placement file, used for validating JSON."""
-
-    qubit_placement: dict[str, tuple[str, int]]

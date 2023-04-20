@@ -21,7 +21,6 @@ import json
 import os
 import time
 from typing import Optional
-from unittest import mock as umock
 from uuid import UUID
 
 from mockito import expect, mock, when
@@ -67,15 +66,6 @@ def tokens_dict():
     tokens_file = os.path.join(resources_path(), 'tokens.json')
     with open(tokens_file, 'r', encoding='utf-8') as file:
         return json.loads(file.read())
-
-
-@pytest.fixture()
-def mock_environment_vars_for_backend(credentials):
-    """
-    Mocks environment variables
-    """
-    with umock.patch.dict(os.environ, {'IQM_SERVER_URL': credentials['auth_server_url']}):
-        yield
 
 
 class MockJsonResponse:
@@ -191,47 +181,6 @@ def expect_logout(auth_server_url: str, realm: str, client_id: str, refresh_toke
         data=request_data.dict(exclude_none=True),
         timeout=AUTH_REQUESTS_TIMEOUT,
     ).thenReturn(mock({'status_code': status_code, 'text': '{}'}))
-
-
-def expect_jobs_requests(iqm_server_url, valid_circuit_qasm_result_file=None, calibration_set_id=None):
-    """
-    Prepare for job submission requests.
-    """
-    success_submit_result = {'id': str(existing_run)}
-    success_submit_response = mock({'status_code': 201, 'text': json.dumps(success_submit_result)})
-    when(success_submit_response).json().thenReturn(success_submit_result)
-    when(requests).post(f'{iqm_server_url}/jobs', ...).thenReturn(success_submit_response)
-
-    running_result = {'status': 'pending compilation', 'metadata': {'request': {'shots': 42, 'circuits': []}}}
-    pending_compilation_response = mock({'status_code': 200, 'text': json.dumps(running_result)})
-    when(pending_compilation_response).json().thenReturn(running_result)
-
-    running_result['status'] = 'pending execution'
-    pending_execution_response = mock({'status_code': 200, 'text': json.dumps(running_result)})
-    when(pending_execution_response).json().thenReturn(running_result)
-
-    if valid_circuit_qasm_result_file is not None:
-        with open(valid_circuit_qasm_result_file, 'r', encoding='utf-8') as file:
-            success_get_result = json.loads(file.read())
-    else:
-        success_get_result = {
-            'status': 'ready',
-            'measurements': [{'result': [[1, 0, 1, 1, 0], [1, 0, 0, 1, 1], [1, 0, 1, 1, 1], [1, 0, 1, 1, 0]]}],
-            'metadata': {
-                'request': {
-                    'circuits': [],
-                    'shots': 42,
-                    'calibration_set_id': str(calibration_set_id) if calibration_set_id is not None else None,
-                },
-                'calibration_set_id': str(calibration_set_id) if calibration_set_id is not None else None,
-            },
-        }
-    success_get_response = mock({'status_code': 200, 'text': json.dumps(success_get_result)})
-    when(success_get_response).json().thenReturn(success_get_result)
-
-    when(requests).get(f'{iqm_server_url}/jobs/{existing_run}', ...).thenReturn(
-        pending_compilation_response
-    ).thenReturn(pending_execution_response).thenReturn(success_get_response)
 
 
 def expect_token_is_valid(token: str, result: bool = True):
