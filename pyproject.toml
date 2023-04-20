@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "iqm-cortex-cli"
 dynamic = ["version"]
-description = "CLI for interacting with IQM quantum computers"
+description = "CLI for managing user authentication when using IQM quantum computers"
 authors = [{name = "IQM Finland Oy", email = "developers@meetiqm.com"}]
 readme = "README.rst"
 license = {file = "LICENSE.rst"}

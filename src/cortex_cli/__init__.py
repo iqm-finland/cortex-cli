@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Command-line interface (CLI) for interacting with IQM quantum computers.
+"""Command-line interface (CLI) for managing user authentication when using IQM quantum computers.
 """
 from importlib.metadata import PackageNotFoundError, version  # type: ignore
 

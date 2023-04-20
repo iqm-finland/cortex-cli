@@ -4,7 +4,7 @@ Cortex CLI
 :Release: |release|
 :Date: |today|
 
-Command-line tool (CLI) for interacting with IQM quantum computers.
+Command-line tool (CLI) for managing user authentication when using IQM quantum computers.
 
 Contents
 --------

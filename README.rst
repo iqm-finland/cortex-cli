@@ -9,7 +9,7 @@
 Cortex CLI
 ==========
 
-Command-line interface (CLI) for interacting with an IQM quantum computer.
+Command-line interface (CLI) for managing user authentication when using IQM quantum computers.
 
 Installing Cortex CLI
 ---------------------

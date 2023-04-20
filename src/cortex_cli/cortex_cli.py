@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Command line interface for interacting with IQM's quantum computers.
+Command line interface for managing user authentication when using IQM quantum computers.
 """
 from datetime import datetime, timedelta
 import json
@@ -277,7 +277,7 @@ class CortexCliCommand(click.Group):
 @click.group(cls=CortexCliCommand)
 @click.version_option(__version__)
 def cortex_cli() -> None:
-    """Interact with an IQM quantum computer with Cortex CLI."""
+    """Cortex CLI for managing user authentication when using IQM quantum computers"""
     return
 
 
