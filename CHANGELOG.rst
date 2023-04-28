@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 4.1
+===========
+
+* Generate license information for dependencies on every release `#44 <https://github.com/iqm-finland/cortex-cli/pull/44>`_
+
 Version 4.0
 ===========
 
