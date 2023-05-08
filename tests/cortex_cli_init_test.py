@@ -15,38 +15,44 @@
 Tests for Cortex CLI's init command
 """
 
+import itertools
 import json
 import os
 from pathlib import Path
 
 from click.testing import CliRunner
 from mockito import unstub
+import pytest
 
 from cortex_cli.cortex_cli import cortex_cli
 from tests.conftest import expect_process_terminate, prepare_auth_server_urls
 
 
-def test_init_saves_config_file(config_dict):
+@pytest.mark.parametrize('first_option', ['--config-file', '--tokens-file', '--auth-server-url', '--client-id'])
+def test_init_saves_config_file(config_dict, first_option):
     """
     Tests that ``cortex init`` produces config file.
+
+    Having different options as first one is tested since it can affect the initialization of ``click.Context``.
+    Specifying ``realm`` before ``auth-server-url`` is not allowed, so that case is not included.
     """
     prepare_auth_server_urls(config_dict)
     runner = CliRunner()
     with runner.isolated_filesystem():
+        options_map = {
+            '--config-file': 'config.json',
+            '--tokens-file': config_dict['tokens_file'],
+            '--auth-server-url': config_dict['auth_server_url'],
+            '--realm': config_dict['realm'],
+            '--client-id': config_dict['client_id'],
+        }
         result = runner.invoke(
             cortex_cli,
             [
                 'init',
-                '--config-file',
-                'config.json',
-                '--tokens-file',
-                config_dict['tokens_file'],
-                '--auth-server-url',
-                config_dict['auth_server_url'],
-                '--realm',
-                config_dict['realm'],
-                '--client-id',
-                config_dict['client_id'],
+                first_option,
+                options_map[first_option],
+                *itertools.chain.from_iterable([item for item in options_map.items() if item[0] != first_option]),
             ],
         )
         assert result.exit_code == 0
