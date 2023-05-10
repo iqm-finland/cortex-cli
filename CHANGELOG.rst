@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 4.2
+===========
+
+* Fix ``init`` command non-interactive mode failing for some orders of options `#44 <https://github.com/iqm-finland/cortex-cli/pull/44>`_
+
 Version 4.1
 ===========
 

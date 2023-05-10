@@ -111,9 +111,11 @@ def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
     Returns:
         str: confirmed and finalized path
     """
-    if ctx.obj and param.name in ctx.obj:
+    if ctx.obj is None:
+        ctx.obj = {}
+    if param.name in ctx.obj:
         return path
-    ctx.obj = {param.name: True}
+    ctx.obj[param.name] = True
 
     # File doesn't exist, no need to confirm overwriting
     if not Path(path).is_file():
@@ -213,7 +215,9 @@ def _validate_auth_server_url(ctx: click.Context, param: click.Option, base_url:
     Returns:
         str: validated auth server base URL
     """
-    if ctx.obj and param.name in ctx.obj:
+    if ctx.obj is None:
+        ctx.obj = {}
+    if param.name in ctx.obj:
         return base_url
 
     is_valid = False
@@ -243,7 +247,9 @@ def _validate_auth_realm(ctx: click.Context, param: click.Option, realm: str) ->
     Returns:
         str: validated realm name
     """
-    if ctx.obj and param.name in ctx.obj:
+    if ctx.obj is None:
+        ctx.obj = {}
+    if param.name in ctx.obj:
         return realm
 
     base_url = ctx.obj.get('auth_server_url', None)
