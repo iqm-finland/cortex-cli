@@ -306,9 +306,9 @@ def cortex_cli() -> None:
 )
 @click.option(
     '--auth-server-url',
-    prompt='Base URL of IQM auth server',
+    prompt='Authentication server URL',
     callback=_validate_auth_server_url,
-    help='Base URL of IQM authentication server.',
+    help='Authentication server URL.',
 )
 @click.option(
     '--realm',
