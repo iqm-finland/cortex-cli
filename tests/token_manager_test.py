@@ -67,5 +67,5 @@ def test_daemonize_token_manager(config_dict):
 
     with runner.isolated_filesystem():
         token_manager.daemonize_token_manager(cycle=1, config=ConfigFile(**config_dict))
-        assert os.path.isfile(f'{Path.home()}/.iqm_cortex_cli/token_manager.log')
+        assert os.path.isfile(f'{Path.home()}/.local/state/token_manager.log')
     unstub()

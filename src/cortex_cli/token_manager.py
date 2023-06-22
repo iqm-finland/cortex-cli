@@ -33,7 +33,7 @@ if not platform.system().lower().startswith('win'):
 
 
 def daemonize_token_manager(
-    cycle: int, config: ConfigFile, logfile: str = f'{Path.home()}/.iqm_cortex_cli/token_manager.log'
+    cycle: int, config: ConfigFile, logfile: str = f'{Path.home()}/.local/state/token_manager.log'
 ) -> None:
     """Start a daemon process.
     Args:
