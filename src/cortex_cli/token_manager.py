@@ -32,13 +32,19 @@ if not platform.system().lower().startswith('win'):
     import daemon
 
 
-def daemonize_token_manager(cycle: int, config: ConfigFile, logfile: str = '/tmp/token_manager.log') -> None:
+def daemonize_token_manager(cycle: int, config: ConfigFile, logfile: Optional[str] = None) -> None:
     """Start a daemon process.
     Args:
         cycle: refresh cycle in seconds
         config: Cortex CLI configuration
         logfile: path to file for writing errors
     """
+    logfile = (
+        logfile
+        if logfile is not None
+        else f'{os.environ.get("XDG_STATE_HOME", f"{Path.home()}/.local/state")}/iqm-cortex-cli/token_manager.log'
+    )
+    os.makedirs(os.path.dirname(logfile), exist_ok=True)
     with open(logfile, 'w', encoding='UTF-8') as output:
         with daemon.DaemonContext(stdout=output, stderr=output):
             start_token_manager(cycle, config)
