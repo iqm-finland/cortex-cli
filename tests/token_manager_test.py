@@ -63,11 +63,13 @@ def test_daemonize_token_manager(config_dict):
     when(daemon.DaemonContext).__enter__().thenReturn(None)  # pylint: disable=unnecessary-dunder-call
     when(daemon.DaemonContext).__exit__(ANY, ANY, ANY).thenReturn(None)
     when(token_manager).start_token_manager(1, ConfigFile(**config_dict)).thenReturn(None)
-    when(os).makedirs(f'{Path.home()}/.local/state', exist_ok=True).thenReturn(None)
+    when(os).makedirs(f'{Path.home()}/.local/state/iqm-cortex-cli', exist_ok=True).thenReturn(None)
     with mock.patch('builtins.open', mock.mock_open()) as mock_log_file:
         with mock.patch.dict(os.environ, {}):
             token_manager.daemonize_token_manager(cycle=1, config=ConfigFile(**config_dict))
-    mock_log_file.assert_called_with(f'{Path.home()}/.local/state/token_manager.log', 'w', encoding='UTF-8')
+    mock_log_file.assert_called_with(
+        f'{Path.home()}/.local/state/iqm-cortex-cli/token_manager.log', 'w', encoding='UTF-8'
+    )
     unstub()
 
 
@@ -80,11 +82,13 @@ def test_daemonize_token_manager_uses_unix_recommended_log_dir(config_dict):
     when(daemon.DaemonContext).__exit__(ANY, ANY, ANY).thenReturn(None)
     when(token_manager).start_token_manager(1, ConfigFile(**config_dict)).thenReturn(None)
     mock_xdg_state_home = 'the/unix/way/to/store/stuff'
-    when(os).makedirs(mock_xdg_state_home, exist_ok=True).thenReturn(None)
+    when(os).makedirs(f'{mock_xdg_state_home}/iqm-cortex-cli', exist_ok=True).thenReturn(None)
     with mock.patch('builtins.open', mock.mock_open()) as mock_log_file:
         with mock.patch.dict(os.environ, {'XDG_STATE_HOME': mock_xdg_state_home}):
             token_manager.daemonize_token_manager(cycle=1, config=ConfigFile(**config_dict))
-    mock_log_file.assert_called_with('the/unix/way/to/store/stuff/token_manager.log', 'w', encoding='UTF-8')
+    mock_log_file.assert_called_with(
+        'the/unix/way/to/store/stuff/iqm-cortex-cli/token_manager.log', 'w', encoding='UTF-8'
+    )
     unstub()
 
 

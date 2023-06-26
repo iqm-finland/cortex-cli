@@ -42,7 +42,7 @@ def daemonize_token_manager(cycle: int, config: ConfigFile, logfile: Optional[st
     logfile = (
         logfile
         if logfile is not None
-        else f'{os.environ.get("XDG_STATE_HOME", f"{Path.home()}/.local/state")}/token_manager.log'
+        else f'{os.environ.get("XDG_STATE_HOME", f"{Path.home()}/.local/state")}/iqm-cortex-cli/token_manager.log'
     )
     os.makedirs(os.path.dirname(logfile), exist_ok=True)
     with open(logfile, 'w', encoding='UTF-8') as output:
