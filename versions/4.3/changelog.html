@@ -1,0 +1,970 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Changelog &#8212; Cortex CLI 4.3 documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="./" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Contributors" href="authors.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="../../_static/logo.png" class="logo" alt="logo">
+      
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="readme.html">
+   Readme
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="license.html">
+   License
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="authors.html">
+   Authors
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Changelog
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav>
+<style type="text/css">
+  ul.version_list { padding-left: 0; }
+  ul.version_list li.version_item { display: inline; }
+  li.version_item a {
+    color: white;
+    background-color: #097aba;
+    padding: 0.12rem 0.45rem;
+    border-radius: 0.35rem;
+  }
+  li.version_item a:hover {
+    background-color: #064061;
+    text-decoration: none;
+  }
+  li.version_item.current_version {
+    color: white;
+    background-color: #064061;
+    padding: 0.12rem 0.45rem;
+    border-radius: 0.35rem;
+  }
+</style>
+<h3>Versions</h3>
+<ul class="version_list">
+    
+      <li class="version_item"><a href="../../changelog.html">dev</a></li>
+    
+    
+      <li class="version_item current_version">4.3</li>
+    
+    
+      <li class="version_item"><a href="../4.2/changelog.html">4.2</a></li>
+    
+    
+      <li class="version_item"><a href="../4.1/changelog.html">4.1</a></li>
+    
+    
+      <li class="version_item"><a href="../4.0/changelog.html">4.0</a></li>
+    
+    
+      <li class="version_item"><a href="../3.6/changelog.html">3.6</a></li>
+    
+    
+      <li class="version_item"><a href="../3.5/changelog.html">3.5</a></li>
+    
+    
+      <li class="version_item"><a href="../3.4/changelog.html">3.4</a></li>
+    
+    
+      <li class="version_item"><a href="../3.3/changelog.html">3.3</a></li>
+    
+    
+      <li class="version_item"><a href="../3.2/changelog.html">3.2</a></li>
+    
+    
+      <li class="version_item"><a href="../3.1/changelog.html">3.1</a></li>
+    
+    
+      <li class="version_item"><a href="../3.0/changelog.html">3.0</a></li>
+    
+    
+      <li class="version_item"><a href="../2.4/changelog.html">2.4</a></li>
+    
+    
+      <li class="version_item"><a href="../2.3/changelog.html">2.3</a></li>
+    
+    
+      <li class="version_item"><a href="../2.2/changelog.html">2.2</a></li>
+    
+    
+      <li class="version_item"><a href="../2.1/changelog.html">2.1</a></li>
+    
+    
+      <li class="version_item"><a href="../2.0/changelog.html">2.0</a></li>
+    
+    
+      <li class="version_item"><a href="../1.6/changelog.html">1.6</a></li>
+    
+    
+      <li class="version_item"><a href="../1.5/changelog.html">1.5</a></li>
+    
+    
+      <li class="version_item"><a href="../1.4/changelog.html">1.4</a></li>
+    
+    
+      <li class="version_item"><a href="../1.3/changelog.html">1.3</a></li>
+    
+    
+      <li class="version_item"><a href="../1.2/changelog.html">1.2</a></li>
+    
+    
+      <li class="version_item"><a href="../1.1/changelog.html">1.1</a></li>
+    
+    
+      <li class="version_item"><a href="../1.0/changelog.html">1.0</a></li>
+    
+</ul>
+</div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Theme by the <a href="https://ebp.jupyterbook.org">Executable Book Project</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="_sources/changelog.rst.txt"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.rst</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-4-3">
+   Version 4.3
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-4-2">
+   Version 4.2
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-4-1">
+   Version 4.1
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-4-0">
+   Version 4.0
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-6">
+   Version 3.6
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-5">
+   Version 3.5
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-4">
+   Version 3.4
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-3">
+   Version 3.3
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-2">
+   Version 3.2
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-1">
+   Version 3.1
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-0">
+   Version 3.0
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-2-4">
+   Version 2.4
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-2-3">
+   Version 2.3
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-2-2">
+   Version 2.2
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-2-1">
+   Version 2.1
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-2-0">
+   Version 2.0
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-6">
+   Version 1.6
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-5">
+   Version 1.5
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-4">
+   Version 1.4
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-3">
+   Version 1.3
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-2">
+   Version 1.2
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-1">
+   Version 1.1
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-0">
+   Version 1.0
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-11">
+   Version 0.11
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-10">
+   Version 0.10
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-9">
+   Version 0.9
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-8">
+   Version 0.8
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-7">
+   Version 0.7
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-6">
+   Version 0.6
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-5">
+   Version 0.5
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-4">
+   Version 0.4
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-3">
+   Version 0.3
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-2">
+   Version 0.2
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-1">
+   Version 0.1
+  </a>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Changelog</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-4-3">
+   Version 4.3
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-4-2">
+   Version 4.2
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-4-1">
+   Version 4.1
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-4-0">
+   Version 4.0
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-6">
+   Version 3.6
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-5">
+   Version 3.5
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-4">
+   Version 3.4
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-3">
+   Version 3.3
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-2">
+   Version 3.2
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-1">
+   Version 3.1
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-3-0">
+   Version 3.0
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-2-4">
+   Version 2.4
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-2-3">
+   Version 2.3
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-2-2">
+   Version 2.2
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-2-1">
+   Version 2.1
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-2-0">
+   Version 2.0
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-6">
+   Version 1.6
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-5">
+   Version 1.5
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-4">
+   Version 1.4
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-3">
+   Version 1.3
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-2">
+   Version 1.2
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-1">
+   Version 1.1
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-1-0">
+   Version 1.0
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-11">
+   Version 0.11
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-10">
+   Version 0.10
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-9">
+   Version 0.9
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-8">
+   Version 0.8
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-7">
+   Version 0.7
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-6">
+   Version 0.6
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-5">
+   Version 0.5
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-4">
+   Version 0.4
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-3">
+   Version 0.3
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-2">
+   Version 0.2
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-1">
+   Version 0.1
+  </a>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+
+
+  <section id="changelog">
+<span id="changes"></span><h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">#</a></h1>
+<section id="version-4-3">
+<h2>Version 4.3<a class="headerlink" href="#version-4-3" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Fix logging for multi-user systems <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/48">#48</a></p></li>
+</ul>
+</section>
+<section id="version-4-2">
+<h2>Version 4.2<a class="headerlink" href="#version-4-2" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">init</span></code> command non-interactive mode failing for some orders of options <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/44">#44</a></p></li>
+</ul>
+</section>
+<section id="version-4-1">
+<h2>Version 4.1<a class="headerlink" href="#version-4-1" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Generate license information for dependencies on every release <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/44">#44</a></p></li>
+</ul>
+</section>
+<section id="version-4-0">
+<h2>Version 4.0<a class="headerlink" href="#version-4-0" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Remove circuit execution command <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/43">#43</a></p></li>
+</ul>
+</section>
+<section id="version-3-6">
+<h2>Version 3.6<a class="headerlink" href="#version-3-6" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Upgrade to IQMClient version 12.0 <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/42">#42</a></p></li>
+</ul>
+</section>
+<section id="version-3-5">
+<h2>Version 3.5<a class="headerlink" href="#version-3-5" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Allow user to update a temporary password in <code class="docutils literal notranslate"><span class="pre">auth</span> <span class="pre">login</span></code> command. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/41">#41</a></p></li>
+</ul>
+</section>
+<section id="version-3-4">
+<h2>Version 3.4<a class="headerlink" href="#version-3-4" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>“Pin down” supported Python versions to 3.9 and 3.10. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/38">#38</a></p></li>
+<li><p>Configure Tox to skip missing versions of Python interpreters when running tests. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/38">#38</a></p></li>
+<li><p>Move project metadata and configuration to <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/38">#38</a></p></li>
+</ul>
+</section>
+<section id="version-3-3">
+<h2>Version 3.3<a class="headerlink" href="#version-3-3" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Provide version information to IQMClient. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/39">#39</a></p></li>
+</ul>
+</section>
+<section id="version-3-2">
+<h2>Version 3.2<a class="headerlink" href="#version-3-2" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Build docs for older versions. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/37">#37</a></p></li>
+</ul>
+</section>
+<section id="version-3-1">
+<h2>Version 3.1<a class="headerlink" href="#version-3-1" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">calibration_set_id</span></code> from metadata directly and not from the request. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/36">#36</a></p></li>
+</ul>
+</section>
+<section id="version-3-0">
+<h2>Version 3.0<a class="headerlink" href="#version-3-0" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Use new opaque UUID for <code class="docutils literal notranslate"><span class="pre">calibration_set_id</span></code>. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/35">#35</a></p></li>
+</ul>
+</section>
+<section id="version-2-4">
+<h2>Version 2.4<a class="headerlink" href="#version-2-4" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Remove <code class="docutils literal notranslate"><span class="pre">description</span></code> from pydantic model fields. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/34">#34</a></p></li>
+</ul>
+</section>
+<section id="version-2-3">
+<h2>Version 2.3<a class="headerlink" href="#version-2-3" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Cortex init command will validate the entered <code class="docutils literal notranslate"><span class="pre">auth_server_url</span></code> and <code class="docutils literal notranslate"><span class="pre">realm</span></code>. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/33">#33</a></p></li>
+</ul>
+</section>
+<section id="version-2-2">
+<h2>Version 2.2<a class="headerlink" href="#version-2-2" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Tokens file gets deleted and logout succeeds even if the authentication server is not available <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/32">#32</a></p></li>
+</ul>
+</section>
+<section id="version-2-1">
+<h2>Version 2.1<a class="headerlink" href="#version-2-1" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>The user can now specify the output format for <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">circuit</span> <span class="pre">run</span></code>: human-readable <code class="docutils literal notranslate"><span class="pre">--output</span> <span class="pre">frequencies</span></code>, <code class="docutils literal notranslate"><span class="pre">--output</span> <span class="pre">shots</span></code> or machine-readable raw <code class="docutils literal notranslate"><span class="pre">RunResult</span></code> <code class="docutils literal notranslate"><span class="pre">--output</span> <span class="pre">json</span></code>. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/31">#31</a></p></li>
+</ul>
+</section>
+<section id="version-2-0">
+<h2>Version 2.0<a class="headerlink" href="#version-2-0" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Replace qubit mapping with QASM qubit placement. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/30">#30</a></p></li>
+</ul>
+</section>
+<section id="version-1-6">
+<h2>Version 1.6<a class="headerlink" href="#version-1-6" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Gracefully handle token files with outdated format. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/28">#28</a></p></li>
+</ul>
+</section>
+<section id="version-1-5">
+<h2>Version 1.5<a class="headerlink" href="#version-1-5" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Make circuit execution an optional functionality, which requires to install additional dependencies. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/27">#27</a></p></li>
+</ul>
+</section>
+<section id="version-1-4">
+<h2>Version 1.4<a class="headerlink" href="#version-1-4" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Fix typing issue related to upgrading to cirq-on-iqm 7.7. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/25">#25</a></p></li>
+</ul>
+</section>
+<section id="version-1-3">
+<h2>Version 1.3<a class="headerlink" href="#version-1-3" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Remove settings from circuit run command. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/24">#24</a></p></li>
+<li><p>Upgrade to iqm-client 8.0. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/24">#24</a></p></li>
+</ul>
+</section>
+<section id="version-1-2">
+<h2>Version 1.2<a class="headerlink" href="#version-1-2" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Fix a bug in handling tokens received from auth server. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/23">#23</a></p></li>
+</ul>
+</section>
+<section id="version-1-1">
+<h2>Version 1.1<a class="headerlink" href="#version-1-1" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Token manager will keep trying indefinitely to re-connect to auth server. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/22">#22</a></p></li>
+</ul>
+</section>
+<section id="version-1-0">
+<h2>Version 1.0<a class="headerlink" href="#version-1-0" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Enable foreground mode for token manager. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+<li><p>Flag <code class="docutils literal notranslate"><span class="pre">--no-daemon</span></code> of the <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span></code> command is renamed to <code class="docutils literal notranslate"><span class="pre">--no-refresh</span></code>. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+<li><p>Flag <code class="docutils literal notranslate"><span class="pre">--no-daemon</span></code> now starts the token manager in foreground mode. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+<li><p>Breaking change. The format of the configuration file is changed: <code class="docutils literal notranslate"><span class="pre">base_url</span></code> renamed to <code class="docutils literal notranslate"><span class="pre">auth_server_url</span></code>. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+<li><p>Breaking change. The format of the tokens file is changed: <code class="docutils literal notranslate"><span class="pre">timestamp</span></code> format is changed to ISO. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+<li><p>Configuration and tokens files’ formats are now validated by Cortex CLI. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/20">#20</a></p></li>
+</ul>
+</section>
+<section id="version-0-11">
+<h2>Version 0.11<a class="headerlink" href="#version-0-11" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--no-auth</span></code> and <code class="docutils literal notranslate"><span class="pre">--config-file</span></code> are now mutually exclusive <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/19">#19</a></p></li>
+</ul>
+</section>
+<section id="version-0-10">
+<h2>Version 0.10<a class="headerlink" href="#version-0-10" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Upgrade to iqm-client 7.0 <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/18">#18</a></p></li>
+<li><p>Report the ID of the calibration set that was used in circuit run when no settings were specified. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/18">#18</a></p></li>
+</ul>
+</section>
+<section id="version-0-9">
+<h2>Version 0.9<a class="headerlink" href="#version-0-9" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Enable mypy checks. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/17">#17</a></p></li>
+<li><p>Update source code according to new checks in pylint v2.15.0. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/17">#17</a></p></li>
+</ul>
+</section>
+<section id="version-0-8">
+<h2>Version 0.8<a class="headerlink" href="#version-0-8" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Upgrade <code class="docutils literal notranslate"><span class="pre">cirq-iqm</span></code> to 7.3. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/15">#15</a></p></li>
+</ul>
+</section>
+<section id="version-0-7">
+<h2>Version 0.7<a class="headerlink" href="#version-0-7" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>iqm-client 6.1 support. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/13">#13</a></p></li>
+<li><p>Allow user to provide a custom <code class="docutils literal notranslate"><span class="pre">calibration_set_id</span></code> when using <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">circuit</span> <span class="pre">run</span></code>. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/13">#13</a></p></li>
+<li><p>Update documentation regarding the use of Cortex CLI. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/13">#13</a></p></li>
+</ul>
+</section>
+<section id="version-0-6">
+<h2>Version 0.6<a class="headerlink" href="#version-0-6" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>iqm-client 6.0 support. <a class="reference external" href="https://github.com/iqm-finland/cortex-cli/pull/14">#14</a></p></li>
+</ul>
+</section>
+<section id="version-0-5">
+<h2>Version 0.5<a class="headerlink" href="#version-0-5" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Partial Windows support (no token manager daemon)</p></li>
+<li><p>Performance improvements for faster loading time</p></li>
+</ul>
+</section>
+<section id="version-0-4">
+<h2>Version 0.4<a class="headerlink" href="#version-0-4" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Bump iqm-client dependency to 5.0</p></li>
+<li><p>Remind the user to login before using operations requiring authentication</p></li>
+</ul>
+</section>
+<section id="version-0-3">
+<h2>Version 0.3<a class="headerlink" href="#version-0-3" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Fix tests for iqm-client 4.3</p></li>
+</ul>
+</section>
+<section id="version-0-2">
+<h2>Version 0.2<a class="headerlink" href="#version-0-2" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Added circuit commands <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">circuit</span> <span class="pre">validate</span></code> and <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">circuit</span> <span class="pre">run</span></code></p></li>
+</ul>
+</section>
+<section id="version-0-1">
+<h2>Version 0.1<a class="headerlink" href="#version-0-1" title="Permalink to this headline">#</a></h2>
+<ul class="simple">
+<li><p>Authentication token manager daemon</p></li>
+<li><p>Multiple configurations support</p></li>
+</ul>
+</section>
+</section>
+
+
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="authors.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Contributors</p>
+        </div>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+      &copy; Copyright 2019-2022, IQM Finland Oy.<br/>
+    Last updated on 2023-06-28.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>
