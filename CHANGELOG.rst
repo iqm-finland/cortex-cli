@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 4.3
+===========
+
+* Fix logging for multi-user systems `#48 <https://github.com/iqm-finland/cortex-cli/pull/48>`_
+
 Version 4.2
 ===========
 
