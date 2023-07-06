@@ -29,6 +29,7 @@ class ConfigFile(BaseModel):
     client_id: str
     username: Optional[str]
     tokens_file: Path
+    proxy_tmp_file: Path
 
 
 class TokensFile(BaseModel):

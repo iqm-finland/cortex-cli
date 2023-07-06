@@ -14,6 +14,7 @@
 """
 Command line interface for managing user authentication when using IQM quantum computers.
 """
+import tempfile
 from datetime import datetime, timedelta
 import json
 import logging
@@ -23,6 +24,7 @@ import platform
 import sys
 
 import click
+from cryptography.fernet import InvalidToken
 from psutil import Process
 from pydantic import ValidationError
 import requests
@@ -40,7 +42,14 @@ from cortex_cli.auth import (
     update_password,
 )
 from cortex_cli.models import ConfigFile, TokensFile
-from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
+from cortex_cli.token_manager import (
+    check_token_manager,
+    daemonize_token_manager,
+    start_token_manager,
+    _decrypt_text,
+    SALT,
+    _encrypt_text,
+)
 
 HOME_PATH = str(Path.home())
 DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
@@ -81,6 +90,23 @@ def _set_log_level_by_verbosity(verbose: bool) -> int:
     return logging.INFO
 
 
+def _read_file(filename: str) -> str:
+    """Opens and reads the given file.
+
+    Args:
+        filename (str): name of the file to read
+    Returns:
+        str: contents of the file
+    Raises:
+        ClickException: if file is not found
+    """
+    try:
+        with open(filename, 'r', encoding='utf-8') as file:
+            return file.read()
+    except FileNotFoundError as error:
+        raise click.ClickException(f'File {filename} not found') from error
+
+
 def _read_json(path: str) -> dict:
     """Read a JSON file.
 
@@ -92,10 +118,7 @@ def _read_json(path: str) -> dict:
         dict: data parsed from the file
     """
     try:
-        with open(path, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-    except FileNotFoundError as error:
-        raise click.FileError(path, 'file not found') from error
+        data = json.loads(_read_file(path))
     except json.decoder.JSONDecodeError as error:
         raise click.FileError(path, f'file is not a valid JSON file: {error}') from error
     return data
@@ -168,8 +191,9 @@ Full validation error:
     return validated_config
 
 
-def _validate_tokens_file(tokens_file: str) -> TokensFile:
+def _validate_tokens_file(tokens_file: str, password: str) -> TokensFile:
     """Checks if provided tokens file is valid, i.e. it:
+       - decryptable with password as key
        - is valid JSON
        - satisfies Cortex CLI format
 
@@ -183,7 +207,11 @@ def _validate_tokens_file(tokens_file: str) -> TokensFile:
     """
 
     # tokens_file must be in correct format
-    tokens = _read_json(tokens_file)
+    with open(tokens_file, 'r', encoding='utf-8') as file:
+        try:
+            tokens = json.loads(_decrypt_text(file.read(), password, SALT))
+        except InvalidToken:
+            raise click.ClickException(f'Invalid password for decrypting file {tokens_file}')
     try:
         validated_tokens = TokensFile(**tokens)
     except ValidationError as ex:
@@ -325,12 +353,23 @@ def cortex_cli() -> None:
     default=USERNAME,
     help='Username. If not provided, it will be asked for at login.',
 )
+@click.option('--password', help='Password for authentication.', prompt='Password', hide_input=True)
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 def init(  # pylint: disable=too-many-arguments
-    config_file: str, tokens_file: str, auth_server_url: str, realm: str, client_id: str, username: str, verbose: bool
+    config_file: str,
+    tokens_file: str,
+    auth_server_url: str,
+    realm: str,
+    client_id: str,
+    username: str,
+    password: str,
+    verbose: bool,
 ) -> None:
     """Initialize configuration and authentication."""
     _set_log_level_by_verbosity(verbose)
+
+    proxy_tmp_file = f'{os.environ.get("XDG_STATE_HOME", f"{Path.home()}/.local/state")}/iqm-cortex-cli/proxy.txt'
+    os.makedirs(os.path.dirname(proxy_tmp_file), exist_ok=True)
 
     path_to_dir = Path(config_file).parent
     config_json = json.dumps(
@@ -340,13 +379,14 @@ def init(  # pylint: disable=too-many-arguments
             'client_id': client_id,
             'username': username,
             'tokens_file': tokens_file,
+            'proxy_tmp_file': proxy_tmp_file,
         },
         indent=2,
     )
 
     # Tokens file exist, so token manager may be running. Notify user and kill token manager.
     if Path(tokens_file).is_file():
-        pid = check_token_manager(tokens_file)
+        pid = check_token_manager(tokens_file, password)
         if pid:
             logger.info('Active token manager (PID %s) will be killed.', pid)
             Process(pid).terminate()
@@ -377,8 +417,9 @@ def auth() -> None:
     type=click.Path(exists=True, dir_okay=False),
     help='Location of the configuration file to be used.',
 )
+@click.option('--password', help='Password for authentication.')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
-def status(config_file, verbose) -> None:
+def status(config_file, password, verbose) -> None:
     """Check status of authentication."""
     _set_log_level_by_verbosity(verbose)
 
@@ -389,12 +430,17 @@ def status(config_file, verbose) -> None:
         click.echo('Not logged in. Use "cortex auth login" to login.')
         return
     try:
-        tokens_data = _validate_tokens_file(tokens_file)
+        password = password or click.prompt('Password', hide_input=True)
+        tokens_data = _validate_tokens_file(tokens_file, password)
     except click.FileError:
         click.echo('Provided tokens.json file is invalid. Use "cortex auth login" to generate new tokens.')
         return
 
-    click.echo(f'Tokens file: {tokens_file}')
+    click.echo(f'Encrypted tokens file: {tokens_file}')
+    with open(config.proxy_tmp_file, 'r', encoding='utf-8') as file:
+        tmp_tokens_file_path = file.read().rstrip()
+    click.echo(f'Decrypted tokens file: {tmp_tokens_file_path}')
+
     if not tokens_data.pid:
         click.echo("Tokens file doesn't contain PID. Probably, 'cortex auth login' was launched with '--no-refresh'\n")
 
@@ -409,7 +455,7 @@ def status(config_file, verbose) -> None:
     time_left_rt = str(timedelta(seconds=seconds_rt))
     click.echo(f'Time left on refresh token (hh:mm:ss): {time_left_rt}')
 
-    active_pid = check_token_manager(tokens_file)
+    active_pid = check_token_manager(tokens_file, password)
     if active_pid:
         click.echo(f'Token manager: {click.style("RUNNING", fg="green")} (PID {active_pid})')
     else:
@@ -464,6 +510,7 @@ def _refresh_tokens(
     no_daemon: bool,
     no_refresh: bool,
     config: ConfigFile,
+    password: str,
 ) -> bool:
     """Refreshes token and returns success status
 
@@ -478,7 +525,7 @@ def _refresh_tokens(
     # Tokens file exists; Refresh tokens without username/password
     tokens_file = str(config.tokens_file)
     try:
-        refresh_token = _validate_tokens_file(tokens_file).refresh_token
+        refresh_token = _validate_tokens_file(tokens_file, password).refresh_token
     except (click.FileError, ValidationError):
         click.echo('Provided tokens.json file is invalid, continuing with login with username and password.')
         os.remove(tokens_file)
@@ -493,16 +540,16 @@ def _refresh_tokens(
         logger.info('Failed to refresh tokens by using existing token. Switching to username/password.')
 
     if new_tokens:
-        save_tokens_file(tokens_file, new_tokens, config.auth_server_url)
+        save_tokens_file(tokens_file, new_tokens, config.auth_server_url, password)
         logger.debug('Saved new tokens file: %s', tokens_file)
         if no_refresh:
             logger.info("Existing token used to refresh session. Token manager not started due to '--no-refresh' flag.")
         elif no_daemon:
             logger.info('Existing token was used to refresh the auth session. Token manager started in foreground...')
-            start_token_manager(refresh_period, config)
+            start_token_manager(refresh_period, config, password)
         else:
             logger.info('Existing token was used to refresh the auth session. Token manager daemon started.')
-            daemonize_token_manager(refresh_period, config)
+            daemonize_token_manager(refresh_period, config, password)
         return True
     return False
 
@@ -515,7 +562,7 @@ def _refresh_tokens(
     help='Location of the configuration file to be used.',
 )
 @click.option('--username', help='Username for authentication.')
-@click.option('--password', help='Password for authentication.')
+@click.option('--password', help='Password for authentication.', prompt="Password")
 @click.option(
     '--refresh-period', default=REFRESH_PERIOD, show_default=True, help='How often to refresh tokens (in seconds).'
 )
@@ -543,11 +590,11 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
     tokens_file = str(config.tokens_file)
 
     if config.tokens_file.is_file():
-        if check_token_manager(tokens_file):
+        if check_token_manager(tokens_file, password):
             logger.info("Login aborted, because token manager is already running. See 'cortex auth status'.")
             return
 
-        if _refresh_tokens(refresh_period, no_daemon, no_refresh, config):
+        if _refresh_tokens(refresh_period, no_daemon, no_refresh, config, password):
             return
 
     # Login with username and password
@@ -586,25 +633,22 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
             tokens = None
 
     logger.info('Logged in successfully as %s', username)
-    save_tokens_file(tokens_file, tokens, auth_server_url)
-    click.echo(
-        f"""
-To use the tokens file with IQM Client or IQM Client-based software, set the environment variable:
-
-export IQM_TOKENS_FILE={tokens_file}
-
-Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm-client/
-"""
-    )
+    save_tokens_file(tokens_file, tokens, auth_server_url, password)
 
     if no_refresh:
         logger.info("Token manager not started due to '--no-refresh' flag.")
+        with open(tokens_file, 'r', encoding='utf-8') as file:
+            try:
+                tokens_data = _decrypt_text(file.read(), password, SALT)
+            except InvalidToken:
+                raise click.ClickException(f'Invalid password for decrypting file {tokens_file}')
+        _save_decrypted_tokens_and_inform(tokens_data)
     elif no_daemon:
         logger.info('Starting token manager in foreground...')
-        start_token_manager(refresh_period, config)
+        start_token_manager(refresh_period, config, password)
     else:
         logger.info('Starting token manager daemon...')
-        daemonize_token_manager(refresh_period, config)
+        daemonize_token_manager(refresh_period, config, password)
 
 
 @auth.command()
@@ -612,8 +656,9 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
     '--config-file', type=click.Path(exists=True, dir_okay=False), default=CortexCliCommand.default_config_path
 )
 @click.option('--keep-tokens', is_flag=True, default=False, help="Don't delete tokens file, but kill token manager.")
+@click.option('--password', help='Password for authentication.')
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
-def logout(config_file: str, keep_tokens: str, force: bool) -> None:
+def logout(config_file: str, keep_tokens: str, password: str, force: bool) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
     config = _validate_config_file(config_file)
     auth_server_url, realm, client_id = config.auth_server_url, config.realm, config.client_id
@@ -624,7 +669,8 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
         return
 
     try:
-        tokens = _validate_tokens_file(str(tokens_file))
+        password = password or click.prompt('Password', hide_input=True)
+        tokens = _validate_tokens_file(str(tokens_file), password)
     except click.FileError:
         click.echo('Found invalid tokens.json, cannot perform any logout steps.')
         return
@@ -632,9 +678,9 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     pid = tokens.pid
     refresh_token = tokens.refresh_token
 
-    extra_msg = ' and kill token manager' if check_token_manager(str(tokens_file)) else ''
+    extra_msg = ' and kill token manager' if check_token_manager(str(tokens_file), password) else ''
 
-    if keep_tokens and not check_token_manager(str(tokens_file)):
+    if keep_tokens and not check_token_manager(str(tokens_file), password):
         click.echo('Token manager is not running, and you chose to keep tokens. Nothing to do, exiting.')
         return
 
@@ -682,13 +728,17 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     logger.info('Logout aborted.')
 
 
-def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) -> None:
+# def save_decrypted_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str, password: str):
+
+
+def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str, password: str) -> None:
     """Saves tokens as JSON file at given path.
 
     Args:
         path (str): path to the file to write
         tokens (dict[str, str]): authorization access and refresh tokens
         auth_server_url (str): base url of the authorization server
+        password (str): encryption key to encrypt the tokens
     Raises:
         OSError: if writing to file fails
     """
@@ -700,12 +750,36 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
         'auth_server_url': auth_server_url,
     }
 
+    tokens_data_content = _encrypt_text(json.dumps(tokens_data), password, SALT)
+
     try:
         path_to_dir.mkdir(parents=True, exist_ok=True)
         with open(Path(path), 'w', encoding='UTF-8') as file:
-            file.write(json.dumps(tokens_data))
+            file.write(tokens_data_content)
     except OSError as error:
         raise click.ClickException(f'Error writing tokens file, {error}') from error
+
+
+def _save_decrypted_tokens_and_inform(text: str) -> str:
+    temp = tempfile.NamedTemporaryFile(prefix='iqm_cortex_cli_token_')
+    temp.write(text.encode())
+    temp.seek(0)
+
+    click.echo(
+        f"""
+To use the tokens file with IQM Client or IQM Client-based software, set the environment variable:
+
+export IQM_TOKENS_FILE={temp.name}
+
+Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm-client/
+"""
+    )
+    # Do not exit function to prevent deleting the temp file until user presses any key
+    input(
+        "The decrypted tokens file is available only while Cortex CLI is running. Press any key to stop Cortex CLI..."
+    )
+    temp.close()
+    return temp.name
 
 
 if __name__ == '__main__':
