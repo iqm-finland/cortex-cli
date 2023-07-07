@@ -336,7 +336,7 @@ def cortex_cli() -> None:
     default=USERNAME,
     help='Username',
 )
-@click.option('--password', help='Password', prompt='Password')
+@click.option('--password', help='Password', prompt='Password', hide_input=True)
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 def init(  # pylint: disable=too-many-arguments
     config_file: str, tokens_file: str, credentials_file: str, auth_server_url: str, realm: str, client_id: str, username: str, password: str, verbose: bool
