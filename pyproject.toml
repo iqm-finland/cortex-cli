@@ -25,7 +25,8 @@ dependencies = [
     "psutil >= 5.9.2",
     "pydantic >= 1.10.2, < 2.0",
     "python-daemon >= 2.3.0",
-    "requests >= 2.26.0"
+    "requests >= 2.26.0",
+    "cryptography >= 41.0.1"
 ]
 
 [project.urls]
