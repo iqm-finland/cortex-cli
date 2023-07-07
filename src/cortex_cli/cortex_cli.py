@@ -14,6 +14,7 @@
 """
 Command line interface for managing user authentication when using IQM quantum computers.
 """
+import base64
 from datetime import datetime, timedelta
 import json
 import logging
@@ -23,6 +24,7 @@ import platform
 import sys
 
 import click
+from cryptography.fernet import Fernet
 from psutil import Process
 from pydantic import ValidationError
 import requests
@@ -45,6 +47,7 @@ from cortex_cli.token_manager import check_token_manager, daemonize_token_manage
 HOME_PATH = str(Path.home())
 DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
 DEFAULT_TOKENS_PATH = f'{HOME_PATH}/.cache/iqm-cortex-cli/tokens.json'
+DEFAULT_ENCRYPTED_CREDENTIALS_PATH = f'{HOME_PATH}/.cache/iqm-cortex-cli/credentials.enc'
 REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
@@ -278,6 +281,7 @@ class CortexCliCommand(click.Group):
 
     default_config_path: str = DEFAULT_CONFIG_PATH
     default_tokens_path: str = DEFAULT_TOKENS_PATH
+    default_encrypted_credentials_path: str = DEFAULT_ENCRYPTED_CREDENTIALS_PATH
 
 
 @click.group(cls=CortexCliCommand)
@@ -305,6 +309,14 @@ def cortex_cli() -> None:
     help='Location where the tokens file will be saved.',
 )
 @click.option(
+    '--credentials-file',
+    prompt='Where to save encrypted credentials',
+    callback=_validate_path,
+    default=CortexCliCommand.default_encrypted_credentials_path,
+    type=click.Path(dir_okay=False, writable=True),
+    help='Location where the encrypted credentials file will be saved.',
+)
+@click.option(
     '--auth-server-url',
     prompt='Authentication server URL',
     callback=_validate_auth_server_url,
@@ -320,14 +332,14 @@ def cortex_cli() -> None:
 @click.option('--client-id', prompt='Client ID', default=CLIENT_ID, help='Client ID on the IQM authentication server.')
 @click.option(
     '--username',
-    prompt='Username (optional)',
-    required=False,
+    prompt='Username',
     default=USERNAME,
-    help='Username. If not provided, it will be asked for at login.',
+    help='Username',
 )
+@click.option('--password', help='Password', prompt='Password')
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 def init(  # pylint: disable=too-many-arguments
-    config_file: str, tokens_file: str, auth_server_url: str, realm: str, client_id: str, username: str, verbose: bool
+    config_file: str, tokens_file: str, credentials_file: str, auth_server_url: str, realm: str, client_id: str, username: str, password: str, verbose: bool
 ) -> None:
     """Initialize configuration and authentication."""
     _set_log_level_by_verbosity(verbose)
@@ -360,6 +372,28 @@ def init(  # pylint: disable=too-many-arguments
             logger.debug('Saved configuration file: %s', config_file)
     except OSError as error:
         raise click.ClickException(f'Error writing configuration file, {error}') from error
+
+    credentials_dict = {
+        "auth_server_url": auth_server_url,
+        "username": username,
+        "password": password
+    }
+    credentials = json.dumps(credentials_dict)
+    encryption_key = generate_key()
+    encrypted_credentials = encrypt_string(encryption_key, credentials)
+    with open(credentials_file, 'w', encoding='utf-8') as file:
+        file.write(json.dumps(encrypted_credentials))
+
+    click.echo(
+        f"""
+To use the encrypted credentials with IQM Client or IQM Client-based software, set the environment variables:
+
+export IQM_ENCRYPTED_CREDENTIALS_FILE={credentials_file}
+export IQM_DECRYPTION_KEY={encryption_key}
+
+Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm-client/
+"""
+    )
 
     logger.info("Cortex CLI initialized successfully. Login and start the token manager with 'cortex auth login'.")
 
@@ -706,6 +740,19 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
             file.write(json.dumps(tokens_data))
     except OSError as error:
         raise click.ClickException(f'Error writing tokens file, {error}') from error
+
+
+def generate_key() -> str:
+    # Generate a random encryption key
+    key = Fernet.generate_key()
+    return key.decode()
+
+
+def encrypt_string(key, plaintext) -> str:
+    # Encrypt given text with given key
+    cipher = Fernet(key)
+    encrypted_text = cipher.encrypt(plaintext.encode())
+    return encrypted_text.decode()  # Convert bytes to string
 
 
 if __name__ == '__main__':
