@@ -126,7 +126,7 @@ def read_tokens(path_to_tokens_file: str, password: str) -> dict:
     """
     with open(path_to_tokens_file, 'r', encoding='utf-8') as file:
         try:
-            tokens_data = json.loads(_decrypt_text(file.read(), password, SALT))
+            tokens_data = _decrypt_text(file.read(), password, SALT)
         except InvalidToken:
             print(f'Invalid password for decrypting file {path_to_tokens_file}')
             exit()

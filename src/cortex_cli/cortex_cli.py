@@ -417,7 +417,7 @@ def auth() -> None:
     type=click.Path(exists=True, dir_okay=False),
     help='Location of the configuration file to be used.',
 )
-@click.option('--password', help='Password for authentication.')
+@click.option('--password', help='Password for authentication.', hide_input=True)
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
 def status(config_file, password, verbose) -> None:
     """Check status of authentication."""
@@ -562,7 +562,7 @@ def _refresh_tokens(
     help='Location of the configuration file to be used.',
 )
 @click.option('--username', help='Username for authentication.')
-@click.option('--password', help='Password for authentication.', prompt="Password")
+@click.option('--password', help='Password for authentication.', prompt="Password", hide_input=True)
 @click.option(
     '--refresh-period', default=REFRESH_PERIOD, show_default=True, help='How often to refresh tokens (in seconds).'
 )
@@ -656,7 +656,7 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
     '--config-file', type=click.Path(exists=True, dir_okay=False), default=CortexCliCommand.default_config_path
 )
 @click.option('--keep-tokens', is_flag=True, default=False, help="Don't delete tokens file, but kill token manager.")
-@click.option('--password', help='Password for authentication.')
+@click.option('--password', help='Password for authentication.', hide_input=True)
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
 def logout(config_file: str, keep_tokens: str, password: str, force: bool) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
