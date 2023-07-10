@@ -59,7 +59,8 @@ def test_init_saves_config_file(config_dict, first_option):
         assert 'Cortex CLI initialized successfully' in result.output
         with open('config.json', 'r', encoding='utf-8') as config_file:
             loaded_config = json.load(config_file)
-            config_dict['tokens_file'] = f'{os.getcwd()}/{config_dict["tokens_file"]}'  # update path to current tempdir
+            tmp_tokens_path = os.path.join(os.getcwd(), config_dict['tokens_file'])
+            config_dict['tokens_file'] = tmp_tokens_path  # update path to current temporary dir created by CliRunner
             assert loaded_config == config_dict
     unstub()
 
@@ -98,7 +99,8 @@ def test_init_overwrites_config_file(config_dict):
         assert 'already exists. Overwrite?' in result.output
         with open('config.json', 'r', encoding='utf-8') as config_file:
             loaded_config = json.load(config_file)
-            config_dict['tokens_file'] = f'{os.getcwd()}/{config_dict["tokens_file"]}'  # update path to current tempdir
+            tmp_tokens_path = os.path.join(os.getcwd(), config_dict['tokens_file'])
+            config_dict['tokens_file'] = tmp_tokens_path  # update path to current temporary dir created by CliRunner
             assert loaded_config == config_dict
             assert loaded_config != old_config_dict
     unstub()
@@ -172,7 +174,8 @@ def test_init_warns_user_if_auth_server_url_is_invalid(config_dict):
         assert 'Do you still want to use it?' in result.output
         with open('config.json', 'r', encoding='utf-8') as config_file:
             loaded_config = json.load(config_file)
-            config_dict['tokens_file'] = f'{os.getcwd()}/{config_dict["tokens_file"]}'  # update path to current tempdir
+            tmp_tokens_path = os.path.join(os.getcwd(), config_dict['tokens_file'])
+            config_dict['tokens_file'] = tmp_tokens_path  # update path to current temporary dir created by CliRunner
             assert loaded_config == {**config_dict, 'auth_server_url': invalid_url}
     unstub()
 
@@ -208,7 +211,8 @@ def test_init_warns_user_if_realm_is_invalid(config_dict):
         assert 'Do you still want to use it?' in result.output
         with open('config.json', 'r', encoding='utf-8') as config_file:
             loaded_config = json.load(config_file)
-            config_dict['tokens_file'] = f'{os.getcwd()}/{config_dict["tokens_file"]}'  # update path to current tempdir
+            tmp_tokens_path = os.path.join(os.getcwd(), config_dict['tokens_file'])
+            config_dict['tokens_file'] = tmp_tokens_path  # update path to current temporary dir created by CliRunner
             assert loaded_config == {**config_dict, 'realm': invalid_realm}
     unstub()
 
@@ -243,6 +247,7 @@ def test_init_lets_user_to_enter_correct_auth_server_url_if_the_original_is_inva
         assert 'Do you still want to use it?' in result.output
         with open('config.json', 'r', encoding='utf-8') as config_file:
             loaded_config = json.load(config_file)
-            config_dict['tokens_file'] = f'{os.getcwd()}/{config_dict["tokens_file"]}'  # update path to current tempdir
+            tmp_tokens_path = os.path.join(os.getcwd(), config_dict['tokens_file'])
+            config_dict['tokens_file'] = tmp_tokens_path  # update path to current temporary dir created by CliRunner
             assert loaded_config == config_dict
     unstub()
