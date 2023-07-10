@@ -29,7 +29,7 @@ from tests.conftest import expect_process_terminate, prepare_auth_server_urls
 
 
 @pytest.mark.parametrize('first_option', ['--config-file', '--tokens-file', '--auth-server-url', '--client-id'])
-def test_init_saves_config_file(config_dict, first_option):
+def test_init_saves_config_file(config_dict, first_option, tmp_path):
     """
     Tests that ``cortex init`` produces config file.
 
@@ -38,7 +38,7 @@ def test_init_saves_config_file(config_dict, first_option):
     """
     prepare_auth_server_urls(config_dict)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         options_map = {
             '--config-file': 'config.json',
             '--tokens-file': config_dict['tokens_file'],
@@ -65,13 +65,13 @@ def test_init_saves_config_file(config_dict, first_option):
     unstub()
 
 
-def test_init_overwrites_config_file(config_dict):
+def test_init_overwrites_config_file(config_dict, tmp_path):
     """
     Tests that ``cortex init`` prompts to overwrite, and overwrites existing config file.
     """
     prepare_auth_server_urls(config_dict)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         old_config_dict = config_dict.copy()
         old_config_dict['auth_server_url'] = 'https://to.be.overwritten.com'
         old_config_dict['username'] = 'to_be_overwritten'
@@ -106,13 +106,13 @@ def test_init_overwrites_config_file(config_dict):
     unstub()
 
 
-def test_init_kills_daemon_and_removes_token_file(config_dict, tokens_dict):
+def test_init_kills_daemon_and_removes_token_file(config_dict, tokens_dict, tmp_path):
     """
     Tests that ``cortex init`` kills active token manager daemon and removes old token file.
     """
     prepare_auth_server_urls(config_dict)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         # emulate a running daemon by storing a real PID
         tokens_dict['pid'] = os.getpid()
 
@@ -144,14 +144,14 @@ def test_init_kills_daemon_and_removes_token_file(config_dict, tokens_dict):
     unstub()
 
 
-def test_init_warns_user_if_auth_server_url_is_invalid(config_dict):
+def test_init_warns_user_if_auth_server_url_is_invalid(config_dict, tmp_path):
     """
     Tests that ``cortex init`` prompts user to either accept invalid auth server URL or to enter another one.
     """
     invalid_url = 'http://invalid.com'
     prepare_auth_server_urls(config_dict, invalid_url)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(
             cortex_cli,
             [
@@ -180,7 +180,7 @@ def test_init_warns_user_if_auth_server_url_is_invalid(config_dict):
     unstub()
 
 
-def test_init_warns_user_if_realm_is_invalid(config_dict):
+def test_init_warns_user_if_realm_is_invalid(config_dict, tmp_path):
     """
     Tests that ``cortex init`` prompts user to either accept invalid realm or to enter another one.
     """
@@ -188,7 +188,7 @@ def test_init_warns_user_if_realm_is_invalid(config_dict):
     invalid_realm = 'invalid'
     prepare_auth_server_urls(config_dict, invalid_realm=invalid_realm)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(
             cortex_cli,
             [
@@ -217,14 +217,14 @@ def test_init_warns_user_if_realm_is_invalid(config_dict):
     unstub()
 
 
-def test_init_lets_user_to_enter_correct_auth_server_url_if_the_original_is_invalid(config_dict):
+def test_init_lets_user_to_enter_correct_auth_server_url_if_the_original_is_invalid(config_dict, tmp_path):
     """
     Tests that ``cortex init`` prompts user to enter another URL if the original is invalid.
     """
     invalid_url = 'http://invalid.com'
     prepare_auth_server_urls(config_dict, invalid_url)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(
             cortex_cli,
             [
