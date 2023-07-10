@@ -29,7 +29,8 @@ from tests.conftest import expect_process_terminate, prepare_auth_server_urls
 
 
 @pytest.mark.parametrize('first_option', ['--config-file', '--tokens-file', '--auth-server-url', '--client-id'])
-def test_init_saves_config_file(config_dict, first_option, tmp_path):
+@pytest.mark.parametrize('absolute_path', [True, False])
+def test_init_saves_config_file(config_dict, first_option, tmp_path, absolute_path):
     """
     Tests that ``cortex init`` produces config file.
 
@@ -40,8 +41,10 @@ def test_init_saves_config_file(config_dict, first_option, tmp_path):
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         options_map = {
-            '--config-file': 'config.json',
-            '--tokens-file': config_dict['tokens_file'],
+            '--config-file': os.path.join(os.getcwd(), 'config.json') if absolute_path else 'config.json',
+            '--tokens-file': os.path.join(os.getcwd(), config_dict['tokens_file'])
+            if absolute_path
+            else config_dict['tokens_file'],
             '--auth-server-url': config_dict['auth_server_url'],
             '--realm': config_dict['realm'],
             '--client-id': config_dict['client_id'],
