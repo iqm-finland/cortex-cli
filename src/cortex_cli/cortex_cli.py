@@ -127,7 +127,7 @@ def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
         if click.confirm(msg, default=None):
             return path
 
-        new_path = click.prompt('New file path', type=click.Path(dir_okay=False, writable=True))
+        new_path = click.prompt('New file path', type=click.Path(dir_okay=False, writable=True, resolve_path=True))
 
         if new_path == path:
             continue
@@ -293,7 +293,7 @@ def cortex_cli() -> None:
     prompt='Where to save config',
     callback=_validate_path,
     default=CortexCliCommand.default_config_path,
-    type=click.Path(dir_okay=False, writable=True),
+    type=click.Path(dir_okay=False, writable=True, resolve_path=True),
     help='Location where the configuration file will be saved.',
 )
 @click.option(
@@ -301,7 +301,7 @@ def cortex_cli() -> None:
     prompt='Where to save auth tokens',
     callback=_validate_path,
     default=CortexCliCommand.default_tokens_path,
-    type=click.Path(dir_okay=False, writable=True),
+    type=click.Path(dir_okay=False, writable=True, resolve_path=True),
     help='Location where the tokens file will be saved.',
 )
 @click.option(
@@ -374,7 +374,7 @@ def auth() -> None:
 @click.option(
     '--config-file',
     default=CortexCliCommand.default_config_path,
-    type=click.Path(exists=True, dir_okay=False),
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
     help='Location of the configuration file to be used.',
 )
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
@@ -511,7 +511,7 @@ def _refresh_tokens(
 @click.option(
     '--config-file',
     default=CortexCliCommand.default_config_path,
-    type=click.Path(exists=True, dir_okay=False),
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
     help='Location of the configuration file to be used.',
 )
 @click.option('--username', help='Username for authentication.')
@@ -609,7 +609,9 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 
 @auth.command()
 @click.option(
-    '--config-file', type=click.Path(exists=True, dir_okay=False), default=CortexCliCommand.default_config_path
+    '--config-file',
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    default=CortexCliCommand.default_config_path,
 )
 @click.option('--keep-tokens', is_flag=True, default=False, help="Don't delete tokens file, but kill token manager.")
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
