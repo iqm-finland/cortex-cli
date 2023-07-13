@@ -21,12 +21,14 @@ import os
 from click.testing import CliRunner
 import mechanize  # type: ignore
 from mockito import ANY, mock, unstub, when
+import pytest
 
 from cortex_cli.cortex_cli import cortex_cli
 from tests.conftest import expect_token_is_valid, make_token, prepare_tokens
 
 
-def test_auth_login_succeeds(config_dict, credentials):
+@pytest.mark.parametrize('absolute_path', [True, False])
+def test_auth_login_succeeds(config_dict, credentials, absolute_path):
     """
     Tests that ``cortex auth login`` performs authentication and saves tokens.
     """
@@ -35,6 +37,8 @@ def test_auth_login_succeeds(config_dict, credentials):
     runner = CliRunner()
     with runner.isolated_filesystem():
         config_dict['username'] = credentials['username']
+        if absolute_path:
+            config_dict['tokens_file'] = os.path.join(os.getcwd(), config_dict['tokens_file'])  # use absolute path
         with open('config.json', 'w', encoding='UTF-8') as file:
             file.write(json.dumps(config_dict))
 

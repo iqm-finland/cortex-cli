@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 4.4
+===========
+
+* Support relative paths during init `#52 <https://github.com/iqm-finland/cortex-cli/pull/52>`_
+
+
 Version 4.3
 ===========
 

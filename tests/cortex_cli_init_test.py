@@ -29,7 +29,8 @@ from tests.conftest import expect_process_terminate, prepare_auth_server_urls
 
 
 @pytest.mark.parametrize('first_option', ['--config-file', '--tokens-file', '--auth-server-url', '--client-id'])
-def test_init_saves_config_file(config_dict, first_option):
+@pytest.mark.parametrize('absolute_path', [True, False])
+def test_init_saves_config_file(config_dict, first_option, tmp_path, absolute_path):
     """
     Tests that ``cortex init`` produces config file.
 
@@ -38,10 +39,12 @@ def test_init_saves_config_file(config_dict, first_option):
     """
     prepare_auth_server_urls(config_dict)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         options_map = {
-            '--config-file': 'config.json',
-            '--tokens-file': config_dict['tokens_file'],
+            '--config-file': os.path.join(os.getcwd(), 'config.json') if absolute_path else 'config.json',
+            '--tokens-file': os.path.join(os.getcwd(), config_dict['tokens_file'])
+            if absolute_path
+            else config_dict['tokens_file'],
             '--auth-server-url': config_dict['auth_server_url'],
             '--realm': config_dict['realm'],
             '--client-id': config_dict['client_id'],
@@ -59,17 +62,19 @@ def test_init_saves_config_file(config_dict, first_option):
         assert 'Cortex CLI initialized successfully' in result.output
         with open('config.json', 'r', encoding='utf-8') as config_file:
             loaded_config = json.load(config_file)
+            tmp_tokens_path = os.path.join(os.getcwd(), config_dict['tokens_file'])
+            config_dict['tokens_file'] = tmp_tokens_path  # update path to current temporary dir created by CliRunner
             assert loaded_config == config_dict
     unstub()
 
 
-def test_init_overwrites_config_file(config_dict):
+def test_init_overwrites_config_file(config_dict, tmp_path):
     """
     Tests that ``cortex init`` prompts to overwrite, and overwrites existing config file.
     """
     prepare_auth_server_urls(config_dict)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         old_config_dict = config_dict.copy()
         old_config_dict['auth_server_url'] = 'https://to.be.overwritten.com'
         old_config_dict['username'] = 'to_be_overwritten'
@@ -97,18 +102,20 @@ def test_init_overwrites_config_file(config_dict):
         assert 'already exists. Overwrite?' in result.output
         with open('config.json', 'r', encoding='utf-8') as config_file:
             loaded_config = json.load(config_file)
+            tmp_tokens_path = os.path.join(os.getcwd(), config_dict['tokens_file'])
+            config_dict['tokens_file'] = tmp_tokens_path  # update path to current temporary dir created by CliRunner
             assert loaded_config == config_dict
             assert loaded_config != old_config_dict
     unstub()
 
 
-def test_init_kills_daemon_and_removes_token_file(config_dict, tokens_dict):
+def test_init_kills_daemon_and_removes_token_file(config_dict, tokens_dict, tmp_path):
     """
     Tests that ``cortex init`` kills active token manager daemon and removes old token file.
     """
     prepare_auth_server_urls(config_dict)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         # emulate a running daemon by storing a real PID
         tokens_dict['pid'] = os.getpid()
 
@@ -140,14 +147,14 @@ def test_init_kills_daemon_and_removes_token_file(config_dict, tokens_dict):
     unstub()
 
 
-def test_init_warns_user_if_auth_server_url_is_invalid(config_dict):
+def test_init_warns_user_if_auth_server_url_is_invalid(config_dict, tmp_path):
     """
     Tests that ``cortex init`` prompts user to either accept invalid auth server URL or to enter another one.
     """
     invalid_url = 'http://invalid.com'
     prepare_auth_server_urls(config_dict, invalid_url)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(
             cortex_cli,
             [
@@ -170,11 +177,13 @@ def test_init_warns_user_if_auth_server_url_is_invalid(config_dict):
         assert 'Do you still want to use it?' in result.output
         with open('config.json', 'r', encoding='utf-8') as config_file:
             loaded_config = json.load(config_file)
+            tmp_tokens_path = os.path.join(os.getcwd(), config_dict['tokens_file'])
+            config_dict['tokens_file'] = tmp_tokens_path  # update path to current temporary dir created by CliRunner
             assert loaded_config == {**config_dict, 'auth_server_url': invalid_url}
     unstub()
 
 
-def test_init_warns_user_if_realm_is_invalid(config_dict):
+def test_init_warns_user_if_realm_is_invalid(config_dict, tmp_path):
     """
     Tests that ``cortex init`` prompts user to either accept invalid realm or to enter another one.
     """
@@ -182,7 +191,7 @@ def test_init_warns_user_if_realm_is_invalid(config_dict):
     invalid_realm = 'invalid'
     prepare_auth_server_urls(config_dict, invalid_realm=invalid_realm)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(
             cortex_cli,
             [
@@ -205,18 +214,20 @@ def test_init_warns_user_if_realm_is_invalid(config_dict):
         assert 'Do you still want to use it?' in result.output
         with open('config.json', 'r', encoding='utf-8') as config_file:
             loaded_config = json.load(config_file)
+            tmp_tokens_path = os.path.join(os.getcwd(), config_dict['tokens_file'])
+            config_dict['tokens_file'] = tmp_tokens_path  # update path to current temporary dir created by CliRunner
             assert loaded_config == {**config_dict, 'realm': invalid_realm}
     unstub()
 
 
-def test_init_lets_user_to_enter_correct_auth_server_url_if_the_original_is_invalid(config_dict):
+def test_init_lets_user_to_enter_correct_auth_server_url_if_the_original_is_invalid(config_dict, tmp_path):
     """
     Tests that ``cortex init`` prompts user to enter another URL if the original is invalid.
     """
     invalid_url = 'http://invalid.com'
     prepare_auth_server_urls(config_dict, invalid_url)
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(
             cortex_cli,
             [
@@ -239,5 +250,7 @@ def test_init_lets_user_to_enter_correct_auth_server_url_if_the_original_is_inva
         assert 'Do you still want to use it?' in result.output
         with open('config.json', 'r', encoding='utf-8') as config_file:
             loaded_config = json.load(config_file)
+            tmp_tokens_path = os.path.join(os.getcwd(), config_dict['tokens_file'])
+            config_dict['tokens_file'] = tmp_tokens_path  # update path to current temporary dir created by CliRunner
             assert loaded_config == config_dict
     unstub()

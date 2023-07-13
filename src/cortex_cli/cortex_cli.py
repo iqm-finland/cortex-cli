@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 import platform
 import sys
+from typing import Any, Optional
 
 import click
 from psutil import Process
@@ -81,6 +82,22 @@ def _set_log_level_by_verbosity(verbose: bool) -> int:
     return logging.INFO
 
 
+class ResolvedPath(click.Path):
+    """A click parameter type for a resolved path.
+    Normal ``click.Path(resolve_path=True)`` fails under Windows running python <= 3.9.
+    See https://github.com/pallets/click/issues/2466
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def convert(self, value: Any, param: Optional[click.Parameter], ctx: Optional[click.Context]) -> Any:
+        abspath = Path(value).absolute()
+        # fsdecode to ensure that the return value is a str.
+        # (with click<8.0.3 Path.convert will return Path if passed a Path)
+        return os.fsdecode(super().convert(abspath, param, ctx))
+
+
 def _read_json(path: str) -> dict:
     """Read a JSON file.
 
@@ -127,7 +144,7 @@ def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
         if click.confirm(msg, default=None):
             return path
 
-        new_path = click.prompt('New file path', type=click.Path(dir_okay=False, writable=True))
+        new_path = click.prompt('New file path', type=ResolvedPath(dir_okay=False, writable=True, resolve_path=True))
 
         if new_path == path:
             continue
@@ -293,7 +310,7 @@ def cortex_cli() -> None:
     prompt='Where to save config',
     callback=_validate_path,
     default=CortexCliCommand.default_config_path,
-    type=click.Path(dir_okay=False, writable=True),
+    type=ResolvedPath(dir_okay=False, writable=True, resolve_path=True),
     help='Location where the configuration file will be saved.',
 )
 @click.option(
@@ -301,7 +318,7 @@ def cortex_cli() -> None:
     prompt='Where to save auth tokens',
     callback=_validate_path,
     default=CortexCliCommand.default_tokens_path,
-    type=click.Path(dir_okay=False, writable=True),
+    type=ResolvedPath(dir_okay=False, writable=True, resolve_path=True),
     help='Location where the tokens file will be saved.',
 )
 @click.option(
@@ -374,7 +391,7 @@ def auth() -> None:
 @click.option(
     '--config-file',
     default=CortexCliCommand.default_config_path,
-    type=click.Path(exists=True, dir_okay=False),
+    type=ResolvedPath(exists=True, dir_okay=False, resolve_path=True),
     help='Location of the configuration file to be used.',
 )
 @click.option('-v', '--verbose', is_flag=True, help='Print extra information.')
@@ -511,7 +528,7 @@ def _refresh_tokens(
 @click.option(
     '--config-file',
     default=CortexCliCommand.default_config_path,
-    type=click.Path(exists=True, dir_okay=False),
+    type=ResolvedPath(exists=True, dir_okay=False, resolve_path=True),
     help='Location of the configuration file to be used.',
 )
 @click.option('--username', help='Username for authentication.')
@@ -609,7 +626,9 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 
 @auth.command()
 @click.option(
-    '--config-file', type=click.Path(exists=True, dir_okay=False), default=CortexCliCommand.default_config_path
+    '--config-file',
+    type=ResolvedPath(exists=True, dir_okay=False, resolve_path=True),
+    default=CortexCliCommand.default_config_path,
 )
 @click.option('--keep-tokens', is_flag=True, default=False, help="Don't delete tokens file, but kill token manager.")
 @click.option('-f', '--force', is_flag=True, default=False, help="Don't ask for confirmation.")
