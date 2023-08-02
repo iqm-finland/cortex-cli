@@ -12,9 +12,7 @@ jobs:
     strategy:
       matrix:
         platform: [ ubuntu-latest, macos-latest, windows-latest ]
-        python-version: [ '3.9', '3.10.6' ]
-        # Replace 3.10.6 with 3.10 when mypy bug is fixed
-        # https://github.com/python/mypy/issues/13627
+        python-version: [ '3.9', '3.10', '3.11' ]
 
     steps:
       - uses: actions/checkout@v3
