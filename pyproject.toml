@@ -138,7 +138,6 @@ namespace_packages = true
 
 [[tool.mypy.overrides]]
 module = [
-    "cirq_iqm",
     "click",
     "daemon",
     "mockito",
