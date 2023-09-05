@@ -17,12 +17,14 @@ Tests for Cortex CLI's auth login command
 
 import json
 import os
+import platform
 
 from click.testing import CliRunner
 import mechanize  # type: ignore
 from mockito import ANY, mock, unstub, when
 import pytest
 
+from cortex_cli import cortex_cli as cortex_cli_module
 from cortex_cli.cortex_cli import cortex_cli
 from tests.conftest import expect_token_is_valid, make_token, prepare_tokens
 
@@ -305,5 +307,45 @@ def test_auth_login_update_temporary_password(config_dict, credentials):
             actual_tokens = json.loads(file.read())
         assert actual_tokens['access_token'] == expected_tokens['access_token']
         assert actual_tokens['refresh_token'] == expected_tokens['refresh_token']
+
+    unstub()
+
+
+def test_auth_login_starts_token_manager(config_dict, credentials):
+    """
+    Tests that ``cortex auth login`` succeeds and starts token manager when neither ``--no-daemon`` nor
+    ``--no-refresh`` are passed.
+    """
+    when(cortex_cli_module).daemonize_token_manager(ANY, ANY).thenReturn(None)
+    when(cortex_cli_module).start_token_manager(ANY, ANY).thenReturn(None)
+    prepare_tokens(300, 3600, **credentials)
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+
+        result = runner.invoke(
+            cortex_cli,
+            [
+                'auth',
+                'login',
+                '--config-file',
+                'config.json',
+                '--username',
+                credentials['username'],
+                '--password',
+                credentials['password'],
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert 'Logged in successfully' in result.output
+        if platform.system().lower().startswith('win'):
+            assert 'Daemonizing is not supported on Windows' in result.output
+            assert 'Starting token manager in foreground' in result.output
+        else:
+            assert 'Starting token manager daemon' in result.output
 
     unstub()

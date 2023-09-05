@@ -16,7 +16,7 @@ Installing Cortex CLI
 
 Requirements for installing:
 
-- Python 3.9
+- Python 3.9-3.11
 - `pip <https://pypi.org/project/pip/>`_
 
 .. code-block:: bash
