@@ -545,7 +545,7 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
     """Authenticate on the IQM server, and optionally start a token manager to maintain the session."""
     _set_log_level_by_verbosity(verbose)
 
-    if platform.system().lower().startswith('win') and not no_refresh:
+    if platform.system().lower().startswith('win') and not no_refresh and not no_daemon:
         click.echo(
             click.style('Warning', fg='yellow')
             + ': Daemonizing is not supported on Windows, so the app started in foreground mode; the user has to '
