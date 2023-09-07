@@ -436,7 +436,6 @@ def status(config_file, verbose) -> None:
 def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> ConfigFile:
     """Checks if provided combination of auth login options is valid:
        - no_daemon and no_refresh are mutually exclusive
-       - daemon mode should not be requested on Windows
        - config file should pass validation
 
     Args:
@@ -445,7 +444,6 @@ def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> Confi
         no_refresh (bool): --no-refresh option value
     Raises:
         click.BadOptionUsage: if both mutually exclusive --no-daemon and --no-refresh are set
-        click.UsageError: if daemon is requested on Windows
         click.BadParameter: if config_file does not exist
     Returns:
         ConfigFile: validated config loaded from config_file
@@ -455,12 +453,6 @@ def _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file) -> Confi
     if no_refresh and no_daemon:
         raise click.BadOptionUsage(
             '--no-refresh', "Cannot request a non-daemonic (foreground) token manager when using '--no-refresh'."
-        )
-
-    # daemonizing is unavailable on Windows
-    if platform.system().lower().startswith('win') and not no_refresh and not no_daemon:
-        raise click.UsageError(
-            "Daemonizing is not yet possible on Windows. Please, use '--no-daemon' or '--no-refresh' flag."
         )
 
     # config file, even the default one, should exist
@@ -552,6 +544,15 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
 ) -> None:
     """Authenticate on the IQM server, and optionally start a token manager to maintain the session."""
     _set_log_level_by_verbosity(verbose)
+
+    if platform.system().lower().startswith('win') and not no_refresh and not no_daemon:
+        click.echo(
+            click.style('Warning', fg='yellow')
+            + ': Daemonizing is not supported on Windows, so the app started in foreground mode; the user has to '
+            'keep this terminal session open in order for Cortex CLI to keep refreshing the tokens and '
+            'maintaining the authentication.\n'
+        )
+        no_daemon = True
 
     # Validate whether the combination of options makes sense
     config = _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file)

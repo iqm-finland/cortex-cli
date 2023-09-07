@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 4.6
+===========
+
+* Automatically use ``--no-daemon`` flag on Windows `#55 <https://github.com/iqm-finland/cortex-cli/pull/55>`_
+
 Version 4.5
 ===========
 
@@ -20,7 +25,7 @@ Version 4.3
 Version 4.2
 ===========
 
-* Fix ``init`` command non-interactive mode failing for some orders of options `#44 <https://github.com/iqm-finland/cortex-cli/pull/44>`_
+* Fix ``init`` command non-interactive mode failing for some orders of options `#45 <https://github.com/iqm-finland/cortex-cli/pull/45>`_
 
 Version 4.1
 ===========
