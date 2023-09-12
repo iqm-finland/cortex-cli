@@ -38,7 +38,6 @@ from cortex_cli.auth import (
     logout_request,
     refresh_request,
     time_left_seconds,
-    update_password,
 )
 from cortex_cli.models import ConfigFile, TokensFile
 from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
