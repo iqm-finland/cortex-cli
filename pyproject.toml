@@ -61,7 +61,7 @@ cicd = [
 ]
 
 [project.scripts]
-cortex = "cortex_cli.cortex_cli:cortex_cli"
+cortex = "iqm.cortex_cli.cortex_cli:cortex_cli"
 
 
 

@@ -29,9 +29,9 @@ import pytest
 import requests
 from requests import HTTPError
 
-from cortex_cli import auth
-from cortex_cli.auth import AuthRequest, GrantType
-from cortex_cli.cortex_cli import CLIENT_ID, REALM_NAME
+from iqm.cortex_cli import auth
+from iqm.cortex_cli.auth import AuthRequest, GrantType
+from iqm.cortex_cli.cortex_cli import CLIENT_ID, REALM_NAME
 
 existing_run = UUID('3c3fcda3-e860-46bf-92a4-bcc59fa76ce9')
 AUTH_REQUESTS_TIMEOUT = 20

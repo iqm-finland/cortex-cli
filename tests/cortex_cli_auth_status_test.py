@@ -21,8 +21,8 @@ import os
 
 from click.testing import CliRunner
 
-from cortex_cli.auth import time_left_seconds
-from cortex_cli.cortex_cli import cortex_cli
+from iqm.cortex_cli.auth import time_left_seconds
+from iqm.cortex_cli.cortex_cli import cortex_cli
 
 
 def test_auth_status_reports_no_config_file():

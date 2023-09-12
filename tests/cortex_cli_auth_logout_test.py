@@ -23,7 +23,7 @@ from mockito import unstub
 from psutil import pid_exists
 from pytest import raises
 
-from cortex_cli.cortex_cli import cortex_cli
+from iqm.cortex_cli.cortex_cli import cortex_cli
 from tests.conftest import expect_logout, expect_process_terminate, prepare_tokens
 
 # ``cortex auth logout`` supports four possible scenarios:

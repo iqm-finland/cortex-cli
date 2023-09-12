@@ -24,7 +24,7 @@ from click.testing import CliRunner
 from mockito import unstub
 import pytest
 
-from cortex_cli.cortex_cli import cortex_cli
+from iqm.cortex_cli.cortex_cli import cortex_cli
 from tests.conftest import expect_process_terminate, prepare_auth_server_urls
 
 

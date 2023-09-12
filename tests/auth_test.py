@@ -18,7 +18,13 @@ Tests for Cortex CLI's auth logic
 from mockito import unstub
 from pytest import raises
 
-from cortex_cli.auth import ClientAuthenticationError, login_request, logout_request, refresh_request, token_is_valid
+from iqm.cortex_cli.auth import (
+    ClientAuthenticationError,
+    login_request,
+    logout_request,
+    refresh_request,
+    token_is_valid,
+)
 from tests.conftest import expect_logout, expect_token_is_valid, prepare_tokens
 
 
