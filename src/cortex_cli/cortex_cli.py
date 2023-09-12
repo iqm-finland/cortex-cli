@@ -585,23 +585,10 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
         except ClientAuthenticationError as error:
             raise click.ClickException(f'Failed to authenticate, {error}') from error
         except ClientAccountSetupError:
-            click.echo('Your account is not fully set up yet. You have to update your password.')
-            while True:
-                new_password = click.prompt('New password', hide_input=True)
-                cfm_password = click.prompt('Confirm new password', hide_input=True)
-                if new_password == cfm_password and new_password != password:
-                    break
-                if new_password == password:
-                    click.echo('New password must be different from old password')
-                else:
-                    click.echo('Confirmation must match the new password')
-            try:
-                update_password(auth_server_url, realm, username, password, new_password)
-                logger.info('Updated temporary password of %s', username)
-            except Exception as error:
-                raise click.ClickException(f'Failed to update password, {error}')
-            password = new_password
-            tokens = None
+            password_update_form_url = f'{auth_server_url}/realms/{realm}/account'
+            raise click.ClickException(
+                f'Failed to authenticate, because your account is not fully set up yet. Please update your password at {password_update_form_url}.'
+            )
 
     logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_file, tokens, auth_server_url)
