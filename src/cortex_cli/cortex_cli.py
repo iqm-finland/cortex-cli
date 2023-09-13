@@ -581,13 +581,16 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
             raise click.ClickException(f'Authentication server at {auth_server_url} is not accessible') from exc
         except Timeout as exc:
             raise click.ClickException(f'Authentication server at {auth_server_url} is not responding') from exc
-        except ClientAuthenticationError as error:
-            raise click.ClickException(f'Failed to authenticate, {error}') from error
-        except ClientAccountSetupError:
+        except ClientAuthenticationError as exc:
+            raise click.ClickException(f'Failed to authenticate, {exc}') from exc
+        except ClientAccountSetupError as exc:
             password_update_form_url = f'{auth_server_url}/realms/{realm}/account'
             raise click.ClickException(
-                f'Failed to authenticate, because your account is not fully set up yet. Please update your password at {password_update_form_url}.'
-            )
+                f"""
+Failed to authenticate, because your account is not fully set up yet.
+Please update your password at {password_update_form_url}.
+"""
+            ) from exc
 
     logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_file, tokens, auth_server_url)
