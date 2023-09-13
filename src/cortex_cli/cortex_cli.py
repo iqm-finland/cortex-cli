@@ -588,7 +588,7 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
             raise click.ClickException(
                 f"""
 Failed to authenticate, because your account is not fully set up yet.
-Please update your password at {password_update_form_url}.
+Please update your password at {password_update_form_url}
 """
             ) from exc
 
