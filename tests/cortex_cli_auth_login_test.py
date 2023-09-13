@@ -20,8 +20,7 @@ import os
 import platform
 
 from click.testing import CliRunner
-import mechanize  # type: ignore
-from mockito import ANY, mock, unstub, when
+from mockito import ANY, unstub, when
 import pytest
 
 from cortex_cli import cortex_cli as cortex_cli_module
@@ -255,29 +254,14 @@ def test_auth_login_proceeds_with_login_on_invalid_tokens_json(config_dict, toke
     unstub()
 
 
-def test_auth_login_update_temporary_password(config_dict, credentials):
+def test_auth_login_detects_temporary_password(config_dict, credentials):
     """
-    Tests that ``cortex auth login`` detects when used password is a temporary one,
-    asks user for new password and calls ``update_password``.
+    Tests that ``cortex auth login`` fails gracefully due to temporary credentials and guides the user where to update
+    them.
     """
-    # Mock mechanize.Browser
-    mocked_browser = mock(mechanize.Browser)
-    when(mechanize).Browser().thenReturn(mocked_browser)
-    when(mocked_browser).set_handle_robots(False).thenReturn(None)
-    when(mocked_browser).open(ANY).thenReturn(None)
-    when(mocked_browser).select_form(nr=0).thenReturn(None)
-    when(mocked_browser).__setitem__(ANY, ANY).thenReturn(None)  # pylint: disable=unnecessary-dunder-call
-    when(mocked_browser).submit().thenReturn(None)
-    when(mocked_browser).geturl().thenReturn(f'{config_dict["auth_server_url"]}/realms/{config_dict["realm"]}/account')
-    when(mocked_browser).close().thenReturn(None)
-
-    # First request for tokens return status code 400
     prepare_tokens(
         300, 3600, status_code=400, response_data={'error_description': 'Account is not fully set up'}, **credentials
     )
-    new_password = 'new$password'
-    # Second request with updated password succeeds
-    expected_tokens = prepare_tokens(300, 3600, **{**credentials, 'password': new_password})
 
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -297,16 +281,12 @@ def test_auth_login_update_temporary_password(config_dict, credentials):
                 credentials['password'],
                 '--no-refresh',  # do not start token manager
             ],
-            input=f'{new_password}\n{new_password}\n',
         )
 
-        # assert result.exit_code == 0
-        assert 'Updated temporary password' in result.output
-        assert 'Logged in successfully' in result.output
-        with open('tokens.json', 'r', encoding='utf-8') as file:
-            actual_tokens = json.loads(file.read())
-        assert actual_tokens['access_token'] == expected_tokens['access_token']
-        assert actual_tokens['refresh_token'] == expected_tokens['refresh_token']
+        password_update_form_url = f'{config_dict["auth_server_url"]}/realms/{config_dict["realm"]}/account'
+
+        assert result.exit_code != 0
+        assert password_update_form_url in result.output
 
     unstub()
 
