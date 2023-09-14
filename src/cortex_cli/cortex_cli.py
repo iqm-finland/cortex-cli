@@ -38,7 +38,6 @@ from cortex_cli.auth import (
     logout_request,
     refresh_request,
     time_left_seconds,
-    update_password,
 )
 from cortex_cli.models import ConfigFile, TokensFile
 from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
@@ -582,26 +581,16 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
             raise click.ClickException(f'Authentication server at {auth_server_url} is not accessible') from exc
         except Timeout as exc:
             raise click.ClickException(f'Authentication server at {auth_server_url} is not responding') from exc
-        except ClientAuthenticationError as error:
-            raise click.ClickException(f'Failed to authenticate, {error}') from error
-        except ClientAccountSetupError:
-            click.echo('Your account is not fully set up yet. You have to update your password.')
-            while True:
-                new_password = click.prompt('New password', hide_input=True)
-                cfm_password = click.prompt('Confirm new password', hide_input=True)
-                if new_password == cfm_password and new_password != password:
-                    break
-                if new_password == password:
-                    click.echo('New password must be different from old password')
-                else:
-                    click.echo('Confirmation must match the new password')
-            try:
-                update_password(auth_server_url, realm, username, password, new_password)
-                logger.info('Updated temporary password of %s', username)
-            except Exception as error:
-                raise click.ClickException(f'Failed to update password, {error}')
-            password = new_password
-            tokens = None
+        except ClientAuthenticationError as exc:
+            raise click.ClickException(f'Failed to authenticate, {exc}') from exc
+        except ClientAccountSetupError as exc:
+            password_update_form_url = f'{auth_server_url}/realms/{realm}/account'
+            raise click.ClickException(
+                f"""
+Failed to authenticate, because your account is not fully set up yet.
+Please update your password at {password_update_form_url}
+"""
+            ) from exc
 
     logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_file, tokens, auth_server_url)

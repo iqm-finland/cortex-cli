@@ -21,7 +21,6 @@ import json
 import time
 from typing import Optional
 
-import mechanize  # type: ignore
 from pydantic import BaseModel, Field
 import requests
 
@@ -90,35 +89,6 @@ def login_request(url: str, realm: str, client_id: str, username: str, password:
     tokens = result.json()
     tokens = {key: tokens.get(key, '') for key in ['access_token', 'refresh_token']}
     return tokens
-
-
-def update_password(url: str, realm: str, username: str, password: str, new_password: str):
-    """Update temporary password using authentication server's account view.
-
-    This works only when account has a temporary password,
-    not to be used for changing permanent passwords.
-    """
-    browser = mechanize.Browser()
-    browser.set_handle_robots(False)
-    browser.open(f'{url}/realms/{realm}/account')
-
-    # Enter old credentials into login form
-    browser.select_form(nr=0)
-    browser['username'] = username
-    browser['password'] = password
-    browser.submit()
-
-    # Enter new credentials into password update form
-    browser.select_form(nr=0)
-    browser['password-new'] = new_password
-    browser['password-confirm'] = new_password
-    browser.submit()
-
-    # Check that password update was successful
-    if not browser.geturl().startswith(f'{url}/realms/{realm}/account'):
-        raise RuntimeError('submitting new password failed')
-
-    browser.close()
 
 
 def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) -> Optional[dict[str, str]]:

@@ -53,8 +53,8 @@ To log in, use
 
   $ cortex auth login
 
-This will ask you to enter your username and password. If you have a temporary password you will be asked to enter
-a new one.
+This will ask you to enter your username and password. If you have a temporary password you will be asked to go to the
+authentication server and enter a new password. URL of the authentication server will be provided.
 
 After a successful authentication, tokens will be saved into a tokens file (path specified in the configuration file),
 and a token manager daemon will start in the background. Token manager will periodically refresh the session and

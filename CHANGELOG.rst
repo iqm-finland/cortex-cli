@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 4.7
+===========
+
+* Remove temporary password update functionality from ``auth login`` command. `#56 <https://github.com/iqm-finland/cortex-cli/pull/56>`_
+
 Version 4.6
 ===========
 
