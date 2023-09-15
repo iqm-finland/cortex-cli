@@ -23,8 +23,8 @@ from click.testing import CliRunner
 from mockito import ANY, unstub, when
 import pytest
 
-from cortex_cli import cortex_cli as cortex_cli_module
-from cortex_cli.cortex_cli import cortex_cli
+from iqm.cortex_cli import cortex_cli as cortex_cli_module
+from iqm.cortex_cli.cortex_cli import cortex_cli
 from tests.conftest import expect_token_is_valid, make_token, prepare_tokens
 
 

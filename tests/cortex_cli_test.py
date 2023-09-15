@@ -18,7 +18,7 @@ Tests for Cortex CLI
 import click
 from click.testing import CliRunner
 
-from cortex_cli.cortex_cli import _validate_path, cortex_cli
+from iqm.cortex_cli.cortex_cli import _validate_path, cortex_cli
 
 
 def test_no_command():

@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 5.0
+===========
+
+* Move ``cortex_cli`` package to ``iqm`` namespace. `#57 <https://github.com/iqm-finland/cortex-cli/pull/57>`_
+
 Version 4.7
 ===========
 

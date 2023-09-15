@@ -25,8 +25,8 @@ from typing import Optional, Tuple
 from psutil import pid_exists
 from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
 
-from cortex_cli.auth import AUTH_REQUESTS_TIMEOUT, ClientAuthenticationError, refresh_request
-from cortex_cli.models import ConfigFile
+from iqm.cortex_cli.auth import AUTH_REQUESTS_TIMEOUT, ClientAuthenticationError, refresh_request
+from iqm.cortex_cli.models import ConfigFile
 
 if not platform.system().lower().startswith('win'):
     import daemon

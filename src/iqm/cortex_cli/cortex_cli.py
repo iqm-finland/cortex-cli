@@ -29,8 +29,8 @@ from pydantic import ValidationError
 import requests
 from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
 
-from cortex_cli import __version__
-from cortex_cli.auth import (
+from iqm.cortex_cli import __version__
+from iqm.cortex_cli.auth import (
     AUTH_REQUESTS_TIMEOUT,
     ClientAccountSetupError,
     ClientAuthenticationError,
@@ -39,8 +39,8 @@ from cortex_cli.auth import (
     refresh_request,
     time_left_seconds,
 )
-from cortex_cli.models import ConfigFile, TokensFile
-from cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
+from iqm.cortex_cli.models import ConfigFile, TokensFile
+from iqm.cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
 
 HOME_PATH = str(Path.home())
 DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'

@@ -29,7 +29,7 @@ version = ''
 # The full version, including alpha/beta/rc tags.
 release = ''
 try:
-    from cortex_cli import __version__ as version
+    from iqm.cortex_cli import __version__ as version
 except ImportError:
     pass
 else:

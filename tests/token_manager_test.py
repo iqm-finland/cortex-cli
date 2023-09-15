@@ -25,8 +25,8 @@ from click.testing import CliRunner
 from mockito import ANY, unstub, when
 import pytest
 
-from cortex_cli import token_manager
-from cortex_cli.models import ConfigFile
+from iqm.cortex_cli import token_manager
+from iqm.cortex_cli.models import ConfigFile
 from tests.conftest import expect_token_is_valid, prepare_tokens
 
 if not platform.system().lower().startswith('win'):
