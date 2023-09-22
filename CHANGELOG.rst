@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 5.1
+===========
+
+* Minor language update in user instructions. `#58 <https://github.com/iqm-finland/cortex-cli/pull/58>`_
+
 Version 5.0
 ===========
 
