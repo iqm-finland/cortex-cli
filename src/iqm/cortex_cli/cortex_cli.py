@@ -547,8 +547,8 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
     if platform.system().lower().startswith('win') and not no_refresh and not no_daemon:
         click.echo(
             click.style('Warning', fg='yellow')
-            + ': Daemonizing is not supported on Windows, so the app started in foreground mode; the user has to '
-            'keep this terminal session open in order for Cortex CLI to keep refreshing the tokens and '
+            + ': Daemonizing is not supported on Windows, and the application has started in foreground mode; '
+            'please keep this terminal session open in order for Cortex CLI to keep refreshing the tokens and '
             'maintaining the authentication.\n'
         )
         no_daemon = True
