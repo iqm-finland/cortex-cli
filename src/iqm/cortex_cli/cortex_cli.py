@@ -14,6 +14,7 @@
 """
 Command line interface for managing user authentication when using IQM quantum computers.
 """
+import contextlib
 from datetime import datetime, timedelta
 import json
 import logging
@@ -24,7 +25,7 @@ import sys
 from typing import Any, Optional
 
 import click
-from psutil import Process
+from psutil import Process, NoSuchProcess
 from pydantic import ValidationError
 import requests
 from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
@@ -365,7 +366,8 @@ def init(  # pylint: disable=too-many-arguments
         pid = check_token_manager(tokens_file)
         if pid:
             logger.info('Active token manager (PID %s) will be killed.', pid)
-            Process(pid).terminate()
+            _safe_process_terminate(pid)
+
         # Remove tokens file to start from scratch after init
         os.remove(tokens_file)
 
@@ -644,8 +646,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     # 1. Keep tokens, kill daemon
     if keep_tokens and pid:
         if force or click.confirm(f'Keep tokens file and kill token manager. OK?', default=None):
-            Process(pid).terminate()
-            logger.info('Token manager killed.')
+            _safe_process_terminate(pid, 'Token manager killed.')
             return
 
     # 2. Keep tokens, do nothing
@@ -663,7 +664,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
                     'Failed to revoke tokens due to error when connecting to authentication server: %s', error
                 )
 
-            Process(pid).terminate()
+            _safe_process_terminate(pid)
             os.remove(tokens_file)
             logger.info('Tokens file deleted. Logged out.')
             return
@@ -709,6 +710,14 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
             file.write(json.dumps(tokens_data))
     except OSError as error:
         raise click.ClickException(f'Error writing tokens file, {error}') from error
+
+
+def _safe_process_terminate(pid: int, msg: str = '') -> None:
+    """Try to terminate a process given a process ID (PID). Suppress the exception in case the process is not existing"""
+    with contextlib.suppress(NoSuchProcess):
+        Process(pid).terminate()
+        if msg:
+            logger.info(msg)
 
 
 if __name__ == '__main__':
