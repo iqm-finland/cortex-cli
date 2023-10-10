@@ -638,29 +638,24 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
         click.echo('Found invalid tokens.json, cannot perform any logout steps.')
         return
 
-    pid = tokens.pid
+    pid = check_token_manager(str(tokens_file))
     refresh_token = tokens.refresh_token
-
-    extra_msg = ' and kill token manager' if check_token_manager(str(tokens_file)) else ''
-
-    if keep_tokens and not check_token_manager(str(tokens_file)):
-        click.echo('Token manager is not running, and you chose to keep tokens. Nothing to do, exiting.')
-        return
 
     # 1. Keep tokens, kill daemon
     if keep_tokens and pid:
-        if force or click.confirm(f'Keep tokens file{extra_msg}. OK?', default=None):
+        if force or click.confirm(f'Keep tokens file and kill token manager. OK?', default=None):
             Process(pid).terminate()
             logger.info('Token manager killed.')
             return
 
     # 2. Keep tokens, do nothing
     if keep_tokens and not pid:
-        logger.info('No PID found in tokens file. Token manager is not running, so tokens may be stale.')
+        click.echo('Token manager is not running, and you chose to keep tokens. Nothing to do, exiting.')
+        return
 
     # 3. Delete tokens, perform logout, kill daemon
     if not keep_tokens and pid:
-        if force or click.confirm(f'Logout from server, delete tokens{extra_msg}. OK?', default=None):
+        if force or click.confirm(f'Logout from server, delete tokens and kill token manager. OK?', default=None):
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
             except (Timeout, ConnectionError, ClientAuthenticationError) as error:
@@ -675,7 +670,6 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
 
     # 4. Delete tokens, perform logout
     if not keep_tokens and not pid:
-        logger.info('No PID found in tokens file. Token manager daemon is not running, so tokens may be stale.')
         if force or click.confirm('Logout from server and delete tokens. OK?', default=None):
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
