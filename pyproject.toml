@@ -47,7 +47,7 @@ testing = [
     "pytest-cov == 3.0.0",
     "pytest-isort == 3.0.0",
     "pytest-mypy == 0.9.1",
-    "pytest-pylint == 0.18.0",
+    "pytest-pylint == 0.21.0",
     "mockito == 1.2.2",
     "types-requests == 2.28.9"
 ]
