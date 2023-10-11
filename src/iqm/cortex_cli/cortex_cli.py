@@ -25,7 +25,7 @@ import sys
 from typing import Any, Optional
 
 import click
-from psutil import Process, NoSuchProcess
+from psutil import NoSuchProcess, Process
 from pydantic import ValidationError
 import requests
 from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
@@ -645,7 +645,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
 
     # 1. Keep tokens, kill daemon
     if keep_tokens and pid:
-        if force or click.confirm(f'Keep tokens file and kill token manager. OK?', default=None):
+        if force or click.confirm('Keep tokens file and kill token manager. OK?', default=None):
             _safe_process_terminate(pid, 'Token manager killed.')
             return
 
@@ -656,7 +656,7 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
 
     # 3. Delete tokens, perform logout, kill daemon
     if not keep_tokens and pid:
-        if force or click.confirm(f'Logout from server, delete tokens and kill token manager. OK?', default=None):
+        if force or click.confirm('Logout from server, delete tokens and kill token manager. OK?', default=None):
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
             except (Timeout, ConnectionError, ClientAuthenticationError) as error:
@@ -713,7 +713,8 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
 
 
 def _safe_process_terminate(pid: int, msg: str = '') -> None:
-    """Try to terminate a process given a process ID (PID). Suppress the exception in case the process is not existing"""
+    """Try to terminate a process given a process ID (PID).
+    Suppress the exception in case the process is not existing"""
     with contextlib.suppress(NoSuchProcess):
         Process(pid).terminate()
         if msg:
