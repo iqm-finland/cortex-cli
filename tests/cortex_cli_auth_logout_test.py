@@ -265,7 +265,6 @@ def test_auth_logout_handles_no_keep_tokens_and_no_pid(config_dict, tokens_dict,
         expect_logout(url, realm, client_id, refresh_token)
         result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
         assert result.exit_code == 0
-        assert 'No PID found in tokens file' in result.output
         assert 'Tokens file deleted. Logged out.' in result.output
 
         # tokens file deleted
@@ -372,3 +371,59 @@ def test_auth_logout_fails_with_invalid_tokens_file(config_dict, tokens_dict):
         )
         assert result.exit_code == 0
         assert 'Found invalid tokens.json' in result.output
+
+
+def test_auth_logout_succeeds_with_non_existent_token_manager_pid(config_dict, credentials):
+    """
+    Tests that ``cortex auth logout`` handles crashed/killed token manager daemon when performing logout request.
+    The emulation of a crashed/killed token manager is done by saving a non-existent PID in a token file.
+    """
+    tokens = prepare_tokens(300, 3600, **credentials)
+    auth_server_url = credentials['auth_server_url']
+    realm = config_dict['realm']
+    client_id = config_dict['client_id']
+    refresh_token = tokens['refresh_token']
+    expect_logout(auth_server_url, realm, client_id, refresh_token)
+    runner = CliRunner()
+
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+
+        runner.invoke(
+            cortex_cli,
+            [
+                'auth',
+                'login',
+                '--config-file',
+                'config.json',
+                '--username',
+                credentials['username'],
+                '--password',
+                credentials['password'],
+                '--no-refresh',  # do not start token manager
+            ],
+        )
+
+        with open('tokens.json', 'r', encoding='utf-8') as file:
+            tokens = json.loads(file.read())
+
+        # emulate a crashed/killed token manager daemon by generating a non-existent PID
+        non_existent_pid = 1000
+        while pid_exists(non_existent_pid):
+            non_existent_pid += 1
+        tokens['pid'] = non_existent_pid
+        with open('tokens.json', 'w', encoding='utf-8') as file:
+            file.write(json.dumps(tokens))
+
+        expect_process_terminate()
+        result = runner.invoke(cortex_cli, ['auth', 'logout', '--config-file', 'config.json', '--force'])
+        assert result.exit_code == 0
+        assert 'Tokens file deleted. Logged out.' in result.output
+
+        # tokens file deleted
+        with raises(FileNotFoundError):
+            with open('tokens.json', 'r', encoding='UTF-8') as file:
+                file.read()
+
+    unstub()

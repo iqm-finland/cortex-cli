@@ -14,6 +14,7 @@
 """
 Command line interface for managing user authentication when using IQM quantum computers.
 """
+import contextlib
 from datetime import datetime, timedelta
 import json
 import logging
@@ -24,7 +25,7 @@ import sys
 from typing import Any, Optional
 
 import click
-from psutil import Process
+from psutil import NoSuchProcess, Process
 from pydantic import ValidationError
 import requests
 from requests.exceptions import ConnectionError, Timeout  # pylint: disable=redefined-builtin
@@ -365,7 +366,8 @@ def init(  # pylint: disable=too-many-arguments
         pid = check_token_manager(tokens_file)
         if pid:
             logger.info('Active token manager (PID %s) will be killed.', pid)
-            Process(pid).terminate()
+            _safe_process_terminate(pid)
+
         # Remove tokens file to start from scratch after init
         os.remove(tokens_file)
 
@@ -638,29 +640,23 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
         click.echo('Found invalid tokens.json, cannot perform any logout steps.')
         return
 
-    pid = tokens.pid
+    pid = check_token_manager(str(tokens_file))
     refresh_token = tokens.refresh_token
-
-    extra_msg = ' and kill token manager' if check_token_manager(str(tokens_file)) else ''
-
-    if keep_tokens and not check_token_manager(str(tokens_file)):
-        click.echo('Token manager is not running, and you chose to keep tokens. Nothing to do, exiting.')
-        return
 
     # 1. Keep tokens, kill daemon
     if keep_tokens and pid:
-        if force or click.confirm(f'Keep tokens file{extra_msg}. OK?', default=None):
-            Process(pid).terminate()
-            logger.info('Token manager killed.')
+        if force or click.confirm('Keep tokens file and kill token manager. OK?', default=None):
+            _safe_process_terminate(pid, 'Token manager killed.')
             return
 
     # 2. Keep tokens, do nothing
     if keep_tokens and not pid:
-        logger.info('No PID found in tokens file. Token manager is not running, so tokens may be stale.')
+        click.echo('Token manager is not running, and you chose to keep tokens. Nothing to do, exiting.')
+        return
 
     # 3. Delete tokens, perform logout, kill daemon
     if not keep_tokens and pid:
-        if force or click.confirm(f'Logout from server, delete tokens{extra_msg}. OK?', default=None):
+        if force or click.confirm('Logout from server, delete tokens and kill token manager. OK?', default=None):
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
             except (Timeout, ConnectionError, ClientAuthenticationError) as error:
@@ -668,14 +664,13 @@ def logout(config_file: str, keep_tokens: str, force: bool) -> None:
                     'Failed to revoke tokens due to error when connecting to authentication server: %s', error
                 )
 
-            Process(pid).terminate()
+            _safe_process_terminate(pid)
             os.remove(tokens_file)
             logger.info('Tokens file deleted. Logged out.')
             return
 
     # 4. Delete tokens, perform logout
     if not keep_tokens and not pid:
-        logger.info('No PID found in tokens file. Token manager daemon is not running, so tokens may be stale.')
         if force or click.confirm('Logout from server and delete tokens. OK?', default=None):
             try:
                 logout_request(auth_server_url, realm, client_id, refresh_token)
@@ -715,6 +710,15 @@ def save_tokens_file(path: str, tokens: dict[str, str], auth_server_url: str) ->
             file.write(json.dumps(tokens_data))
     except OSError as error:
         raise click.ClickException(f'Error writing tokens file, {error}') from error
+
+
+def _safe_process_terminate(pid: int, msg: str = '') -> None:
+    """Try to terminate a process given a process ID (PID).
+    Suppress the exception in case the process is not existing"""
+    with contextlib.suppress(NoSuchProcess):
+        Process(pid).terminate()
+        if msg:
+            logger.info(msg)
 
 
 if __name__ == '__main__':

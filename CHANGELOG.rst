@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 5.2
+===========
+
+* Fix cortex-cli logout crash when token manager process is not running. `#59 <https://github.com/iqm-finland/cortex-cli/pull/59>`_
+
 Version 5.1
 ===========
 
