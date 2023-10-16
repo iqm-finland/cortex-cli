@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 5.3
+===========
+
+* Use latest version of ``sphinx-multiversion-contrib`` to fix documentation version sorting. `#60 <https://github.com/iqm-finland/cortex-cli/pull/60>`_
+
 Version 5.2
 ===========
 
