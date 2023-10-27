@@ -305,12 +305,14 @@ def cortex_cli() -> None:
 
 
 @cortex_cli.command()
+@click.help_option()
 @click.option(
     '--config-file',
     prompt='Where to save config',
     callback=_validate_path,
     default=CortexCliCommand.default_config_path,
     type=ResolvedPath(dir_okay=False, writable=True, resolve_path=True),
+    is_eager=True,
     help='Location where the configuration file will be saved.',
 )
 @click.option(
@@ -319,18 +321,22 @@ def cortex_cli() -> None:
     callback=_validate_path,
     default=CortexCliCommand.default_tokens_path,
     type=ResolvedPath(dir_okay=False, writable=True, resolve_path=True),
+    is_eager=True,
     help='Location where the tokens file will be saved.',
 )
 @click.option(
     '--auth-server-url',
     prompt='Authentication server URL',
     callback=_validate_auth_server_url,
+    is_eager=True,
     help='Authentication server URL.',
 )
 @click.option(
     '--realm',
     prompt='Realm on IQM auth server',
+    prompt_required=False,
     default=REALM_NAME,
+    show_default=True,
     callback=_validate_auth_realm,
     help='Name of the realm on the IQM authentication server.',
 )
