@@ -28,7 +28,9 @@ from iqm.cortex_cli.cortex_cli import cortex_cli
 from tests.conftest import expect_process_terminate, prepare_auth_server_urls
 
 
-@pytest.mark.parametrize('first_option', ['--config-file', '--tokens-file', '--auth-server-url', '--realm', '--client-id'])
+@pytest.mark.parametrize(
+    'first_option', ['--config-file', '--tokens-file', '--auth-server-url', '--realm', '--client-id']
+)
 @pytest.mark.parametrize('absolute_path', [True, False])
 def test_init_saves_config_file(config_dict, first_option, tmp_path, absolute_path):
     """
