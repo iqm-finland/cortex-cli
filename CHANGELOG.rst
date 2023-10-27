@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 5.4
+===========
+
+* Use default values of ``realm`` and ``client-id`` silently during ``cortex init``. Allow to overwrite the default values with command line switches ``--realm`` and ``--client-id``. `#61 <https://github.com/iqm-finland/cortex-cli/pull/61>`_
+
 Version 5.3
 ===========
 
