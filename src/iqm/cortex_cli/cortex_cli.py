@@ -334,7 +334,14 @@ def cortex_cli() -> None:
     callback=_validate_auth_realm,
     help='Name of the realm on the IQM authentication server.',
 )
-@click.option('--client-id', prompt='Client ID', default=CLIENT_ID, help='Client ID on the IQM authentication server.')
+@click.option(
+    '--client-id',
+    prompt='Client ID',
+    prompt_required=False,
+    default=CLIENT_ID,
+    show_default=True,
+    help='Client ID on the IQM authentication server.',
+)
 @click.option(
     '--username',
     prompt='Username (optional)',
