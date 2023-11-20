@@ -44,8 +44,8 @@ from iqm.cortex_cli.models import ConfigFile, TokensFile
 from iqm.cortex_cli.token_manager import check_token_manager, daemonize_token_manager, start_token_manager
 
 HOME_PATH = str(Path.home())
-DEFAULT_CONFIG_PATH = f'{HOME_PATH}/.config/iqm-cortex-cli/config.json'
-DEFAULT_TOKENS_PATH = f'{HOME_PATH}/.cache/iqm-cortex-cli/tokens.json'
+DEFAULT_CONFIG_PATH = os.path.join(HOME_PATH, '.config', 'iqm-cortex-cli', 'config.json')
+DEFAULT_TOKENS_PATH = os.path.join(HOME_PATH, '.cache', 'iqm-cortex-cli', 'tokens.json')
 REALM_NAME = 'cortex'
 CLIENT_ID = 'iqm_client'
 USERNAME = ''
