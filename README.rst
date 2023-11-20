@@ -79,11 +79,17 @@ Use with Cirq on IQM, Qiskit on IQM, etc.
 Adapters based on IQM Client, such as Cirq on IQM and Qiskit on IQM, can take advantage of the tokens file maintained by
 Cortex CLI. This way you won't need to provide the authentication server URL, username, or password to the adapter
 library itself. To achieve this, follow the instructions printed on the screen after running ``cortex auth login``.
-Namely, set the ``IQM_TOKENS_FILE`` environment variable to point to your tokens file, for example:
+Namely, set the ``IQM_TOKENS_FILE`` environment variable to point to your tokens file. On Linux:
 
 .. code-block:: bash
 
   $ export IQM_TOKENS_FILE=/home/user/iqm_tokens.json
+
+On Windows:
+
+.. code-block:: batch
+
+  set IQM_TOKENS_FILE=C:\Users\<username>\.cache\iqm-cortex-cli\tokens.json
 
 Once set, this environment variable is read by the instance of IQM Client associated with the adapter. As a result,
 from the point of view of the adapter it looks like authentication is simply not required (i.e. no
