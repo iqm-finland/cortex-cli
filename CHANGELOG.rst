@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 5.5
+===========
+
+* Update user documentation with an example how to set environment variable `#62 <https://github.com/iqm-finland/cortex-cli/pull/62>`_
+
 Version 5.4
 ===========
 
