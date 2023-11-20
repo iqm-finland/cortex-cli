@@ -609,11 +609,12 @@ Please update your password at {password_update_form_url}
 
     logger.info('Logged in successfully as %s', username)
     save_tokens_file(tokens_file, tokens, auth_server_url)
+    env_var_command = "set" if platform.system().lower().startswith('win') else "export"
     click.echo(
         f"""
 To use the tokens file with IQM Client or IQM Client-based software, set the environment variable:
 
-export IQM_TOKENS_FILE={tokens_file}
+{env_var_command} IQM_TOKENS_FILE={tokens_file}
 
 Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm-client/
 """
