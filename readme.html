@@ -136,6 +136,9 @@
       <li class="version_item current_version">dev</li>
     
     
+      <li class="version_item"><a href="versions/5.5/readme.html">5.5</a></li>
+    
+    
       <li class="version_item"><a href="versions/5.4/readme.html">5.4</a></li>
     
     
@@ -486,7 +489,7 @@ title="Print to PDF"
   <strong>
     
     You're reading the documentation for a development version.
-    For the latest released version, please have a look at <a href="versions/5.4/readme.html">5.4</a>.
+    For the latest released version, please have a look at <a href="versions/5.5/readme.html">5.5</a>.
     
   </strong>
 </div>
@@ -548,8 +551,13 @@ asked to re-enter your credentials.</p>
 <p>Adapters based on IQM Client, such as Cirq on IQM and Qiskit on IQM, can take advantage of the tokens file maintained by
 Cortex CLI. This way you won’t need to provide the authentication server URL, username, or password to the adapter
 library itself. To achieve this, follow the instructions printed on the screen after running <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span></code>.
-Namely, set the <code class="docutils literal notranslate"><span class="pre">IQM_TOKENS_FILE</span></code> environment variable to point to your tokens file, for example:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="nv">IQM_TOKENS_FILE</span><span class="o">=</span>/home/user/iqm_tokens.json
+Namely, set the <code class="docutils literal notranslate"><span class="pre">IQM_TOKENS_FILE</span></code> environment variable to point to your tokens file.</p>
+<p>On Linux:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">export</span><span class="w"> </span><span class="nv">IQM_TOKENS_FILE</span><span class="o">=</span>/home/&lt;username&gt;/tokens.json
+</pre></div>
+</div>
+<p>On Windows:</p>
+<div class="highlight-batch notranslate"><div class="highlight"><pre><span></span><span class="k">set</span> <span class="nv">IQM_TOKENS_FILE</span><span class="p">=</span>C:\Users\<span class="p">&lt;</span>username<span class="p">&gt;</span>\.cache\iqm-cortex-cli\tokens.json
 </pre></div>
 </div>
 <p>Once set, this environment variable is read by the instance of IQM Client associated with the adapter. As a result,
@@ -627,7 +635,7 @@ $<span class="w"> </span>cortex<span class="w"> </span>auth<span class="w"> </sp
         <footer class="col footer"><p>
   
       &copy; Copyright 2019-2022, IQM Finland Oy.<br/>
-    Last updated on 2023-10-31.<br/>
+    Last updated on 2023-11-22.<br/>
 </p>
         </footer>
     </div>
