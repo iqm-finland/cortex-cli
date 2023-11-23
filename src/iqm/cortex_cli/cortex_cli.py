@@ -142,7 +142,7 @@ def _validate_path(ctx: click.Context, param: click.core.Option, path: str) -> s
     if isinstance(param_name, str):
         param_source = ctx.get_parameter_source(param_name)
         if isinstance(param_source, click.core.ParameterSource):
-            if param_source.name == "COMMANDLINE":
+            if param_source.name == 'COMMANDLINE':
                 cmd_line_opt_name = param.opts[0]
                 msg = click.style(
                     f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{path}" as is',
@@ -262,7 +262,7 @@ def _validate_auth_server_url(ctx: click.Context, param: click.Option, base_url:
     if isinstance(param_name, str):
         param_source = ctx.get_parameter_source(param_name)
         if isinstance(param_source, click.core.ParameterSource):
-            if param_source.name == "COMMANDLINE":
+            if param_source.name == 'COMMANDLINE':
                 cmd_line_opt_name = param.opts[0]
                 msg = click.style(
                     f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{base_url}" as is',
@@ -311,7 +311,7 @@ def _validate_auth_realm(ctx: click.Context, param: click.Option, realm: str) ->
     if isinstance(param_name, str):
         param_source = ctx.get_parameter_source(param_name)
         if isinstance(param_source, click.core.ParameterSource):
-            if param_source.name == "COMMANDLINE":
+            if param_source.name == 'COMMANDLINE':
                 cmd_line_opt_name = param.opts[0]
                 msg = click.style(
                     f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{realm}" as is',
