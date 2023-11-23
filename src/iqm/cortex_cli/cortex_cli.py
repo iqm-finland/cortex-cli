@@ -118,7 +118,7 @@ def _read_json(path: str) -> dict:
     return data
 
 
-def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
+def _validate_path(ctx: click.Context, param: click.core.Option, path: str) -> str:
     """Callback for CLI prompt. If needed, confirmation to overwrite is prompted.
 
     The validation logic is not applied if the parameter is supplied via the
@@ -138,14 +138,18 @@ def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
     ctx.obj[param.name] = True
 
     # Skip parameter validation completely if the parameter comes from command line
-    if ctx.get_parameter_source(param.name):
-        if ctx.get_parameter_source(param.name).name == "COMMANDLINE":
-            cmd_line_opt_name = param.opts[0]
-            msg = click.style(
-                f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{path}" as is', fg='yellow'
-            )
-            click.echo(msg)
-            return path
+    param_name = param.name
+    if isinstance(param_name, str):
+        param_source = ctx.get_parameter_source(param_name)
+        if isinstance(param_source, click.core.ParameterSource):
+            if param_source.name == "COMMANDLINE":
+                cmd_line_opt_name = param.opts[0]
+                msg = click.style(
+                    f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{path}" as is',
+                    fg='yellow',
+                )
+                click.echo(msg)
+                return path
 
     # File doesn't exist, no need to confirm overwriting
     if not Path(path).is_file():
@@ -254,15 +258,18 @@ def _validate_auth_server_url(ctx: click.Context, param: click.Option, base_url:
         return base_url
 
     # Skip parameter validation completely if the parameter comes from command line
-    if ctx.get_parameter_source(param.name):
-        if ctx.get_parameter_source(param.name).name == "COMMANDLINE":
-            cmd_line_opt_name = param.opts[0]
-            msg = click.style(
-                f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{base_url}" as is',
-                fg='yellow',
-            )
-            click.echo(msg)
-            return base_url
+    param_name = param.name
+    if isinstance(param_name, str):
+        param_source = ctx.get_parameter_source(param_name)
+        if isinstance(param_source, click.core.ParameterSource):
+            if param_source.name == "COMMANDLINE":
+                cmd_line_opt_name = param.opts[0]
+                msg = click.style(
+                    f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{base_url}" as is',
+                    fg='yellow',
+                )
+                click.echo(msg)
+                return base_url
 
     is_valid = False
     while not is_valid:
@@ -300,14 +307,18 @@ def _validate_auth_realm(ctx: click.Context, param: click.Option, realm: str) ->
         return realm
 
     # Skip parameter validation completely if the parameter comes from command line
-    if ctx.get_parameter_source(param.name):
-        if ctx.get_parameter_source(param.name).name == "COMMANDLINE":
-            cmd_line_opt_name = param.opts[0]
-            msg = click.style(
-                f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{realm}" as is', fg='yellow'
-            )
-            click.echo(msg)
-            return realm
+    param_name = param.name
+    if isinstance(param_name, str):
+        param_source = ctx.get_parameter_source(param_name)
+        if isinstance(param_source, click.core.ParameterSource):
+            if param_source.name == "COMMANDLINE":
+                cmd_line_opt_name = param.opts[0]
+                msg = click.style(
+                    f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{realm}" as is',
+                    fg='yellow',
+                )
+                click.echo(msg)
+                return realm
 
     base_url = ctx.obj.get('auth_server_url', None)
     if base_url is None:
