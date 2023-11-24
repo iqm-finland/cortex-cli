@@ -269,6 +269,7 @@ def _validate_auth_server_url(ctx: click.Context, param: click.Option, base_url:
                     fg='yellow',
                 )
                 click.echo(msg)
+                ctx.obj[param_name] = base_url
                 return base_url
 
     is_valid = False
@@ -318,6 +319,7 @@ def _validate_auth_realm(ctx: click.Context, param: click.Option, realm: str) ->
                     fg='yellow',
                 )
                 click.echo(msg)
+                ctx.obj[param_name] = realm
                 return realm
 
     base_url = ctx.obj.get('auth_server_url', None)
