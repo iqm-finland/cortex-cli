@@ -82,10 +82,12 @@ def login_request(url: str, realm: str, client_id: str, username: str, password:
     result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
     if result.status_code == 404:
         raise ClientAuthenticationError(f'token endpoint is not available at {url}')
+    if result.status_code == 401:
+        raise ClientAuthenticationError('invalid username and/or password')
     if result.status_code == 400 and result.json().get('error_description', '') == 'Account is not fully set up':
         raise ClientAccountSetupError('Account is not fully set up')
     if result.status_code != 200:
-        raise ClientAuthenticationError('invalid username and/or password')
+        raise ClientAuthenticationError('unexpected error during authentication')
     tokens = result.json()
     tokens = {key: tokens.get(key, '') for key in ['access_token', 'refresh_token']}
     return tokens
