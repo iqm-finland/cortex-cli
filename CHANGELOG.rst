@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 5.6
+===========
+
+* Enable ``cortex-cli`` to be used in non-interactive mode `#63 <https://github.com/iqm-finland/cortex-cli/pull/63>`_
+
 Version 5.5
 ===========
 
