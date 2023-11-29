@@ -118,8 +118,21 @@ def _read_json(path: str) -> dict:
     return data
 
 
-def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
+def _is_parameter_source_cmd_line(ctx: click.Context, param_name: Optional[str]) -> bool:
+    """Check if the given parameter is submitted via command line"""
+    if isinstance(param_name, str):
+        param_source = ctx.get_parameter_source(param_name)
+        if isinstance(param_source, click.core.ParameterSource):
+            if param_source.name == 'COMMANDLINE':
+                return True
+    return False
+
+
+def _validate_path(ctx: click.Context, param: click.core.Option, path: str) -> str:
     """Callback for CLI prompt. If needed, confirmation to overwrite is prompted.
+
+    The validation logic is not applied if the parameter is supplied via the
+    command line.
 
     Args:
         ctx: click context
@@ -133,6 +146,15 @@ def _validate_path(ctx: click.Context, param: click.Path, path: str) -> str:
     if param.name in ctx.obj:
         return path
     ctx.obj[param.name] = True
+
+    # Skip parameter validation completely if the parameter comes from command line
+    if _is_parameter_source_cmd_line(ctx, param.name):
+        msg = click.style(
+            f'Skipping validation of "{param.opts[0]}", using the provided value "{path}" as is',
+            fg='yellow',
+        )
+        click.echo(msg)
+        return path
 
     # File doesn't exist, no need to confirm overwriting
     if not Path(path).is_file():
@@ -225,6 +247,9 @@ def _validate_auth_server_url(ctx: click.Context, param: click.Option, base_url:
        - is accessible
        - points to an authentication server
 
+    The validation logic is not applied if the parameter is supplied via the
+    command line.
+
     Args:
         ctx: click context
         param: click prompt param object
@@ -235,6 +260,15 @@ def _validate_auth_server_url(ctx: click.Context, param: click.Option, base_url:
     if ctx.obj is None:
         ctx.obj = {}
     if param.name in ctx.obj:
+        return base_url
+
+    if _is_parameter_source_cmd_line(ctx, param.name):
+        msg = click.style(
+            f'Skipping validation of "{param.opts[0]}", using the provided value "{base_url}" as is',
+            fg='yellow',
+        )
+        click.echo(msg)
+        ctx.obj[param.name] = base_url
         return base_url
 
     is_valid = False
@@ -257,6 +291,9 @@ def _validate_auth_server_url(ctx: click.Context, param: click.Option, base_url:
 def _validate_auth_realm(ctx: click.Context, param: click.Option, realm: str) -> str:
     """Checks if provided realm exists on auth server.
 
+    The validation logic is not applied if the parameter is supplied via the
+    command line.
+
     Args:
         ctx: click context
         param: click prompt param object
@@ -267,6 +304,15 @@ def _validate_auth_realm(ctx: click.Context, param: click.Option, realm: str) ->
     if ctx.obj is None:
         ctx.obj = {}
     if param.name in ctx.obj:
+        return realm
+
+    if _is_parameter_source_cmd_line(ctx, param.name):
+        msg = click.style(
+            f'Skipping validation of "{param.opts[0]}", using the provided value "{realm}" as is',
+            fg='yellow',
+        )
+        click.echo(msg)
+        ctx.obj[param.name] = realm
         return realm
 
     base_url = ctx.obj.get('auth_server_url', None)
