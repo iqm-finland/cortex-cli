@@ -118,6 +118,16 @@ def _read_json(path: str) -> dict:
     return data
 
 
+def _is_parameter_source_cmd_line(ctx: click.Context, param_name: Optional[str]) -> bool:
+    """Check if the given parameter is submitted via command line"""
+    if isinstance(param_name, str):
+        param_source = ctx.get_parameter_source(param_name)
+        if isinstance(param_source, click.core.ParameterSource):
+            if param_source.name == 'COMMANDLINE':
+                return True
+    return False
+
+
 def _validate_path(ctx: click.Context, param: click.core.Option, path: str) -> str:
     """Callback for CLI prompt. If needed, confirmation to overwrite is prompted.
 
@@ -138,18 +148,13 @@ def _validate_path(ctx: click.Context, param: click.core.Option, path: str) -> s
     ctx.obj[param.name] = True
 
     # Skip parameter validation completely if the parameter comes from command line
-    param_name = param.name
-    if isinstance(param_name, str):
-        param_source = ctx.get_parameter_source(param_name)
-        if isinstance(param_source, click.core.ParameterSource):
-            if param_source.name == 'COMMANDLINE':
-                cmd_line_opt_name = param.opts[0]
-                msg = click.style(
-                    f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{path}" as is',
-                    fg='yellow',
-                )
-                click.echo(msg)
-                return path
+    if _is_parameter_source_cmd_line(ctx, param.name):
+        msg = click.style(
+            f'Skipping validation of "{param.opts[0]}", using the provided value "{path}" as is',
+            fg='yellow',
+        )
+        click.echo(msg)
+        return path
 
     # File doesn't exist, no need to confirm overwriting
     if not Path(path).is_file():
@@ -257,20 +262,14 @@ def _validate_auth_server_url(ctx: click.Context, param: click.Option, base_url:
     if param.name in ctx.obj:
         return base_url
 
-    # Skip parameter validation completely if the parameter comes from command line
-    param_name = param.name
-    if isinstance(param_name, str):
-        param_source = ctx.get_parameter_source(param_name)
-        if isinstance(param_source, click.core.ParameterSource):
-            if param_source.name == 'COMMANDLINE':
-                cmd_line_opt_name = param.opts[0]
-                msg = click.style(
-                    f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{base_url}" as is',
-                    fg='yellow',
-                )
-                click.echo(msg)
-                ctx.obj[param_name] = base_url
-                return base_url
+    if _is_parameter_source_cmd_line(ctx, param.name):
+        msg = click.style(
+            f'Skipping validation of "{param.opts[0]}", using the provided value "{base_url}" as is',
+            fg='yellow',
+        )
+        click.echo(msg)
+        ctx.obj[param.name] = base_url
+        return base_url
 
     is_valid = False
     while not is_valid:
@@ -307,20 +306,14 @@ def _validate_auth_realm(ctx: click.Context, param: click.Option, realm: str) ->
     if param.name in ctx.obj:
         return realm
 
-    # Skip parameter validation completely if the parameter comes from command line
-    param_name = param.name
-    if isinstance(param_name, str):
-        param_source = ctx.get_parameter_source(param_name)
-        if isinstance(param_source, click.core.ParameterSource):
-            if param_source.name == 'COMMANDLINE':
-                cmd_line_opt_name = param.opts[0]
-                msg = click.style(
-                    f'Skipping validation of "{cmd_line_opt_name}", using the provided value "{realm}" as is',
-                    fg='yellow',
-                )
-                click.echo(msg)
-                ctx.obj[param_name] = realm
-                return realm
+    if _is_parameter_source_cmd_line(ctx, param.name):
+        msg = click.style(
+            f'Skipping validation of "{param.opts[0]}", using the provided value "{realm}" as is',
+            fg='yellow',
+        )
+        click.echo(msg)
+        ctx.obj[param.name] = realm
+        return realm
 
     base_url = ctx.obj.get('auth_server_url', None)
     if base_url is None:
