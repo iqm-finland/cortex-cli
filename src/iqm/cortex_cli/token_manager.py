@@ -73,7 +73,7 @@ def start_token_manager(cycle: int, config: ConfigFile, single_run: bool = False
         if new_tokens is None:
             break
 
-        write_tokens(tokens_file, config.auth_server_url, status, **new_tokens)
+        write_tokens(tokens_file, str(config.auth_server_url), status, **new_tokens)
 
         if single_run:
             break
@@ -117,7 +117,7 @@ def refresh_tokens(config: ConfigFile, current_tokens: dict, cycle: int) -> Tupl
     access_token = current_tokens.get('access_token', '')
     refresh_token = current_tokens.get('refresh_token', '')
     try:
-        tokens = refresh_request(config.auth_server_url, config.realm, config.client_id, refresh_token)
+        tokens = refresh_request(str(config.auth_server_url), config.realm, config.client_id, refresh_token)
         status = True
         sleep_time = cycle
         log_timestamp = datetime.now().strftime('%m/%d/%Y %H:%M:%S')

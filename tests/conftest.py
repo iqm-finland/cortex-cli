@@ -143,7 +143,7 @@ def prepare_tokens(
 
     when(requests).post(
         f'{credentials["auth_server_url"]}/realms/{REALM_NAME}/protocol/openid-connect/token',
-        data=request_data.dict(exclude_none=True),
+        data=request_data.model_dump(exclude_none=True),
         timeout=AUTH_REQUESTS_TIMEOUT,
     ).thenReturn(MockJsonResponse(status_code, response_data))
 
@@ -178,7 +178,7 @@ def expect_logout(auth_server_url: str, realm: str, client_id: str, refresh_toke
     request_data = AuthRequest(client_id=client_id, refresh_token=refresh_token)
     expect(requests, times=1).post(
         f'{auth_server_url}/realms/{realm}/protocol/openid-connect/logout',
-        data=request_data.dict(exclude_none=True),
+        data=request_data.model_dump(exclude_none=True),
         timeout=AUTH_REQUESTS_TIMEOUT,
     ).thenReturn(mock({'status_code': status_code, 'text': '{}'}))
 

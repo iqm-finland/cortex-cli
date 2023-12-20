@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath(py_path))
 # -- Project information -----------------------------------------------------
 
 project = 'Cortex CLI'
-copyright = '2019-2022, IQM Finland Oy'
+copyright = '2019-2023, IQM Finland Oy'
 
 # The short X.Y version.
 version = ''
@@ -39,7 +39,7 @@ else:
 # -- General configuration ---------------------------------------------------
 
 # require a recent version of Sphinx
-needs_sphinx = '4.5'
+needs_sphinx = '6.2'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -88,11 +88,9 @@ html_context = dict(display_github=False)
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {
-    'logo_only': True,
-}
+html_theme_options = {}
 
-html_sidebars = {'**': ['sidebar-logo.html', 'search-field.html', 'sbt-sidebar-nav.html', 'versioning.html']}
+html_sidebars = {'**': ['navbar-logo.html', 'search-field.html', 'sbt-sidebar-nav.html', 'versioning.html']}
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 # html_short_title = None
@@ -145,6 +143,7 @@ intersphinx_mapping = {
 # Only include certain tags (i.e. all tags except for ones listed below)
 # (technically a whitelist, but we treat it as blacklist by using negative lookahead regex `?!`)
 smv_tag_whitelist = r'^(?!(0\.[0-9]*)).*$'  # ignore all the versions before 4.0
+smv_tag_whitelist = r'^(5.5|5.6)$'
 
 smv_branch_whitelist = "None"  # Do not include local branches in versions list
 smv_remote_whitelist = "None"  # Do not include remote branches in versions list

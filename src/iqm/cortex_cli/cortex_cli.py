@@ -23,6 +23,7 @@ from pathlib import Path
 import platform
 import sys
 from typing import Any, Optional
+from urllib.parse import urljoin
 
 import click
 from psutil import NoSuchProcess, Process
@@ -557,12 +558,12 @@ def _refresh_tokens(
 
     new_tokens = None
     try:
-        new_tokens = refresh_request(config.auth_server_url, config.realm, config.client_id, refresh_token)
+        new_tokens = refresh_request(str(config.auth_server_url), config.realm, config.client_id, refresh_token)
     except (Timeout, ConnectionError, ClientAuthenticationError):
         logger.info('Failed to refresh tokens by using existing token. Switching to username/password.')
 
     if new_tokens:
-        save_tokens_file(tokens_file, new_tokens, config.auth_server_url)
+        save_tokens_file(tokens_file, new_tokens, str(config.auth_server_url))
         logger.debug('Saved new tokens file: %s', tokens_file)
         if no_refresh:
             logger.info("Existing token used to refresh session. Token manager not started due to '--no-refresh' flag.")
@@ -617,7 +618,7 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
     # Validate whether the combination of options makes sense
     config = _validate_cortex_cli_auth_login(no_daemon, no_refresh, config_file)
 
-    auth_server_url, realm, client_id = config.auth_server_url, config.realm, config.client_id
+    auth_server_url, realm, client_id = str(config.auth_server_url), config.realm, config.client_id
     tokens_file = str(config.tokens_file)
 
     if config.tokens_file.is_file():
@@ -645,7 +646,7 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
         except ClientAuthenticationError as exc:
             raise click.ClickException(f'Failed to authenticate, {exc}') from exc
         except ClientAccountSetupError as exc:
-            password_update_form_url = f'{auth_server_url}/realms/{realm}/account'
+            password_update_form_url = urljoin(auth_server_url, f'/realms/{realm}/account')
             raise click.ClickException(
                 f"""
 Failed to authenticate, because your account is not fully set up yet.
@@ -687,7 +688,7 @@ Refer to IQM Client documentation for details: https://iqm-finland.github.io/iqm
 def logout(config_file: str, keep_tokens: str, force: bool) -> None:
     """Either logout completely, or just stop token manager while keeping tokens file."""
     config = _validate_config_file(config_file)
-    auth_server_url, realm, client_id = config.auth_server_url, config.realm, config.client_id
+    auth_server_url, realm, client_id = str(config.auth_server_url), config.realm, config.client_id
     tokens_file = config.tokens_file
 
     if not tokens_file.is_file():
