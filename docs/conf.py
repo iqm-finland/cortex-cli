@@ -143,7 +143,6 @@ intersphinx_mapping = {
 # Only include certain tags (i.e. all tags except for ones listed below)
 # (technically a whitelist, but we treat it as blacklist by using negative lookahead regex `?!`)
 smv_tag_whitelist = r'^(?!(0\.[0-9]*)).*$'  # ignore all the versions before 4.0
-smv_tag_whitelist = r'^(5.5|5.6)$'
 
 smv_branch_whitelist = "None"  # Do not include local branches in versions list
 smv_remote_whitelist = "None"  # Do not include remote branches in versions list
