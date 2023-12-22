@@ -20,6 +20,7 @@ from enum import Enum
 import json
 import time
 from typing import Optional
+from urllib.parse import urljoin
 
 from pydantic import BaseModel, Field
 import requests
@@ -78,8 +79,8 @@ def login_request(url: str, realm: str, client_id: str, username: str, password:
 
     data = AuthRequest(client_id=client_id, grant_type=GrantType.PASSWORD, username=username, password=password)
 
-    request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
-    result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
+    request_url = urljoin(url, f'/realms/{realm}/protocol/openid-connect/token')
+    result = requests.post(request_url, data=data.model_dump(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
     if result.status_code == 404:
         raise ClientAuthenticationError(f'token endpoint is not available at {url}')
     if result.status_code == 400 and result.json().get('error_description', '') == 'Account is not fully set up':
@@ -109,8 +110,8 @@ def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) ->
     # Update tokens using existing refresh_token
     data = AuthRequest(client_id=client_id, grant_type=GrantType.REFRESH, refresh_token=refresh_token)
 
-    request_url = f'{url}/realms/{realm}/protocol/openid-connect/token'
-    result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
+    request_url = urljoin(url, f'/realms/{realm}/protocol/openid-connect/token')
+    result = requests.post(request_url, data=data.model_dump(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
     if result.status_code != 200:
         raise ClientAuthenticationError(f'Failed to update tokens, {result.text}')
     tokens = result.json()
@@ -130,8 +131,8 @@ def logout_request(url: str, realm: str, client_id: str, refresh_token: str) -> 
         True if logout was successful
     """
     data = AuthRequest(client_id=client_id, refresh_token=refresh_token)
-    request_url = f'{url}/realms/{realm}/protocol/openid-connect/logout'
-    result = requests.post(request_url, data=data.dict(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
+    request_url = urljoin(url, f'/realms/{realm}/protocol/openid-connect/logout')
+    result = requests.post(request_url, data=data.model_dump(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
 
     if result.status_code != 204:
         raise ClientAuthenticationError(f'Failed to logout, {result.text}')

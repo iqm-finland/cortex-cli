@@ -32,6 +32,7 @@ from tests.conftest import expect_logout, expect_process_terminate, prepare_toke
 # 3. If not --keep-tokens, and PID is found: send logout request, kill process, delete tokens file.
 # 4. If not --keep-tokens, and PID is not found: send logout request, delete tokens file.
 
+
 # Logout Scenario 1
 def test_auth_logout_handles_keep_tokens_and_pid(config_dict, credentials):
     """

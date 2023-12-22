@@ -27,16 +27,16 @@ class ConfigFile(BaseModel):
     auth_server_url: AnyUrl
     realm: str
     client_id: str
-    username: Optional[str]
+    username: Optional[str] = None
     tokens_file: Path
 
 
 class TokensFile(BaseModel):
     """Model of tokens file, used for validating JSON."""
 
-    pid: Optional[int]
+    pid: Optional[int] = None
     timestamp: datetime
     access_token: str
     refresh_token: str
-    refresh_status: Optional[str]
+    refresh_status: Optional[str] = None
     auth_server_url: AnyUrl

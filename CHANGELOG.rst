@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 5.7
+===========
+
+* Bump dependencies and dev tools. `#65 <https://github.com/iqm-finland/cortex-cli/pull/65>`_
+
 Version 5.6
 ===========
 
