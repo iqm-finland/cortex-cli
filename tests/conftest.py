@@ -46,7 +46,7 @@ def resources_path():
 def credentials():
     """Sample credentials for logging in"""
     return {
-        'auth_server_url': 'http://example.com',
+        'auth_server_url': 'http://example.com/auth',
         'username': 'some_username',
         'password': 'some_password',
     }

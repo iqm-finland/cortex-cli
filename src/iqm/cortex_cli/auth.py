@@ -20,7 +20,6 @@ from enum import Enum
 import json
 import time
 from typing import Optional
-from urllib.parse import urljoin
 
 from pydantic import BaseModel, Field
 import requests
@@ -67,6 +66,11 @@ class AuthRequest(BaseModel):
     "refresh token for grant type ``'refresh_token'`` and logout request"
 
 
+def slash_join(a: str, b: str) -> str:
+    """Join two URL segments together, ensuring a single slash between them."""
+    return a.rstrip('/') + '/' + b.lstrip('/')
+
+
 def login_request(url: str, realm: str, client_id: str, username: str, password: str) -> dict[str, str]:
     """Sends login request to the authentication server.
 
@@ -79,7 +83,7 @@ def login_request(url: str, realm: str, client_id: str, username: str, password:
 
     data = AuthRequest(client_id=client_id, grant_type=GrantType.PASSWORD, username=username, password=password)
 
-    request_url = urljoin(url, f'/realms/{realm}/protocol/openid-connect/token')
+    request_url = slash_join(url, f'realms/{realm}/protocol/openid-connect/token')
     result = requests.post(request_url, data=data.model_dump(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
     if result.status_code == 404:
         raise ClientAuthenticationError(f'token endpoint is not available at {url}')
@@ -110,7 +114,7 @@ def refresh_request(url: str, realm: str, client_id: str, refresh_token: str) ->
     # Update tokens using existing refresh_token
     data = AuthRequest(client_id=client_id, grant_type=GrantType.REFRESH, refresh_token=refresh_token)
 
-    request_url = urljoin(url, f'/realms/{realm}/protocol/openid-connect/token')
+    request_url = slash_join(url, f'realms/{realm}/protocol/openid-connect/token')
     result = requests.post(request_url, data=data.model_dump(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
     if result.status_code != 200:
         raise ClientAuthenticationError(f'Failed to update tokens, {result.text}')
@@ -131,7 +135,7 @@ def logout_request(url: str, realm: str, client_id: str, refresh_token: str) -> 
         True if logout was successful
     """
     data = AuthRequest(client_id=client_id, refresh_token=refresh_token)
-    request_url = urljoin(url, f'/realms/{realm}/protocol/openid-connect/logout')
+    request_url = slash_join(url, f'realms/{realm}/protocol/openid-connect/logout')
     result = requests.post(request_url, data=data.model_dump(exclude_none=True), timeout=AUTH_REQUESTS_TIMEOUT)
 
     if result.status_code != 204:
