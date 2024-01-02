@@ -23,7 +23,6 @@ from pathlib import Path
 import platform
 import sys
 from typing import Any, Optional
-from urllib.parse import urljoin
 
 import click
 from psutil import NoSuchProcess, Process
@@ -39,6 +38,7 @@ from iqm.cortex_cli.auth import (
     login_request,
     logout_request,
     refresh_request,
+    slash_join,
     time_left_seconds,
 )
 from iqm.cortex_cli.models import ConfigFile, TokensFile
@@ -646,7 +646,7 @@ def login(  # pylint: disable=too-many-arguments, too-many-locals, too-many-bran
         except ClientAuthenticationError as exc:
             raise click.ClickException(f'Failed to authenticate, {exc}') from exc
         except ClientAccountSetupError as exc:
-            password_update_form_url = urljoin(auth_server_url, f'/realms/{realm}/account')
+            password_update_form_url = slash_join(auth_server_url, f'realms/{realm}/account')
             raise click.ClickException(
                 f"""
 Failed to authenticate, because your account is not fully set up yet.
