@@ -5,6 +5,11 @@ Changelog
 Version 5.8
 ===========
 
+* Remove multiversion documentation. `#67 <https://github.com/iqm-finland/cortex-cli/pull/67>`_
+
+Version 5.8
+===========
+
 * Bugfix: join URLs properly. `#66 <https://github.com/iqm-finland/cortex-cli/pull/66>`_
 
 Version 5.7
