@@ -1,15 +1,14 @@
 
-
 <!DOCTYPE html>
 
 
-<html lang="en" data-content_root="" >
+<html lang="en" data-content_root="./" >
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Cortex CLI &#8212; Cortex CLI dev documentation</title>
+    <title>Cortex CLI &#8212; Cortex CLI 5.9 documentation</title>
   
   
   
@@ -19,28 +18,28 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
-<link href="_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
 
   
-  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+  <link href="_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
 
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=384b581d" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
-  <script src="_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
+  <script src="_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
 
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
-    <script src="_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script src="_static/documentation_options.js?v=8744b788"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=efea14e4"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'readme';</script>
     <link rel="icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
@@ -49,7 +48,7 @@
     <link rel="prev" title="Cortex CLI" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-    <meta name="docbuild:last-update" content="2024-01-02"/>
+    <meta name="docbuild:last-update" content="2024-02-27"/>
   </head>
   
   
@@ -57,10 +56,9 @@
 
   
   
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
   
   <div id="pst-scroll-pixel-helper"></div>
-
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>
@@ -101,11 +99,14 @@
 </form></div>
   </div>
   
-    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
-    </nav>
+    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    </header>
   
+
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
+      
+      
       
       <div class="bd-sidebar-primary bd-sidebar">
         
@@ -134,175 +135,35 @@
       
     
     
-    <img src="_static/logo.png" class="logo__image only-light" alt="Cortex CLI dev documentation - Home"/>
-    <script>document.write(`<img src="_static/logo.png" class="logo__image only-dark" alt="Cortex CLI dev documentation - Home"/>`);</script>
+    <img src="_static/logo.png" class="logo__image only-light" alt="Cortex CLI 5.9 documentation - Home"/>
+    <script>document.write(`<img src="_static/logo.png" class="logo__image only-dark" alt="Cortex CLI 5.9 documentation - Home"/>`);</script>
   
   
 </a></div>
         <div class="sidebar-primary-item">
-<form class="bd-search d-flex align-items-center"
-      action="search.html"
-      method="get">
-  <i class="fa-solid fa-magnifying-glass"></i>
-  <input type="search"
-         class="form-control"
-         name="q"
-         id="search-input"
-         placeholder="Search..."
-         aria-label="Search..."
-         autocomplete="off"
-         autocorrect="off"
-         autocapitalize="off"
-         spellcheck="false"/>
-  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+
+ <script>
+ document.write(`
+   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
     <div class="bd-toc-item navbar-nav active">
         <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Readme</a></li>
 <li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
 <li class="toctree-l1"><a class="reference internal" href="authors.html">Authors</a></li>
+</ul>
+<ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 
     </div>
 </nav></div>
-        <div class="sidebar-primary-item">
-<style type="text/css">
-  ul.version_list { padding-left: 0; }
-  ul.version_list li.version_item { display: inline; }
-  li.version_item a {
-    color: white;
-    background-color: #097aba;
-    padding: 0.12rem 0.45rem;
-    border-radius: 0.35rem;
-  }
-  li.version_item a:hover {
-    background-color: #064061;
-    text-decoration: none;
-  }
-  li.version_item.current_version {
-    color: white;
-    background-color: #064061;
-    padding: 0.12rem 0.45rem;
-    border-radius: 0.35rem;
-  }
-</style>
-<h3>Versions</h3>
-<ul class="version_list">
-    
-      <li class="version_item current_version">dev</li>
-    
-    
-      <li class="version_item"><a href="versions/5.8/readme.html">5.8</a></li>
-    
-    
-      <li class="version_item"><a href="versions/5.7/readme.html">5.7</a></li>
-    
-    
-      <li class="version_item"><a href="versions/5.6/readme.html">5.6</a></li>
-    
-    
-      <li class="version_item"><a href="versions/5.5/readme.html">5.5</a></li>
-    
-    
-      <li class="version_item"><a href="versions/5.4/readme.html">5.4</a></li>
-    
-    
-      <li class="version_item"><a href="versions/5.3/readme.html">5.3</a></li>
-    
-    
-      <li class="version_item"><a href="versions/5.2/readme.html">5.2</a></li>
-    
-    
-      <li class="version_item"><a href="versions/5.1/readme.html">5.1</a></li>
-    
-    
-      <li class="version_item"><a href="versions/5.0/readme.html">5.0</a></li>
-    
-    
-      <li class="version_item"><a href="versions/4.7/readme.html">4.7</a></li>
-    
-    
-      <li class="version_item"><a href="versions/4.6/readme.html">4.6</a></li>
-    
-    
-      <li class="version_item"><a href="versions/4.5/readme.html">4.5</a></li>
-    
-    
-      <li class="version_item"><a href="versions/4.4/readme.html">4.4</a></li>
-    
-    
-      <li class="version_item"><a href="versions/4.3/readme.html">4.3</a></li>
-    
-    
-      <li class="version_item"><a href="versions/4.2/readme.html">4.2</a></li>
-    
-    
-      <li class="version_item"><a href="versions/4.1/readme.html">4.1</a></li>
-    
-    
-      <li class="version_item"><a href="versions/4.0/readme.html">4.0</a></li>
-    
-    
-      <li class="version_item"><a href="versions/3.6/readme.html">3.6</a></li>
-    
-    
-      <li class="version_item"><a href="versions/3.5/readme.html">3.5</a></li>
-    
-    
-      <li class="version_item"><a href="versions/3.4/readme.html">3.4</a></li>
-    
-    
-      <li class="version_item"><a href="versions/3.3/readme.html">3.3</a></li>
-    
-    
-      <li class="version_item"><a href="versions/3.2/readme.html">3.2</a></li>
-    
-    
-      <li class="version_item"><a href="versions/3.1/readme.html">3.1</a></li>
-    
-    
-      <li class="version_item"><a href="versions/3.0/readme.html">3.0</a></li>
-    
-    
-      <li class="version_item"><a href="versions/2.4/readme.html">2.4</a></li>
-    
-    
-      <li class="version_item"><a href="versions/2.3/readme.html">2.3</a></li>
-    
-    
-      <li class="version_item"><a href="versions/2.2/readme.html">2.2</a></li>
-    
-    
-      <li class="version_item"><a href="versions/2.1/readme.html">2.1</a></li>
-    
-    
-      <li class="version_item"><a href="versions/2.0/readme.html">2.0</a></li>
-    
-    
-      <li class="version_item"><a href="versions/1.6/readme.html">1.6</a></li>
-    
-    
-      <li class="version_item"><a href="versions/1.5/readme.html">1.5</a></li>
-    
-    
-      <li class="version_item"><a href="versions/1.4/readme.html">1.4</a></li>
-    
-    
-      <li class="version_item"><a href="versions/1.3/readme.html">1.3</a></li>
-    
-    
-      <li class="version_item"><a href="versions/1.2/readme.html">1.2</a></li>
-    
-    
-      <li class="version_item"><a href="versions/1.1/readme.html">1.1</a></li>
-    
-    
-      <li class="version_item"><a href="versions/1.0/readme.html">1.0</a></li>
-    
-</ul>
-</div>
     </div>
   
   
@@ -466,32 +327,14 @@ document.write(`
               
                 
 <div id="searchbox"></div>
-                <article class="bd-article" role="main">
+                <article class="bd-article">
                   
-
-<style type="text/css">
-  .version_notice {
-    background-color: #ffc107;
-    padding: 0.5em 0.75em;
-    margin-bottom: 1em;
-  }
-</style>
-<div class="version_notice">
-  <strong>
-    
-    You're reading the documentation for a development version.
-    For the latest released version, please have a look at <a href="versions/5.8/readme.html">5.8</a>.
-    
-  </strong>
-</div>
-
-
   <p id="readme"><img alt="CI badge" src="https://github.com/iqm-finland/cortex-cli/actions/workflows/ci.yml/badge.svg" /> <img alt="Release badge" src="https://img.shields.io/github/release/iqm-finland/cortex-cli.svg" /> <a class="reference external" href="https://github.com/psf/black"><img alt="Black badge" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a></p>
 <section id="cortex-cli">
-<h1>Cortex CLI<a class="headerlink" href="#cortex-cli" title="Permalink to this heading">#</a></h1>
+<h1>Cortex CLI<a class="headerlink" href="#cortex-cli" title="Link to this heading">#</a></h1>
 <p>Command-line interface (CLI) for managing user authentication when using IQM quantum computers.</p>
 <section id="installing-cortex-cli">
-<h2>Installing Cortex CLI<a class="headerlink" href="#installing-cortex-cli" title="Permalink to this heading">#</a></h2>
+<h2>Installing Cortex CLI<a class="headerlink" href="#installing-cortex-cli" title="Link to this heading">#</a></h2>
 <p>Requirements for installing:</p>
 <ul class="simple">
 <li><p>Python 3.9-3.11</p></li>
@@ -502,13 +345,13 @@ document.write(`
 </div>
 </section>
 <section id="using-cortex-cli">
-<h2>Using Cortex CLI<a class="headerlink" href="#using-cortex-cli" title="Permalink to this heading">#</a></h2>
+<h2>Using Cortex CLI<a class="headerlink" href="#using-cortex-cli" title="Link to this heading">#</a></h2>
 <p>For general usage instructions, run</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>cortex<span class="w"> </span>--help
 </pre></div>
 </div>
 <section id="initialization">
-<h3>Initialization<a class="headerlink" href="#initialization" title="Permalink to this heading">#</a></h3>
+<h3>Initialization<a class="headerlink" href="#initialization" title="Link to this heading">#</a></h3>
 <p>First, Cortex CLI needs initialization, which produces a configuration file:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>cortex<span class="w"> </span>init
 </pre></div>
@@ -517,7 +360,7 @@ document.write(`
 prompt. See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">init</span> <span class="pre">--help</span></code> for details.</p>
 </section>
 <section id="login">
-<h3>Login<a class="headerlink" href="#login" title="Permalink to this heading">#</a></h3>
+<h3>Login<a class="headerlink" href="#login" title="Link to this heading">#</a></h3>
 <p>To log in, use</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>cortex<span class="w"> </span>auth<span class="w"> </span>login
 </pre></div>
@@ -538,7 +381,7 @@ asked to re-enter your credentials.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span> <span class="pre">--help</span></code> for more details.</p>
 </section>
 <section id="use-with-cirq-on-iqm-qiskit-on-iqm-etc">
-<h3>Use with Cirq on IQM, Qiskit on IQM, etc.<a class="headerlink" href="#use-with-cirq-on-iqm-qiskit-on-iqm-etc" title="Permalink to this heading">#</a></h3>
+<h3>Use with Cirq on IQM, Qiskit on IQM, etc.<a class="headerlink" href="#use-with-cirq-on-iqm-qiskit-on-iqm-etc" title="Link to this heading">#</a></h3>
 <p>Adapters based on IQM Client, such as Cirq on IQM and Qiskit on IQM, can take advantage of the tokens file maintained by
 Cortex CLI. This way you won’t need to provide the authentication server URL, username, or password to the adapter
 library itself. To achieve this, follow the instructions printed on the screen after running <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">login</span></code>.
@@ -556,7 +399,7 @@ from the point of view of the adapter it looks like authentication is simply not
 authentication-related information has to be provided to the adapter).</p>
 </section>
 <section id="status">
-<h3>Status<a class="headerlink" href="#status" title="Permalink to this heading">#</a></h3>
+<h3>Status<a class="headerlink" href="#status" title="Link to this heading">#</a></h3>
 <p>To see the current status of the token manager, use:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>cortex<span class="w"> </span>auth<span class="w"> </span>status
 </pre></div>
@@ -567,7 +410,7 @@ how much time is left until current tokens expire.</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">status</span> <span class="pre">--help</span></code> for more details.</p>
 </section>
 <section id="logout">
-<h3>Logout<a class="headerlink" href="#logout" title="Permalink to this heading">#</a></h3>
+<h3>Logout<a class="headerlink" href="#logout" title="Link to this heading">#</a></h3>
 <p>To log out, run</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>cortex<span class="w"> </span>auth<span class="w"> </span><span class="nb">logout</span>
 </pre></div>
@@ -582,7 +425,7 @@ To do so, run:</p>
 <p>See <code class="docutils literal notranslate"><span class="pre">cortex</span> <span class="pre">auth</span> <span class="pre">logout</span> <span class="pre">--help</span></code> for more details.</p>
 </section>
 <section id="multiple-configuration-files">
-<h3>Multiple configuration files<a class="headerlink" href="#multiple-configuration-files" title="Permalink to this heading">#</a></h3>
+<h3>Multiple configuration files<a class="headerlink" href="#multiple-configuration-files" title="Link to this heading">#</a></h3>
 <p>By default, all Cortex CLI commands read the configuration file from the default location
 <code class="docutils literal notranslate"><span class="pre">~/.config/iqm-cortex-cli/config.json</span></code>. You can specify a different filepath by providing the <code class="docutils literal notranslate"><span class="pre">--config-file</span></code> value,
 for example:</p>
@@ -594,7 +437,6 @@ $<span class="w"> </span>cortex<span class="w"> </span>auth<span class="w"> </sp
 </section>
 </section>
 </section>
-
 
 
                 </article>
@@ -634,6 +476,7 @@ $<span class="w"> </span>cortex<span class="w"> </span>auth<span class="w"> </sp
               
                 <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
+
   <div class="sidebar-secondary-item">
   <div class="page-toc tocsection onthispage">
     <i class="fa-solid fa-list"></i> Contents
@@ -670,7 +513,7 @@ $<span class="w"> </span>cortex<span class="w"> </span>auth<span class="w"> </sp
 
   <p class="copyright">
     
-      © Copyright 2019-2023, IQM Finland Oy.
+      © Copyright 2019-2024, IQM Finland Oy.
       <br/>
     
   </p>
@@ -679,7 +522,7 @@ $<span class="w"> </span>cortex<span class="w"> </span>auth<span class="w"> </sp
   
   <div class="footer-item">
     <p class="last-updated">
-  Last updated on 2024-01-02.
+  Last updated on 2024-02-27.
   <br/>
 </p>
   </div>
@@ -697,8 +540,8 @@ $<span class="w"> </span>cortex<span class="w"> </span>auth<span class="w"> </sp
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
-<script src="_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+  <script src="_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
 
   <footer class="bd-footer">
   </footer>
