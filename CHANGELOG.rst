@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 5.9
+===========
+
+* Remove multiversion documentation. `#67 <https://github.com/iqm-finland/cortex-cli/pull/67>`_
+
 Version 5.8
 ===========
 

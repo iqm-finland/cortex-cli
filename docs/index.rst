@@ -15,6 +15,10 @@ Contents
    Readme <readme>
    License <license>
    Authors <authors>
+
+.. toctree::
+   :maxdepth: 1
+
    Changelog <changelog>
 
 Indices
