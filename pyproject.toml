@@ -53,9 +53,6 @@ docs = [
     "sphinx == 7.2.6",
     "sphinx-book-theme == 1.1.2",
 ]
-cicd = [
-    "twine == 4.0.2"
-]
 
 [project.scripts]
 cortex = "iqm.cortex_cli.cortex_cli:cortex_cli"
