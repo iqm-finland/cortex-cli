@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 5.10
+===========
+
+* Use GitHub Action as a Trusted Publisher to publish packages to PyPI. `#68 <https://github.com/iqm-finland/cortex-cli/pull/68>`_
+
 Version 5.9
 ===========
 
