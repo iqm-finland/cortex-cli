@@ -333,7 +333,7 @@ def test_auth_login_starts_token_manager(config_dict, credentials):
 
 def test_auth_login_no_daemonization_on_windows(config_dict, credentials):
     """
-    Tests that damonization is disabled on windows, even if not testing on windows.
+    Tests that daemonization is disabled on Windows, even if not testing on Windows.
     """
     when(platform).system().thenReturn('Windows')
     when(cortex_cli_module).start_token_manager(ANY, ANY).thenReturn(None)
