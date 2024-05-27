@@ -18,7 +18,6 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
-import platform
 import time
 from typing import Optional, Tuple
 
@@ -28,9 +27,6 @@ from requests.exceptions import ConnectionError, Timeout  # pylint: disable=rede
 from iqm.cortex_cli.auth import AUTH_REQUESTS_TIMEOUT, ClientAuthenticationError, refresh_request
 from iqm.cortex_cli.models import ConfigFile
 
-if not platform.system().lower().startswith('win'):
-    import daemon
-
 
 def daemonize_token_manager(cycle: int, config: ConfigFile, logfile: Optional[str] = None) -> None:
     """Start a daemon process.
@@ -39,6 +35,8 @@ def daemonize_token_manager(cycle: int, config: ConfigFile, logfile: Optional[st
         config: Cortex CLI configuration
         logfile: path to file for writing errors
     """
+    import daemon  # pylint: disable=import-outside-toplevel
+
     logfile = (
         logfile
         if logfile is not None
