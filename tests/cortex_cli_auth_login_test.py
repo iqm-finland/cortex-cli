@@ -20,7 +20,7 @@ import os
 import platform
 
 from click.testing import CliRunner
-from mockito import ANY, unstub, when
+from mockito import ANY, unstub, verifyNoUnwantedInteractions, when
 import pytest
 
 from iqm.cortex_cli import cortex_cli as cortex_cli_module
@@ -328,4 +328,41 @@ def test_auth_login_starts_token_manager(config_dict, credentials):
         else:
             assert 'Starting token manager daemon' in result.output
 
+    unstub()
+
+
+def test_auth_login_no_daemonization_on_windows(config_dict, credentials):
+    """
+    Tests that daemonization is disabled on Windows, even if not testing on Windows.
+    """
+    when(platform).system().thenReturn('Windows')
+    when(cortex_cli_module).start_token_manager(ANY, ANY).thenReturn(None)
+    prepare_tokens(300, 3600, **credentials)
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem():
+        with open('config.json', 'w', encoding='UTF-8') as file:
+            file.write(json.dumps(config_dict))
+
+        result = runner.invoke(
+            cortex_cli,
+            [
+                'auth',
+                'login',
+                '--config-file',
+                'config.json',
+                '--username',
+                credentials['username'],
+                '--password',
+                credentials['password'],
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert 'Logged in successfully' in result.output
+        assert 'Daemonizing is not supported on Windows' in result.output
+        assert 'Starting token manager in foreground' in result.output
+
+    verifyNoUnwantedInteractions()
     unstub()
