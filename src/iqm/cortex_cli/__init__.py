@@ -14,6 +14,7 @@
 """Command-line interface (CLI) for managing user authentication when using IQM quantum computers.
 """
 from importlib.metadata import PackageNotFoundError, version  # type: ignore
+import warnings
 
 try:
     DIST_NAME = 'iqm-cortex-cli'
@@ -22,3 +23,10 @@ except PackageNotFoundError:
     __version__ = 'unknown'
 finally:
     del version, PackageNotFoundError
+
+warnings.warn(
+    DeprecationWarning(
+        'The iqm-cortex-cli package is deprecated and new versions of Cortex CLI will be published as part of '
+        'iqm-client. Please uninstall iqm-cortex-cli and install iqm-client[cli] to get the newest version.'
+    )
+)
