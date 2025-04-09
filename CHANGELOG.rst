@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 6.1
+============
+
+* Disable attestations on ``gh-action-pypi-publish`` to fix failing PyPI publishing
+  `#72 <https://github.com/iqm-finland/cortex-cli/pull/72>`_
+
 Version 6.0
 ============
 
