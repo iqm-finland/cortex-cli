@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 6.0
+============
+
+* Deprecate the ``iqm-cortex-cli`` package. New versions of Cortex CLI are published as part of iqm-client.
+  `#71 <https://github.com/iqm-finland/cortex-cli/pull/71>`_
+
 Version 5.10
 ============
 

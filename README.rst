@@ -9,6 +9,13 @@
 Cortex CLI
 ==========
 
+**The** ``iqm-cortex-cli`` **package is deprecated and the GitHub repository has been archived. New versions of
+Cortex CLI will be published as part of the** `iqm-client <https://pypi.org/project/iqm-client/>`_
+**package as IQM Client CLI and can be installed from public PyPI with** ``pip install iqm-client[cli]``.
+**See the latest documentation at** `<https://docs.meetiqm.com/iqm-client/user_guide_cli.html>`_ **for more
+information. The source code is available as part of the** ``iqm-client`` **package and a public mirror of the source
+code is available at** `<https://github.com/iqm-finland/sdk>`_. **For support, you can contact support@meetiqm.com**.
+
 Command-line interface (CLI) for managing user authentication when using IQM quantum computers.
 
 Installing Cortex CLI
